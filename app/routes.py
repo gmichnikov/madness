@@ -2,9 +2,11 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round, LogEntry
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm
 from functools import wraps
 import os
+from datetime import datetime
+import pytz
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -43,7 +45,7 @@ def register():
             flash('Email already registered.')
             return redirect(url_for('register'))
         
-        new_user = User(email=form.email.data, full_name=form.full_name.data)
+        new_user = User(email=form.email.data, full_name=form.full_name.data, time_zone=form.time_zone.data)
         new_user.set_password(form.password.data)
         # Automatically make user with ADMIN_EMAIL an admin
         if form.email.data == ADMIN_EMAIL:
@@ -223,5 +225,39 @@ def super_admin_manage_admins():
 @admin_required
 @login_required
 def admin_view_logs():
+    user_tz = pytz.timezone(current_user.time_zone)
     log_entries = LogEntry.query.order_by(LogEntry.timestamp.desc()).all()
+    for log in log_entries:
+        localized_timestamp = log.timestamp.replace(tzinfo=pytz.utc).astimezone(user_tz)
+        tz_abbr = localized_timestamp.tzname()  # Gets the time zone abbreviation
+        # log.formatted_timestamp = localized_timestamp.strftime('%Y-%m-%d, %I:%M:%S %p')
+        log.formatted_timestamp = localized_timestamp.strftime('%Y-%m-%d, %I:%M:%S %p ') + tz_abbr
     return render_template('admin/view_logs.html', log_entries=log_entries)
+
+@app.route('/user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def user_profile(user_id):
+    user = User.query.get_or_404(user_id)
+    form = EditProfileForm()
+
+    if user_id != current_user.id:
+        return render_template('user_profile.html', user=user)
+
+    if form.validate_on_submit():
+        user.full_name = form.full_name.data
+        user.time_zone = form.time_zone.data
+        db.session.commit()
+        flash('Profile updated successfully.')
+        return redirect(url_for('user_profile', user_id=user_id))
+
+    elif request.method == 'GET':
+        form.full_name.data = user.full_name
+        form.time_zone.data = user.time_zone
+
+    return render_template('edit_user_profile.html', form=form, user=user)
+
+@app.route('/users')
+@login_required
+def users():
+    users = User.query.order_by(User.full_name).all()
+    return render_template('users.html', users=users)

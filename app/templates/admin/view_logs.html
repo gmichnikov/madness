@@ -6,15 +6,13 @@
     <h1>Log Entries</h1>
     <table class="table-logs">
         <tr>
-            <th>Timestamp</th>
-            <th>User ID</th>
+            <th>Date + Time</th>
             <th>Category</th>
             <th>Description</th>
         </tr>
         {% for log in log_entries %}
         <tr>
-            <td>{{ log.timestamp }}</td>
-            <td>{{ log.current_user_id }}</td>
+            <td>{{ log.formatted_timestamp }}</td>
             <td>{{ log.category }}</td>
             <td>{{ log.description }}</td>
         </tr>

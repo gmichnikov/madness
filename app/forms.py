@@ -1,11 +1,13 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
+import pytz
 
 class RegistrationForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     full_name = StringField('Full Name', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
+    time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones])
     submit = SubmitField('Register')
 
 class LoginForm(FlaskForm):
@@ -106,3 +108,8 @@ class AdminStatusForm(FlaskForm):
     user_email = SelectField('User', coerce=int)
     is_admin = BooleanField('Is Admin')
     submit = SubmitField('Update Admin Status')
+
+class EditProfileForm(FlaskForm):
+    full_name = StringField('Full Name')
+    time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones])
+    submit = SubmitField('Update Profile')
