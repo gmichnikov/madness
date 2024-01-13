@@ -14,3 +14,10 @@ migrate = Migrate(app, db)
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+from .models import Region
+with app.app_context():
+    if Region.query.count() == 0:
+        for i in range(1, 5):
+            db.session.add(Region(name=f"Region {i}"))
+        db.session.commit()

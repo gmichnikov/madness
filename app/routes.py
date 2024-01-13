@@ -1,8 +1,8 @@
 from flask import render_template, redirect, url_for, flash, request
 from app import app, db
-from app.models import User
+from app.models import User, Region
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm
 from functools import wraps
 import os
 from dotenv import load_dotenv
@@ -93,3 +93,28 @@ def admin_reset_password():
             flash('User not found.')
 
     return render_template('admin/reset_password.html', form=form)
+
+@app.route('/admin/manage_regions', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_manage_regions():
+    form = ManageRegionsForm()
+    if form.validate_on_submit():
+        # Assuming you have 4 regions and they are in the database
+        # Update each region with the data from the form
+        for i in range(1, 5):
+            region = Region.query.get(i)
+            if region:
+                region_name = getattr(form, f'region_{i}').data
+                region.name = region_name
+        db.session.commit()
+        flash('Regions updated successfully.')
+        return redirect(url_for('admin_manage_regions'))
+
+    # Pre-populate form fields with current region names
+    for i in range(1, 5):
+        region = Region.query.get(i)
+        if region:
+            getattr(form, f'region_{i}').data = region.name
+
+    return render_template('admin/manage_regions.html', form=form)

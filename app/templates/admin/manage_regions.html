@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Regions{% endblock %}
+
+{% block content %}
+    <h1>Manage Regions</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.region_1.label }}<br>
+            {{ form.region_1(size=20) }}
+        </p>
+        <p>
+            {{ form.region_2.label }}<br>
+            {{ form.region_2(size=20) }}
+        </p>
+        <p>
+            {{ form.region_3.label }}<br>
+            {{ form.region_3(size=20) }}
+        </p>
+        <p>
+            {{ form.region_4.label }}<br>
+            {{ form.region_4(size=20) }}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}
