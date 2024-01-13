@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 from app import db
 
@@ -54,3 +55,13 @@ class Round(db.Model):
 
     def __repr__(self):
         return f'<Round {self.name}>'
+    
+class LogEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    category = db.Column(db.String(100), nullable=False)
+    current_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    description = db.Column(db.Text, nullable=False)
+
+    def __repr__(self):
+        return f'<LogEntry {self.timestamp} - {self.category}>'

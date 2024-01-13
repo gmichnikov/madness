@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request
 from app import app, db
-from app.models import User, Region, Team, Round
+from app.models import User, Region, Team, Round, LogEntry
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm
 from functools import wraps
@@ -52,6 +52,11 @@ def register():
 
         db.session.add(new_user)
         db.session.commit()
+
+        log_entry = LogEntry(category='Register', current_user_id=new_user.id, description=f"Name: {new_user.full_name}, Email: {new_user.email}")
+        db.session.add(log_entry)
+        db.session.commit()
+
         flash('Registration successful. Please log in.')
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
@@ -90,6 +95,11 @@ def admin_reset_password():
             user.set_password(form.new_password.data)
             db.session.commit()
             flash('Password reset successfully.')
+
+            log_entry = LogEntry(category='Reset Password', current_user_id=current_user.id, description=f"{current_user.full_name} reset password of {user.full_name}")
+            db.session.add(log_entry)
+            db.session.commit()
+
         else:
             flash('User not found.')
 
@@ -110,6 +120,11 @@ def admin_manage_regions():
                 region.name = region_name
         db.session.commit()
         flash('Regions updated successfully.')
+
+        log_entry = LogEntry(category='Manage Regions', current_user_id=current_user.id, description=f"{current_user.full_name} edited regions")
+        db.session.add(log_entry)
+        db.session.commit()
+
         return redirect(url_for('admin_manage_regions'))
 
     # Pre-populate form fields with current region names
@@ -133,6 +148,11 @@ def admin_manage_teams():
                 team.name = team_field.data
         db.session.commit()
         flash('Teams updated successfully.')
+
+        log_entry = LogEntry(category='Manage Teams', current_user_id=current_user.id, description=f"{current_user.full_name} edited teams")
+        db.session.add(log_entry)
+        db.session.commit()
+
         return redirect(url_for('admin_manage_teams'))
 
     # Pre-populate form fields with current team names
@@ -157,6 +177,11 @@ def admin_manage_rounds():
                 round.points = round_points
         db.session.commit()
         flash('Rounds updated successfully.')
+
+        log_entry = LogEntry(category='Manage Rounds', current_user_id=current_user.id, description=f"{current_user.full_name} edited round points")
+        db.session.add(log_entry)
+        db.session.commit()
+
         return redirect(url_for('admin_manage_rounds'))
 
     # Pre-populate form fields with current region names
@@ -185,6 +210,18 @@ def super_admin_manage_admins():
                 user.is_admin = form.is_admin.data
                 db.session.commit()
                 flash('Admin status updated successfully.')
+
+                log_entry = LogEntry(category='Manage Admins', current_user_id=current_user.id, description=f"{current_user.full_name} edited admin status of {user.full_name} to {user.is_admin}")
+                db.session.add(log_entry)
+                db.session.commit()
+
                 return redirect(url_for('super_admin_manage_admins'))
 
     return render_template('super_admin/manage_admins.html', form=form, current_admins=current_admins)
+
+@app.route('/admin/view_logs')
+@admin_required
+@login_required
+def admin_view_logs():
+    log_entries = LogEntry.query.order_by(LogEntry.timestamp.desc()).all()
+    return render_template('admin/view_logs.html', log_entries=log_entries)
