@@ -25,3 +25,17 @@
 .btn-primary {
     background-color: #007bff;
 }
+
+/* CSS for navigation links */
+nav a {
+    font-size: 18px; /* Adjust the font size as needed */
+    margin-right: 5px;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+    nav a {
+        font-size: 18px; /* Reduce font size for smaller screens */
+        margin-right: 5px;
+    }
+}
