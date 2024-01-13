@@ -15,7 +15,7 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-from .models import Region, Team
+from .models import Region, Team, Round
 with app.app_context():
     if Region.query.count() == 0:
         for i in range(1, 5):
@@ -29,4 +29,20 @@ with app.app_context():
                 name = f"Region {region_id}: Seed {seed}"
                 team = Team(seed=seed, name=name, region_id=region_id)
                 db.session.add(team)
+        db.session.commit()
+
+with app.app_context():
+    if Round.query.count() == 0:
+        round1 = Round(name="1st Round", points=1)
+        db.session.add(round1)
+        round2 = Round(name="2nd Round", points=2)
+        db.session.add(round2)
+        round3 = Round(name="Sweet 16", points=3)
+        db.session.add(round3)
+        round4 = Round(name="Elite 8", points=4)
+        db.session.add(round4)
+        round5 = Round(name="Final 4", points=6)
+        db.session.add(round5)
+        round6 = Round(name="Championship Game", points=12)
+        db.session.add(round6)
         db.session.commit()

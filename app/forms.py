@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, Length, EqualTo
+from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField
+from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
 
 class RegistrationForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -24,9 +24,6 @@ class ManageRegionsForm(FlaskForm):
     region_3 = StringField('Region 3', default="Region 3")
     region_4 = StringField('Region 4', default="Region 4")
     submit = SubmitField('Update Regions')
-
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
 
 class ManageTeamsForm(FlaskForm):
     team_1 = StringField('Team 1: Region 1, Seed 1')
@@ -94,3 +91,13 @@ class ManageTeamsForm(FlaskForm):
     team_63 = StringField('Team 63: Region 4, Seed 15')
     team_64 = StringField('Team 64: Region 4, Seed 16')
     submit = SubmitField('Update Teams')
+
+class ManageRoundsForm(FlaskForm):
+    round_1_points = IntegerField('1st Round Points', validators=[DataRequired(), NumberRange(min=0)])
+    round_2_points = IntegerField('2nd Round Points', validators=[DataRequired(), NumberRange(min=0)])
+    round_3_points = IntegerField('Sweet 16 Points', validators=[DataRequired(), NumberRange(min=0)])
+    round_4_points = IntegerField('Elite 8 Points', validators=[DataRequired(), NumberRange(min=0)])
+    round_5_points = IntegerField('Final 4 Points', validators=[DataRequired(), NumberRange(min=0)])
+    round_6_points = IntegerField('National Championship Points', validators=[DataRequired(), NumberRange(min=0)])
+
+    submit = SubmitField('Update Points')

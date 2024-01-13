@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Rounds{% endblock %}
+
+{% block content %}
+    <h1>Manage Round Points</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.round_1_points.label(class="form-label") }}<br>
+            {{ form.round_1_points(class="form-control", size=20) }}
+        </div>
+        <div class="form-group">
+            {{ form.round_2_points.label(class="form-label") }}<br>
+            {{ form.round_2_points(class="form-control", size=20) }}
+        </div>
+        <div class="form-group">
+            {{ form.round_3_points.label(class="form-label") }}<br>
+            {{ form.round_3_points(class="form-control", size=20) }}
+        </div>
+        <div class="form-group">
+            {{ form.round_4_points.label(class="form-label") }}<br>
+            {{ form.round_4_points(class="form-control", size=20) }}
+        </div>
+        <div class="form-group">
+            {{ form.round_5_points.label(class="form-label") }}<br>
+            {{ form.round_5_points(class="form-control", size=20) }}
+        </div>
+        <div class="form-group">
+            {{ form.round_6_points.label(class="form-label") }}<br>
+            {{ form.round_6_points(class="form-control", size=20) }}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+{% endblock %}
+
+
