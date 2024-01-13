@@ -21,6 +21,9 @@
                     <a href="{{ url_for('admin_manage_teams') }}">Manage Teams</a>
                     <a href="{{ url_for('admin_manage_rounds') }}">Manage Rounds</a>
                 {% endif %}
+                {% if current_user.is_super_admin %}
+                    <a href="{{ url_for('super_admin_manage_admins') }}">Manage Admins</a>
+                {% endif %}
             {% endif %}
         </nav>
     </header>

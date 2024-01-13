@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm
 from functools import wraps
 import os
 from dotenv import load_dotenv
@@ -48,6 +48,7 @@ def register():
         # Automatically make user with ADMIN_EMAIL an admin
         if form.email.data == ADMIN_EMAIL:
             new_user.is_admin = True
+            new_user.is_super_admin = True
 
         db.session.add(new_user)
         db.session.commit()
@@ -165,3 +166,25 @@ def admin_manage_rounds():
             getattr(form, f'round_{i}_points').data = round.points
 
     return render_template('admin/manage_rounds.html', form=form)
+
+@app.route('/super_admin/manage_admins', methods=['GET', 'POST'])
+@login_required
+def super_admin_manage_admins():
+    if not current_user.is_super_admin:
+        return redirect(url_for('index'))
+
+    form = AdminStatusForm()
+    form.user_email.choices = [(user.id, user.email) for user in User.query.filter(User.is_super_admin == False)]
+
+    current_admins = User.query.filter_by(is_admin=True).all()
+
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            user = User.query.get(form.user_email.data)
+            if user:
+                user.is_admin = form.is_admin.data
+                db.session.commit()
+                flash('Admin status updated successfully.')
+                return redirect(url_for('super_admin_manage_admins'))
+
+    return render_template('super_admin/manage_admins.html', form=form, current_admins=current_admins)

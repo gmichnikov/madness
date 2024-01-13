@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
 
 class RegistrationForm(FlaskForm):
@@ -101,3 +101,8 @@ class ManageRoundsForm(FlaskForm):
     round_6_points = IntegerField('National Championship Points', validators=[DataRequired(), NumberRange(min=0)])
 
     submit = SubmitField('Update Points')
+
+class AdminStatusForm(FlaskForm):
+    user_email = SelectField('User', coerce=int)
+    is_admin = BooleanField('Is Admin')
+    submit = SubmitField('Update Admin Status')

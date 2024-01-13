@@ -10,6 +10,7 @@ class User(db.Model, UserMixin):
     full_name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+    is_super_admin = db.Column(db.Boolean, default=False, nullable=False)
     r1score = db.Column(db.Integer, default=0, nullable=False)
     r2score = db.Column(db.Integer, default=0, nullable=False)
     r3score = db.Column(db.Integer, default=0, nullable=False)

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Admins{% endblock %}
+
+{% block content %}
+    <h1>Manage Admins</h1>
+
+    <h2>Current Admins:</h2>
+    <ul>
+    {% for admin in current_admins %}
+        <li>{{ admin.email }}</li>
+    {% endfor %}
+    </ul>
+    
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div>
+            {{ form.user_email.label }}<br>
+            {{ form.user_email() }}
+        </div>
+        <div>
+            {{ form.is_admin.label }}<br>
+            {{ form.is_admin() }}
+        </div>
+        <div>{{ form.submit() }}</div>
+    </form>
+{% endblock %}
