@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify Users{% endblock %}
+
+{% block content %}
+    <h1>Verify Users</h1>
+    <form method="POST">
+        {% for user in users %}
+            <div>
+                <input type="checkbox" name="verified_{{ user.id }}" {% if user.is_verified %} checked {% endif %}>
+                <strong>{{ user.full_name }}</strong> ({{ user.email }}) 
+            </div>
+        {% endfor %}
+        <input type="submit" value="Update Verifications">
+    </form>
+{% endblock %}

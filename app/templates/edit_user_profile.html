@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
+    <h1>Verified?</h1>
+    <p class="{{ 'verified-user' if user.is_verified else 'unverified-user' }}">{{ user.is_verified }}</p>
     <h1>Edit Profile</h1>
     <form method="POST">
         {{ form.hidden_tag() }}

@@ -19,6 +19,7 @@
                 {% if current_user.is_admin %}
                     <br> Admin: 
                     <a href="{{ url_for('admin_view_logs') }}">View Logs</a>
+                    <a href="{{ url_for('admin_verify_users') }}">Verify Users</a>
                     <a href="{{ url_for('admin_reset_password') }}">Reset Passwords</a>
                     <a href="{{ url_for('admin_manage_regions') }}">Manage Regions</a>
                     <a href="{{ url_for('admin_manage_teams') }}">Manage Teams</a>

@@ -58,3 +58,13 @@ nav a {
 .table-logs tr:nth-child(even) {
     background-color: #f9f9f9;
 }
+
+.verified-user {
+    font-size: 18px;
+    color: green;
+}
+
+.unverified-user {
+    font-size: 18px;
+    color: red;
+}

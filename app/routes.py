@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round, LogEntry
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, UserVerificationForm
 from functools import wraps
 import os
 from datetime import datetime
@@ -85,9 +85,6 @@ def logout():
 @login_required
 @admin_required
 def admin_reset_password():
-    if not current_user.is_admin:
-        return redirect(url_for('index'))
-
     form = AdminPasswordResetForm()
     form.email.choices = [(user.email, user.email) for user in User.query.all()]
 
@@ -248,6 +245,11 @@ def user_profile(user_id):
         user.time_zone = form.time_zone.data
         db.session.commit()
         flash('Profile updated successfully.')
+
+        log_entry = LogEntry(category='Edit Profile', current_user_id=current_user.id, description=f"{current_user.email} set name to {user.full_name} and timezone to {user.time_zone}")
+        db.session.add(log_entry)
+        db.session.commit()
+
         return redirect(url_for('user_profile', user_id=user_id))
 
     elif request.method == 'GET':
@@ -261,3 +263,23 @@ def user_profile(user_id):
 def users():
     users = User.query.order_by(User.full_name).all()
     return render_template('users.html', users=users)
+
+@app.route('/admin/verify_users', methods=['GET', 'POST'])
+@admin_required
+@login_required
+def admin_verify_users():
+    users = User.query.order_by(User.full_name).all()
+
+    if request.method == 'POST':
+        for user in users:
+            user.is_verified = request.form.get('verified_' + str(user.id)) == 'on'
+        db.session.commit()
+        flash('User verifications updated successfully.')
+
+        log_entry = LogEntry(category='Verify Users', current_user_id=current_user.id, description=f"{current_user.email} verified some users")
+        db.session.add(log_entry)
+        db.session.commit()
+
+        return redirect(url_for('admin_verify_users'))
+
+    return render_template('admin/verify_users.html', users=users)

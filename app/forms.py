@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField, FieldList, HiddenField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange
 import pytz
 
@@ -113,3 +113,8 @@ class EditProfileForm(FlaskForm):
     full_name = StringField('Full Name')
     time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones])
     submit = SubmitField('Update Profile')
+
+class UserVerificationForm(FlaskForm):
+    user_ids = FieldList(HiddenField())
+    user_verifications = FieldList(BooleanField('Verified'))
+    submit = SubmitField('Update Verifications')
