@@ -1,8 +1,8 @@
 from flask import render_template, redirect, url_for, flash, request
 from app import app, db
-from app.models import User, Region
+from app.models import User, Region, Team
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm
 from functools import wraps
 import os
 from dotenv import load_dotenv
@@ -118,3 +118,27 @@ def admin_manage_regions():
             getattr(form, f'region_{i}').data = region.name
 
     return render_template('admin/manage_regions.html', form=form)
+
+@app.route('/admin/manage_teams', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_manage_teams():
+    form = ManageTeamsForm()
+    if form.validate_on_submit():
+        for i in range(1, 65):
+            team = Team.query.get(i)
+            if team:
+                team_field = getattr(form, f'team_{i}')
+                team.name = team_field.data
+        db.session.commit()
+        flash('Teams updated successfully.')
+        return redirect(url_for('admin_manage_teams'))
+
+    # Pre-populate form fields with current team names
+    for i in range(1, 65):
+        team = Team.query.get(i)
+        if team:
+            team_field = getattr(form, f'team_{i}')
+            team_field.data = team.name
+
+    return render_template('admin/manage_teams.html', form=form)

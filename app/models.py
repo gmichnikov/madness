@@ -34,3 +34,14 @@ class Region(db.Model):
 
     def __repr__(self):
         return f'<Region {self.name}>'
+
+class Team(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    seed = db.Column(db.Integer, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    region_id = db.Column(db.Integer, db.ForeignKey('region.id'), nullable=False)
+
+    region = db.relationship('Region', backref=db.backref('teams', lazy=True))
+
+    def __repr__(self):
+        return f'<Team {self.name}>'

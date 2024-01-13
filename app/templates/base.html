@@ -16,6 +16,7 @@
                 {% if current_user.is_admin %}
                     | <a href="{{ url_for('admin_reset_password') }}">Admin: Reset Passwords</a>
                     | <a href="{{ url_for('admin_manage_regions') }}">Admin: Manage Regions</a>
+                    | <a href="{{ url_for('admin_manage_teams') }}">Admin: Manage Teams</a>
                 {% endif %}
             {% endif %}
         </nav>

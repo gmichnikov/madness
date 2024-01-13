@@ -15,9 +15,18 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-from .models import Region
+from .models import Region, Team
 with app.app_context():
     if Region.query.count() == 0:
         for i in range(1, 5):
             db.session.add(Region(name=f"Region {i}"))
+        db.session.commit()
+
+with app.app_context():
+    if Team.query.count() == 0:
+        for region_id in range(1, 5):
+            for seed in range(1, 17):
+                name = f"Region {region_id}: Seed {seed}"
+                team = Team(seed=seed, name=name, region_id=region_id)
+                db.session.add(team)
         db.session.commit()
