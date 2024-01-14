@@ -352,6 +352,7 @@ def make_picks():
     games = Game.query.order_by(Game.id).all()
     teams = Team.query.all()
     rounds = {round.id: round.name for round in Round.query.all()}
+    regions = {region.id: region.name for region in Region.query.all()}
     user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
 
     if request.method == 'POST':
@@ -376,4 +377,4 @@ def make_picks():
         flash('Your picks have been saved.')
         return redirect(url_for('make_picks'))
 
-    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, user_picks=user_picks)
+    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks)

@@ -2,21 +2,78 @@
 {% block content %}
     <h1>Make Your Picks</h1>
     <form method="post">
+        <input type="submit" value="Submit Picks" class="bracket-grid-submit btn btn-primary">
         <div class="bracket-grid">
             {% for game in games %}
                 <div class="game-dropdown" id="game{{ game.id }}">
-                    <label for="game{{ game.id }}">G{{ game.id }} ({{ rounds[game.round_id] }})</label>
-                    <select name="game{{ game.id }}" id="game{{ game.id }}">
+                    <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select">
                         <option value=""></option>
                         {% for team in teams %}
                             <option value="{{ team.id }}" {% if user_picks.get(game.id) == team.id %} selected {% endif %}>
-                                {{ team.name }}
+                                {{ team.seed }} - {{ team.name }}
                             </option>
                         {% endfor %}
                     </select>
                 </div>
             {% endfor %}
+            <div class="grid-blank-region-1" id="grid-blank-4-1"></div>
+            <div class="grid-blank-region-1" id="grid-blank-8-1"></div>
+            <div class="grid-blank-region-1" id="grid-blank-12-1"></div>
+            <div class="grid-blank-region-1" id="grid-blank-16-1"></div>
+            <div class="grid-blank-region-2" id="grid-blank-34-1"></div>
+            <div class="grid-blank-region-2" id="grid-blank-30-1"></div>
+            <div class="grid-blank-region-2" id="grid-blank-26-1"></div>
+            <div class="grid-blank-region-2" id="grid-blank-22-1"></div>
+            <div class="grid-blank-region-3" id="grid-blank-4-11"></div>
+            <div class="grid-blank-region-3" id="grid-blank-8-11"></div>
+            <div class="grid-blank-region-3" id="grid-blank-12-11"></div>
+            <div class="grid-blank-region-3" id="grid-blank-16-11"></div>
+            <div class="grid-blank-region-4" id="grid-blank-34-11"></div>
+            <div class="grid-blank-region-4" id="grid-blank-30-11"></div>
+            <div class="grid-blank-region-4" id="grid-blank-26-11"></div>
+            <div class="grid-blank-region-4" id="grid-blank-22-11"></div>
+
+            <div class="grid-blank-region-1" id="grid-blank-5-2"></div>
+            <div class="grid-blank-region-1" id="grid-blank-6-2"></div>
+            <div class="grid-blank-region-1" id="grid-blank-7-2"></div>
+
+            <div class="grid-region" id="grid-region-top-left">{{ regions[1] }}</div>
+            <div class="grid-region" id="grid-region-bottom-left">{{ regions[2] }}</div>
+            <div class="grid-region" id="grid-region-top-right">{{ regions[3] }}</div>
+            <div class="grid-region" id="grid-region-bottom-right">{{ regions[4] }}</div>
+
+            <div class="grid-round" id="grid-round-1st-top-left">{{ rounds[1] }}</div>
+            <div class="grid-round" id="grid-round-1st-bottom-left">{{ rounds[1] }}</div>
+            <div class="grid-round" id="grid-round-1st-top-right">{{ rounds[1] }}</div>
+            <div class="grid-round" id="grid-round-1st-bottom-right">{{ rounds[1] }}</div>
+            <div class="grid-round" id="grid-round-2nd-top-left">{{ rounds[2] }}</div>
+            <div class="grid-round" id="grid-round-2nd-bottom-left">{{ rounds[2] }}</div>
+            <div class="grid-round" id="grid-round-2nd-top-right">{{ rounds[2] }}</div>
+            <div class="grid-round" id="grid-round-2nd-bottom-right">{{ rounds[2] }}</div>
+            <div class="grid-round" id="grid-round-3rd-top-left">{{ rounds[3] }}</div>
+            <div class="grid-round" id="grid-round-3rd-bottom-left">{{ rounds[3] }}</div>
+            <div class="grid-round" id="grid-round-3rd-top-right">{{ rounds[3] }}</div>
+            <div class="grid-round" id="grid-round-3rd-bottom-right">{{ rounds[3] }}</div>
+            <div class="grid-round" id="grid-round-4th-top-left">{{ rounds[4] }}</div>
+            <div class="grid-round" id="grid-round-4th-bottom-left">{{ rounds[4] }}</div>
+            <div class="grid-round" id="grid-round-4th-top-right">{{ rounds[4] }}</div>
+            <div class="grid-round" id="grid-round-4th-bottom-right">{{ rounds[4] }}</div>
+            <div class="grid-round" id="grid-round-5th-top-left">{{ rounds[5] }}</div>
+            <div class="grid-round" id="grid-round-5th-bottom-left">{{ rounds[5] }}</div>
+            <div class="grid-round" id="grid-round-5th-top-right">{{ rounds[5] }}</div>
+            <div class="grid-round" id="grid-round-5th-bottom-right">{{ rounds[5] }}</div>
+            <div class="grid-round" id="grid-round-6th-top-left">{{ rounds[6] }}</div>
+            <div class="grid-round" id="grid-round-6th-bottom-left">{{ rounds[6] }}</div>
+
+            <div class="grid-blank-row" id="grid-blank-row-2">&nbsp;</div>
+            <div class="grid-blank-row" id="grid-blank-row-18">&nbsp;</div>
+            <div class="grid-blank-row" id="grid-blank-row-20">&nbsp;</div>
+            <div class="grid-blank-row" id="grid-blank-row-36">&nbsp;</div>
         </div>
-        <input type="submit" value="Submit Picks">
     </form>
 {% endblock %}
+
+<!-- 
+<label for="game{{ game.id }}">G{{ game.id }} ({{ rounds[game.round_id] }})</label>
+<div class="grid-region" id="grid-region-8-2">Region Top Left!</div>
+-->

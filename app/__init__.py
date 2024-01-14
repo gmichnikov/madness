@@ -43,6 +43,6 @@ with app.app_context():
         db.session.add(round4)
         round5 = Round(name="Final 4", points=6)
         db.session.add(round5)
-        round6 = Round(name="Championship Game", points=12)
+        round6 = Round(name="Championship", points=12)
         db.session.add(round6)
         db.session.commit()

@@ -102,7 +102,7 @@ class ManageRoundsForm(FlaskForm):
     round_3_points = IntegerField('Sweet 16 Points', validators=[DataRequired(), NumberRange(min=0)])
     round_4_points = IntegerField('Elite 8 Points', validators=[DataRequired(), NumberRange(min=0)])
     round_5_points = IntegerField('Final 4 Points', validators=[DataRequired(), NumberRange(min=0)])
-    round_6_points = IntegerField('National Championship Points', validators=[DataRequired(), NumberRange(min=0)])
+    round_6_points = IntegerField('Championship Points', validators=[DataRequired(), NumberRange(min=0)])
 
     submit = SubmitField('Update Points')
 
