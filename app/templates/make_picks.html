@@ -2,19 +2,21 @@
 {% block content %}
     <h1>Make Your Picks</h1>
     <form method="post">
-        {% for game in games %}
-            <div>
-                <label for="game{{ game.id }}">Game {{ game.id }} ({{ rounds[game.round_id] }})</label>
-                <select name="game{{ game.id }}" id="game{{ game.id }}">
-                    <option value=""></option>
-                    {% for team in teams %}
-                        <option value="{{ team.id }}" {% if user_picks.get(game.id) == team.id %} selected {% endif %}>
-                            {{ team.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-        {% endfor %}
+        <div class="bracket-grid">
+            {% for game in games %}
+                <div class="game-dropdown" id="game{{ game.id }}">
+                    <label for="game{{ game.id }}">G{{ game.id }} ({{ rounds[game.round_id] }})</label>
+                    <select name="game{{ game.id }}" id="game{{ game.id }}">
+                        <option value=""></option>
+                        {% for team in teams %}
+                            <option value="{{ team.id }}" {% if user_picks.get(game.id) == team.id %} selected {% endif %}>
+                                {{ team.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endfor %}
+        </div>
         <input type="submit" value="Submit Picks">
     </form>
 {% endblock %}
