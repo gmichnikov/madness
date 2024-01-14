@@ -27,6 +27,7 @@
                 {% endif %}
                 {% if current_user.is_super_admin %}
                     <a href="{{ url_for('super_admin_manage_admins') }}">Manage Admins</a>
+                    <a href="{{ url_for('super_admin_reset_games') }}">Reset Games</a>
                 {% endif %}
             {% endif %}
         </nav>

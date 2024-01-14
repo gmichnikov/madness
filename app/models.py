@@ -66,3 +66,21 @@ class LogEntry(db.Model):
 
     def __repr__(self):
         return f'<LogEntry {self.timestamp} - {self.category}>'
+    
+class Game(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    round_id = db.Column(db.Integer, db.ForeignKey('round.id'), nullable=False)
+    winner_goes_to_game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=True)
+    team1_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=True)
+    team2_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=True)
+    winning_team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=True)
+
+    # Relationships
+    round = db.relationship('Round', backref='games')
+    winner_goes_to_game = db.relationship('Game', remote_side=[id], uselist=False)
+    team1 = db.relationship('Team', foreign_keys=[team1_id])
+    team2 = db.relationship('Team', foreign_keys=[team2_id])
+    winning_team = db.relationship('Team', foreign_keys=[winning_team_id])
+
+    def __repr__(self):
+        return f'<Game {self.id} - Round {self.round_id}>'

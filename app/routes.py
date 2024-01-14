@@ -1,11 +1,12 @@
 from flask import render_template, redirect, url_for, flash, request
 from app import app, db
-from app.models import User, Region, Team, Round, LogEntry
+from app.models import User, Region, Team, Round, LogEntry, Game
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, UserVerificationForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm
 from functools import wraps
 import os
-from datetime import datetime
+import csv
+from sqlalchemy import text
 import pytz
 from dotenv import load_dotenv
 load_dotenv()
@@ -283,3 +284,55 @@ def admin_verify_users():
         return redirect(url_for('admin_verify_users'))
 
     return render_template('admin/verify_users.html', users=users)
+
+@app.route('/super_admin/reset_games', methods=['GET', 'POST'])
+@login_required
+def super_admin_reset_games():
+    if not current_user.is_super_admin:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        reset_game_table()
+        flash('Game table reset successfully.')
+
+        log_entry = LogEntry(category='Reset Games', current_user_id=current_user.id, description=f"{current_user.email} reset the games table")
+        db.session.add(log_entry)
+        db.session.commit()
+
+        return redirect(url_for('admin_view_logs'))
+
+    return render_template('super_admin/reset_games.html')
+
+def reset_game_table():
+    db.session.query(Game).delete()
+
+    db.session.execute(text('ALTER SEQUENCE game_id_seq RESTART WITH 1'))
+
+    repopulate_game_table()
+
+    db.session.commit()
+
+def repopulate_game_table():
+    current_dir = os.path.dirname(__file__)
+    file_path = os.path.join(current_dir, 'static', 'games.csv')
+
+    # First Phase: Insert games without winner_goes_to_game_id
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            game = Game(
+                round_id=int(row[0]),
+                team1_id=int(row[2]) if row[2] else None,
+                team2_id=int(row[3]) if row[3] else None,
+                winning_team_id=int(row[4]) if row[4] else None
+            )
+            db.session.add(game)
+            db.session.commit()
+
+    # Second Phase: Update games with winner_goes_to_game_id
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        for row, game in zip(reader, Game.query.order_by(Game.id)):
+            if row[1]:
+                game.winner_goes_to_game_id = int(row[1])
+        db.session.commit()
