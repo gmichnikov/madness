@@ -9,6 +9,10 @@
         {{ form.full_name(size=20) }}<br>
         {{ form.time_zone.label }}<br>
         {{ form.time_zone() }}<br>
+        {{ form.tiebreaker_winner.label }}<br>
+        {{ form.tiebreaker_winner() }}<br>
+        {{ form.tiebreaker_loser.label }}<br>
+        {{ form.tiebreaker_loser() }}<br>
         {{ form.submit() }}
     </form>
 {% endblock %}

@@ -7,7 +7,9 @@ class RegistrationForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     full_name = StringField('Full Name', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
-    time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones])
+    time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones], default='US/Eastern')
+    tiebreaker_winner = IntegerField('Winner\'s Score in Championship Game', validators=[DataRequired()], default=0)
+    tiebreaker_loser = IntegerField('Loser\'s Score in Championship Game', validators=[DataRequired()], default=0)
     submit = SubmitField('Register')
 
 class LoginForm(FlaskForm):
@@ -112,4 +114,6 @@ class AdminStatusForm(FlaskForm):
 class EditProfileForm(FlaskForm):
     full_name = StringField('Full Name')
     time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones])
+    tiebreaker_winner = IntegerField('Winner\'s Score in Championship Game', validators=[DataRequired()])
+    tiebreaker_loser = IntegerField('Loser\'s Score in Championship Game', validators=[DataRequired()])
     submit = SubmitField('Update Profile')

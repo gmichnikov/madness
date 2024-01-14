@@ -46,7 +46,13 @@ def register():
             flash('Email already registered.')
             return redirect(url_for('register'))
         
-        new_user = User(email=form.email.data, full_name=form.full_name.data, time_zone=form.time_zone.data)
+        new_user = User(
+            email=form.email.data,
+            full_name=form.full_name.data,
+            time_zone=form.time_zone.data,
+            tiebreaker_winner=form.tiebreaker_winner.data,
+            tiebreaker_loser=form.tiebreaker_loser.data
+        )
         new_user.set_password(form.password.data)
         # Automatically make user with ADMIN_EMAIL an admin
         if form.email.data == ADMIN_EMAIL:
@@ -244,6 +250,8 @@ def user_profile(user_id):
     if form.validate_on_submit():
         user.full_name = form.full_name.data
         user.time_zone = form.time_zone.data
+        user.tiebreaker_winner = form.tiebreaker_winner.data
+        user.tiebreaker_loser = form.tiebreaker_loser.data
         db.session.commit()
         flash('Profile updated successfully.')
 
@@ -256,7 +264,8 @@ def user_profile(user_id):
     elif request.method == 'GET':
         form.full_name.data = user.full_name
         form.time_zone.data = user.time_zone
-
+        form.tiebreaker_winner.data = user.tiebreaker_winner
+        form.tiebreaker_loser.data = user.tiebreaker_loser
     return render_template('edit_user_profile.html', form=form, user=user)
 
 @app.route('/users')

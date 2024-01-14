@@ -29,6 +29,18 @@
             {% endfor %}
         </p>
         <p>
+            {{ form.time_zone.label }}<br>
+            {{ form.time_zone() }}
+        </p>
+        <p>
+            {{ form.tiebreaker_winner.label }}<br>
+            {{ form.tiebreaker_winner() }}
+        </p>
+        <p>
+            {{ form.tiebreaker_loser.label }}<br>
+            {{ form.tiebreaker_loser() }}
+        </p>
+        <p>
             {{ form.submit() }}
         </p>
     </form>
