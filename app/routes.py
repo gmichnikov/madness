@@ -355,6 +355,9 @@ def make_picks():
     regions = {region.id: region.name for region in Region.query.all()}
     user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
 
+    teams_dict = {team.id: team for team in teams}
+    potential_picks_map = {game.id: get_potential_picks(game.id, False) for game in games}
+
     if request.method == 'POST':
         for game in games:
             selected_team_id = request.form.get(f'game{game.id}')
@@ -377,4 +380,45 @@ def make_picks():
         flash('Your picks have been saved.')
         return redirect(url_for('make_picks'))
 
-    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks)
+    # return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks)
+    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map)
+
+def get_potential_winners(game_id):
+    game = Game.query.get(game_id)
+
+    if game.winning_team_id:
+        return [game.winning_team_id]
+
+    if game.round_id == 1:
+        return [team_id for team_id in [game.team1_id, game.team2_id] if team_id]
+
+    # Otherwise, find the two games that lead to this game
+    previous_games = Game.query.filter_by(winner_goes_to_game_id=game_id).all()
+    potential_winners = []
+
+    # Recursively call this function on the previous games
+    for prev_game in previous_games:
+        potential_winners.extend(get_potential_winners(prev_game.id))
+
+    return potential_winners
+
+def get_potential_picks(game_id, return_current_pick):
+    game = Game.query.get(game_id)
+
+    if return_current_pick:
+        pick = Pick.query.filter_by(user_id=current_user.id, game_id=game_id).first()
+        if pick:
+            return [pick.team_id]
+
+    if game.round_id == 1:
+        return [team_id for team_id in [game.team1_id, game.team2_id] if team_id]
+
+    # Otherwise, find the two games that lead to this game
+    previous_games = Game.query.filter_by(winner_goes_to_game_id=game_id).all()
+    potential_picks = []
+
+    # Recursively call this function on the previous games
+    for prev_game in previous_games:
+        potential_picks.extend(get_potential_picks(prev_game.id, True))
+
+    return potential_picks

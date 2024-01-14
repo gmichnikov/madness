@@ -2,13 +2,15 @@
 {% block content %}
     <h1>Make Your Picks</h1>
     <form method="post">
-        <input type="submit" value="Submit Picks" class="bracket-grid-submit btn btn-primary">
+        <input type="submit" value="Save Picks" class="bracket-grid-submit btn btn-primary">
+        <p>Each time you Save Picks, all dropdowns will be updated to only show available teams, based on your picks in earlier rounds. Note that picks are not saved automatically.</p>
         <div class="bracket-grid">
             {% for game in games %}
                 <div class="game-dropdown" id="game{{ game.id }}">
                     <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select">
                         <option value=""></option>
-                        {% for team in teams %}
+                        {% for team_id in potential_picks_map.get(game.id, []) %}
+                            {% set team = teams_dict[team_id] %}
                             <option value="{{ team.id }}" {% if user_picks.get(game.id) == team.id %} selected {% endif %}>
                                 {{ team.seed }} - {{ team.name }}
                             </option>
