@@ -1,8 +1,8 @@
 .bracket-grid {
     display: grid;
-    grid-template-columns: repeat(11, 1fr);
+    grid-template-columns: repeat(13, 1fr);
     grid-template-rows: repeat(37, auto);
-    grid-gap: 2px 2px;
+    grid-gap: 0px 2px;
     background-color: lightblue;
     padding: 8px;
 }
@@ -15,147 +15,319 @@
     border-left: 2px solid black;
 }
 
+.grid-blank-region-1, .grid-blank-region-2, .grid-blank-region-3, .grid-blank-region-4 {
+    font-size: 10px;
+}
+
 .bracket-grid-submit {
     margin-bottom: 24px;
 }
 
 .bracket-grid-select {
     width: 100%;
-    font-size: 12px;
+    font-size: 10px;
+    box-sizing: border-box;
 }
 
 .grid-region {
-    font-size: 18px;
+    font-size: 16px;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     color: blue;
+    text-align: center;
 }
 
 .grid-round{
-    font-size: 18px;
+    font-size: 16px;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     color: maroon;
     text-align: center;
 }
 
+.game-dropdown {
+}
+
+.bracket-grid-1st-round-cell {
+    position: relative;
+}
+
+.bracket-grid-1st-round-team {
+    font-size: 12px;
+    position: absolute;
+    bottom: 0;
+    left: 0; /* Starts from the left edge of the cell */
+    right: 0; /* Stretches to the right edge of the cell */
+    text-align: center; /* Centers the text horizontally */
+}
+
 #grid-round-1st-top-left { grid-row: 1; grid-column: 1; }
 #grid-round-1st-bottom-left { grid-row: 37; grid-column: 1; }
-#grid-round-1st-top-right { grid-row: 1; grid-column: 11; }
-#grid-round-1st-bottom-right { grid-row: 37; grid-column: 11; }
+#grid-round-1st-top-right { grid-row: 1; grid-column: 13; }
+#grid-round-1st-bottom-right { grid-row: 37; grid-column: 13; }
 #grid-round-2nd-top-left { grid-row: 1; grid-column: 2; }
 #grid-round-2nd-bottom-left { grid-row: 37; grid-column: 2; }
-#grid-round-2nd-top-right { grid-row: 1; grid-column: 10; }
-#grid-round-2nd-bottom-right { grid-row: 37; grid-column: 10; }
+#grid-round-2nd-top-right { grid-row: 1; grid-column: 12; }
+#grid-round-2nd-bottom-right { grid-row: 37; grid-column: 12; }
 
 #grid-round-3rd-top-left { grid-row: 1; grid-column: 3; }
 #grid-round-3rd-bottom-left { grid-row: 37; grid-column: 3; }
-#grid-round-3rd-top-right { grid-row: 1; grid-column: 9; }
-#grid-round-3rd-bottom-right { grid-row: 37; grid-column: 9; }
+#grid-round-3rd-top-right { grid-row: 1; grid-column: 11; }
+#grid-round-3rd-bottom-right { grid-row: 37; grid-column: 11; }
 
 #grid-round-4th-top-left { grid-row: 1; grid-column: 4; }
 #grid-round-4th-bottom-left { grid-row: 37; grid-column: 4; }
-#grid-round-4th-top-right { grid-row: 1; grid-column: 8; }
-#grid-round-4th-bottom-right { grid-row: 37; grid-column: 8; }
+#grid-round-4th-top-right { grid-row: 1; grid-column: 10; }
+#grid-round-4th-bottom-right { grid-row: 37; grid-column: 10; }
 
 #grid-round-5th-top-left { grid-row: 1; grid-column: 5; }
 #grid-round-5th-bottom-left { grid-row: 37; grid-column: 5; }
-#grid-round-5th-top-right { grid-row: 1; grid-column: 7; }
-#grid-round-5th-bottom-right { grid-row: 37; grid-column: 7; }
+#grid-round-5th-top-right { grid-row: 1; grid-column: 9; }
+#grid-round-5th-bottom-right { grid-row: 37; grid-column: 9; }
 
 #grid-round-6th-top-left { grid-row: 1; grid-column: 6; }
 #grid-round-6th-bottom-left { grid-row: 37; grid-column: 6; }
+#grid-round-6th-top-right { grid-row: 1; grid-column: 8; }
+#grid-round-6th-bottom-right { grid-row: 37; grid-column: 8; }
 
+#grid-round-7th-top { grid-row: 1; grid-column: 7; }
+#grid-round-7th-bottom { grid-row: 37; grid-column: 7; }
 
 #grid-blank-row-2 { grid-row: 2; grid-column: 1; }
 #grid-blank-row-18 { grid-row: 18; grid-column: 1; }
 #grid-blank-row-20 { grid-row: 20; grid-column: 1; }
 #grid-blank-row-36 { grid-row: 36; grid-column: 1; }
 
-#game1 { grid-row: 3; grid-column: 1; }
-#game2 { grid-row: 5; grid-column: 1; }
-#game3 { grid-row: 7; grid-column: 1; }
-#game4 { grid-row: 9; grid-column: 1; }
-#game5 { grid-row: 11; grid-column: 1; }
-#game6 { grid-row: 13; grid-column: 1; }
-#game7 { grid-row: 15; grid-column: 1; }
-#game8 { grid-row: 17; grid-column: 1; }
-#game9 { grid-row: 21; grid-column: 1; }
-#game10 { grid-row: 23; grid-column: 1; }
-#game11 { grid-row: 25; grid-column: 1; }
-#game12 { grid-row: 27; grid-column: 1; }
-#game13 { grid-row: 29; grid-column: 1; }
-#game14 { grid-row: 31; grid-column: 1; }
-#game15 { grid-row: 33; grid-column: 1; }
-#game16 { grid-row: 35; grid-column: 1; }
-#game17 { grid-row: 3; grid-column: 11; }
-#game18 { grid-row: 5; grid-column: 11; }
-#game19 { grid-row: 7; grid-column: 11; }
-#game20 { grid-row: 9; grid-column: 11; }
-#game21 { grid-row: 11; grid-column: 11; }
-#game22 { grid-row: 13; grid-column: 11; }
-#game23 { grid-row: 15; grid-column: 11; }
-#game24 { grid-row: 17; grid-column: 11; }
-#game25 { grid-row: 21; grid-column: 11; }
-#game26 { grid-row: 23; grid-column: 11; }
-#game27 { grid-row: 25; grid-column: 11; }
-#game28 { grid-row: 27; grid-column: 11; }
-#game29 { grid-row: 29; grid-column: 11; }
-#game30 { grid-row: 31; grid-column: 11; }
-#game31 { grid-row: 33; grid-column: 11; }
-#game32 { grid-row: 35; grid-column: 11; }
-#game33 { grid-row: 4; grid-column: 2; }
-#game34 { grid-row: 8; grid-column: 2; }
-#game35 { grid-row: 12; grid-column: 2; }
-#game36 { grid-row: 16; grid-column: 2; }
-#game37 { grid-row: 22; grid-column: 2; }
-#game38 { grid-row: 26; grid-column: 2; }
-#game39 { grid-row: 30; grid-column: 2; }
-#game40 { grid-row: 34; grid-column: 2; }
-#game41 { grid-row: 4; grid-column: 10; }
-#game42 { grid-row: 8; grid-column: 10; }
-#game43 { grid-row: 12; grid-column: 10; }
-#game44 { grid-row: 16; grid-column: 10; }
-#game45 { grid-row: 22; grid-column: 10; }
-#game46 { grid-row: 26; grid-column: 10; }
-#game47 { grid-row: 30; grid-column: 10; }
-#game48 { grid-row: 34; grid-column: 10; }
-#game49 { grid-row: 6; grid-column: 3; }
-#game50 { grid-row: 14; grid-column: 3; }
-#game51 { grid-row: 24; grid-column: 3; }
-#game52 { grid-row: 32; grid-column: 3; }
-#game53 { grid-row: 6; grid-column: 9; }
-#game54 { grid-row: 14; grid-column: 9; }
-#game55 { grid-row: 24; grid-column: 9; }
-#game56 { grid-row: 32; grid-column: 9; }
-#game57 { grid-row: 10; grid-column: 4; }
-#game58 { grid-row: 28; grid-column: 4; }
-#game59 { grid-row: 10; grid-column: 8; }
-#game60 { grid-row: 28; grid-column: 8; }
-#game61 { grid-row: 19; grid-column: 5; }
-#game62 { grid-row: 19; grid-column: 7; }
-#game63 { grid-row: 19; grid-column: 6; }
+#game1 { grid-row: 3; grid-column: 2; }
+#game2 { grid-row: 5; grid-column: 2; }
+#game3 { grid-row: 7; grid-column: 2; }
+#game4 { grid-row: 9; grid-column: 2; }
+#game5 { grid-row: 11; grid-column: 2; }
+#game6 { grid-row: 13; grid-column: 2; }
+#game7 { grid-row: 15; grid-column: 2; }
+#game8 { grid-row: 17; grid-column: 2; }
+#game9 { grid-row: 21; grid-column: 2; }
+#game10 { grid-row: 23; grid-column: 2; }
+#game11 { grid-row: 25; grid-column: 2; }
+#game12 { grid-row: 27; grid-column: 2; }
+#game13 { grid-row: 29; grid-column: 2; }
+#game14 { grid-row: 31; grid-column: 2; }
+#game15 { grid-row: 33; grid-column: 2; }
+#game16 { grid-row: 35; grid-column: 2; }
+#game17 { grid-row: 3; grid-column: 12; }
+#game18 { grid-row: 5; grid-column: 12; }
+#game19 { grid-row: 7; grid-column: 12; }
+#game20 { grid-row: 9; grid-column: 12; }
+#game21 { grid-row: 11; grid-column: 12; }
+#game22 { grid-row: 13; grid-column: 12; }
+#game23 { grid-row: 15; grid-column: 12; }
+#game24 { grid-row: 17; grid-column: 12; }
+#game25 { grid-row: 21; grid-column: 12; }
+#game26 { grid-row: 23; grid-column: 12; }
+#game27 { grid-row: 25; grid-column: 12; }
+#game28 { grid-row: 27; grid-column: 12; }
+#game29 { grid-row: 29; grid-column: 12; }
+#game30 { grid-row: 31; grid-column: 12; }
+#game31 { grid-row: 33; grid-column: 12; }
+#game32 { grid-row: 35; grid-column: 12; }
+#game33 { grid-row: 4; grid-column: 3; }
+#game34 { grid-row: 8; grid-column: 3; }
+#game35 { grid-row: 12; grid-column: 3; }
+#game36 { grid-row: 16; grid-column: 3; }
+#game37 { grid-row: 22; grid-column: 3; }
+#game38 { grid-row: 26; grid-column: 3; }
+#game39 { grid-row: 30; grid-column: 3; }
+#game40 { grid-row: 34; grid-column: 3; }
+#game41 { grid-row: 4; grid-column: 11; }
+#game42 { grid-row: 8; grid-column: 11; }
+#game43 { grid-row: 12; grid-column: 11; }
+#game44 { grid-row: 16; grid-column: 11; }
+#game45 { grid-row: 22; grid-column: 11; }
+#game46 { grid-row: 26; grid-column: 11; }
+#game47 { grid-row: 30; grid-column: 11; }
+#game48 { grid-row: 34; grid-column: 11; }
+#game49 { grid-row: 6; grid-column: 4; }
+#game50 { grid-row: 14; grid-column: 4; }
+#game51 { grid-row: 24; grid-column: 4; }
+#game52 { grid-row: 32; grid-column: 4; }
+#game53 { grid-row: 6; grid-column: 10; }
+#game54 { grid-row: 14; grid-column: 10; }
+#game55 { grid-row: 24; grid-column: 10; }
+#game56 { grid-row: 32; grid-column: 10; }
+#game57 { grid-row: 10; grid-column: 5; }
+#game58 { grid-row: 28; grid-column: 5; }
+#game59 { grid-row: 10; grid-column: 9; }
+#game60 { grid-row: 28; grid-column: 9; }
+#game61 { grid-row: 19; grid-column: 6; }
+#game62 { grid-row: 19; grid-column: 8; }
+#game63 { grid-row: 19; grid-column: 7; }
 
-#grid-blank-4-1 { grid-row: 4; grid-column: 1; }
-#grid-blank-8-1 { grid-row: 8; grid-column: 1; }
-#grid-blank-12-1 { grid-row: 12; grid-column: 1; }
-#grid-blank-16-1 { grid-row: 16; grid-column: 1; }
-#grid-blank-34-1 { grid-row: 34; grid-column: 1; }
-#grid-blank-30-1 { grid-row: 30; grid-column: 1; }
-#grid-blank-26-1 { grid-row: 26; grid-column: 1; }
-#grid-blank-22-1 { grid-row: 22; grid-column: 1; }
-#grid-blank-4-11 { grid-row: 4; grid-column: 11; }
-#grid-blank-8-11 { grid-row: 8; grid-column: 11; }
-#grid-blank-12-11 { grid-row: 12; grid-column: 11; }
-#grid-blank-16-11 { grid-row: 16; grid-column: 11; }
-#grid-blank-34-11 { grid-row: 34; grid-column: 11; }
-#grid-blank-30-11 { grid-row: 30; grid-column: 11; }
-#grid-blank-26-11 { grid-row: 26; grid-column: 11; }
-#grid-blank-22-11 { grid-row: 22; grid-column: 11; }
+#grid-blank-4-2 { grid-row: 4; grid-column: 2; }
+#grid-blank-8-2 { grid-row: 8; grid-column: 2; }
+#grid-blank-12-2 { grid-row: 12; grid-column: 2; }
+#grid-blank-16-2 { grid-row: 16; grid-column: 2; }
+#grid-blank-34-2 { grid-row: 34; grid-column: 2; }
+#grid-blank-30-2 { grid-row: 30; grid-column: 2; }
+#grid-blank-26-2 { grid-row: 26; grid-column: 2; }
+#grid-blank-22-2 { grid-row: 22; grid-column: 2; }
+#grid-blank-4-12 { grid-row: 4; grid-column: 12; }
+#grid-blank-8-12 { grid-row: 8; grid-column: 12; }
+#grid-blank-12-12 { grid-row: 12; grid-column: 12; }
+#grid-blank-16-12 { grid-row: 16; grid-column: 12; }
+#grid-blank-34-12 { grid-row: 34; grid-column: 12; }
+#grid-blank-30-12 { grid-row: 30; grid-column: 12; }
+#grid-blank-26-12 { grid-row: 26; grid-column: 12; }
+#grid-blank-22-12 { grid-row: 22; grid-column: 12; }
+#grid-blank-5-3 { grid-row: 5; grid-column: 3; }
+#grid-blank-6-3 { grid-row: 6; grid-column: 3; }
+#grid-blank-7-3 { grid-row: 7; grid-column: 3; }
+#grid-blank-13-3 { grid-row: 13; grid-column: 3; }
+#grid-blank-14-3 { grid-row: 14; grid-column: 3; }
+#grid-blank-15-3 { grid-row: 15; grid-column: 3; }
+#grid-blank-33-3 { grid-row: 33; grid-column: 3; }
+#grid-blank-32-3 { grid-row: 32; grid-column: 3; }
+#grid-blank-31-3 { grid-row: 31; grid-column: 3; }
+#grid-blank-25-3 { grid-row: 25; grid-column: 3; }
+#grid-blank-24-3 { grid-row: 24; grid-column: 3; }
+#grid-blank-23-3 { grid-row: 23; grid-column: 3; }
+#grid-blank-5-11 { grid-row: 5; grid-column: 11; }
+#grid-blank-6-11 { grid-row: 6; grid-column: 11; }
+#grid-blank-7-11 { grid-row: 7; grid-column: 11; }
+#grid-blank-13-11 { grid-row: 13; grid-column: 11; }
+#grid-blank-14-11 { grid-row: 14; grid-column: 11; }
+#grid-blank-15-11 { grid-row: 15; grid-column: 11; }
+#grid-blank-33-11 { grid-row: 33; grid-column: 11; }
+#grid-blank-32-11 { grid-row: 32; grid-column: 11; }
+#grid-blank-31-11 { grid-row: 31; grid-column: 11; }
+#grid-blank-25-11 { grid-row: 25; grid-column: 11; }
+#grid-blank-24-11 { grid-row: 24; grid-column: 11; }
+#grid-blank-23-11 { grid-row: 23; grid-column: 11; }
+#grid-blank-7-4 { grid-row: 7; grid-column: 4; }
+#grid-blank-8-4 { grid-row: 8; grid-column: 4; }
+#grid-blank-9-4 { grid-row: 9; grid-column: 4; }
+#grid-blank-10-4 { grid-row: 10; grid-column: 4; }
+#grid-blank-11-4 { grid-row: 11; grid-column: 4; }
+#grid-blank-12-4 { grid-row: 12; grid-column: 4; }
+#grid-blank-13-4 { grid-row: 13; grid-column: 4; }
+#grid-blank-25-4 { grid-row: 25; grid-column: 4; }
+#grid-blank-26-4 { grid-row: 26; grid-column: 4; }
+#grid-blank-27-4 { grid-row: 27; grid-column: 4; }
+#grid-blank-28-4 { grid-row: 28; grid-column: 4; }
+#grid-blank-29-4 { grid-row: 29; grid-column: 4; }
+#grid-blank-30-4 { grid-row: 30; grid-column: 4; }
+#grid-blank-31-4 { grid-row: 31; grid-column: 4; }
+#grid-blank-7-10 { grid-row: 7; grid-column: 10; }
+#grid-blank-8-10 { grid-row: 8; grid-column: 10; }
+#grid-blank-9-10 { grid-row: 9; grid-column: 10; }
+#grid-blank-10-10 { grid-row: 10; grid-column: 10; }
+#grid-blank-11-10 { grid-row: 11; grid-column: 10; }
+#grid-blank-12-10 { grid-row: 12; grid-column: 10; }
+#grid-blank-13-10 { grid-row: 13; grid-column: 10; }
+#grid-blank-25-10 { grid-row: 25; grid-column: 10; }
+#grid-blank-26-10 { grid-row: 26; grid-column: 10; }
+#grid-blank-27-10 { grid-row: 27; grid-column: 10; }
+#grid-blank-28-10 { grid-row: 28; grid-column: 10; }
+#grid-blank-29-10 { grid-row: 29; grid-column: 10; }
+#grid-blank-30-10 { grid-row: 30; grid-column: 10; }
+#grid-blank-31-10 { grid-row: 31; grid-column: 10; }
 
-#grid-blank-5-2 { grid-row: 5; grid-column: 2; }
-#grid-blank-6-2 { grid-row: 6; grid-column: 2; }
-#grid-blank-7-2 { grid-row: 7; grid-column: 2; }
+#grid-blank-11-5 { grid-row: 11; grid-column: 5; }
+#grid-blank-12-5 { grid-row: 12; grid-column: 5; }
+#grid-blank-13-5 { grid-row: 13; grid-column: 5; }
+#grid-blank-14-5 { grid-row: 14; grid-column: 5; }
+#grid-blank-15-5 { grid-row: 15; grid-column: 5; }
+#grid-blank-16-5 { grid-row: 16; grid-column: 5; }
+#grid-blank-17-5 { grid-row: 17; grid-column: 5; }
+#grid-blank-18-5 { grid-row: 18; grid-column: 5; }
+#grid-blank-20-5 { grid-row: 20; grid-column: 5; }
+#grid-blank-21-5 { grid-row: 21; grid-column: 5; }
+#grid-blank-22-5 { grid-row: 22; grid-column: 5; }
+#grid-blank-23-5 { grid-row: 23; grid-column: 5; }
+#grid-blank-24-5 { grid-row: 24; grid-column: 5; }
+#grid-blank-25-5 { grid-row: 25; grid-column: 5; }
+#grid-blank-26-5 { grid-row: 26; grid-column: 5; }
+#grid-blank-27-5 { grid-row: 27; grid-column: 5; }
+#grid-blank-11-9 { grid-row: 11; grid-column: 9; }
+#grid-blank-12-9 { grid-row: 12; grid-column: 9; }
+#grid-blank-13-9 { grid-row: 13; grid-column: 9; }
+#grid-blank-14-9 { grid-row: 14; grid-column: 9; }
+#grid-blank-15-9 { grid-row: 15; grid-column: 9; }
+#grid-blank-16-9 { grid-row: 16; grid-column: 9; }
+#grid-blank-17-9 { grid-row: 17; grid-column: 9; }
+#grid-blank-18-9 { grid-row: 18; grid-column: 9; }
+#grid-blank-20-9 { grid-row: 20; grid-column: 9; }
+#grid-blank-21-9 { grid-row: 21; grid-column: 9; }
+#grid-blank-22-9 { grid-row: 22; grid-column: 9; }
+#grid-blank-23-9 { grid-row: 23; grid-column: 9; }
+#grid-blank-24-9 { grid-row: 24; grid-column: 9; }
+#grid-blank-25-9 { grid-row: 25; grid-column: 9; }
+#grid-blank-26-9 { grid-row: 26; grid-column: 9; }
+#grid-blank-27-9 { grid-row: 27; grid-column: 9; }
 
-#grid-region-top-left { grid-row: 4; grid-column: 4; }
-#grid-region-top-right { grid-row: 4; grid-column: 8; }
-#grid-region-bottom-left { grid-row: 34; grid-column: 4; }
-#grid-region-bottom-right { grid-row: 34; grid-column: 8; }
+#grid-region-top-left { grid-row: 4; grid-column: 5; }
+#grid-region-top-right { grid-row: 4; grid-column: 9; }
+#grid-region-bottom-left { grid-row: 34; grid-column: 5; }
+#grid-region-bottom-right { grid-row: 34; grid-column: 9; }
+
+#team1 { grid-row: 2; grid-column: 1; }
+#team16 { grid-row: 3; grid-column: 1; }
+#team8 { grid-row: 4; grid-column: 1; }
+#team9 { grid-row: 5; grid-column: 1; }
+#team5 { grid-row: 6; grid-column: 1; }
+#team12 { grid-row: 7; grid-column: 1; }
+#team4 { grid-row: 8; grid-column: 1; }
+#team13 { grid-row: 9; grid-column: 1; }
+#team6 { grid-row: 11; grid-column: 1; }
+#team11 { grid-row: 12; grid-column: 1; }
+#team3 { grid-row: 13; grid-column: 1; }
+#team14 { grid-row: 14; grid-column: 1; }
+#team7 { grid-row: 15; grid-column: 1; }
+#team10 { grid-row: 16; grid-column: 1; }
+#team2 { grid-row: 17; grid-column: 1; }
+#team15 { grid-row: 18; grid-column: 1; }
+#team17 { grid-row: 20; grid-column: 1; }
+#team32 { grid-row: 21; grid-column: 1; }
+#team24 { grid-row: 22; grid-column: 1; }
+#team25 { grid-row: 23; grid-column: 1; }
+#team21 { grid-row: 24; grid-column: 1; }
+#team28 { grid-row: 25; grid-column: 1; }
+#team20 { grid-row: 26; grid-column: 1; }
+#team29 { grid-row: 27; grid-column: 1; }
+#team22 { grid-row: 29; grid-column: 1; }
+#team27 { grid-row: 30; grid-column: 1; }
+#team19 { grid-row: 31; grid-column: 1; }
+#team30 { grid-row: 32; grid-column: 1; }
+#team23 { grid-row: 33; grid-column: 1; }
+#team26 { grid-row: 34; grid-column: 1; }
+#team18 { grid-row: 35; grid-column: 1; }
+#team31 { grid-row: 36; grid-column: 1; }
+#team33 { grid-row: 2; grid-column: 13; }
+#team48 { grid-row: 3; grid-column: 13; }
+#team40 { grid-row: 4; grid-column: 13; }
+#team41 { grid-row: 5; grid-column: 13; }
+#team37 { grid-row: 6; grid-column: 13; }
+#team44 { grid-row: 7; grid-column: 13; }
+#team36 { grid-row: 8; grid-column: 13; }
+#team45 { grid-row: 9; grid-column: 13; }
+#team38 { grid-row: 11; grid-column: 13; }
+#team43 { grid-row: 12; grid-column: 13; }
+#team35 { grid-row: 13; grid-column: 13; }
+#team46 { grid-row: 14; grid-column: 13; }
+#team39 { grid-row: 15; grid-column: 13; }
+#team42 { grid-row: 16; grid-column: 13; }
+#team34 { grid-row: 17; grid-column: 13; }
+#team47 { grid-row: 18; grid-column: 13; }
+#team49 { grid-row: 20; grid-column: 13; }
+#team64 { grid-row: 21; grid-column: 13; }
+#team56 { grid-row: 22; grid-column: 13; }
+#team57 { grid-row: 23; grid-column: 13; }
+#team53 { grid-row: 24; grid-column: 13; }
+#team60 { grid-row: 25; grid-column: 13; }
+#team52 { grid-row: 26; grid-column: 13; }
+#team61 { grid-row: 27; grid-column: 13; }
+#team54 { grid-row: 29; grid-column: 13; }
+#team59 { grid-row: 30; grid-column: 13; }
+#team51 { grid-row: 31; grid-column: 13; }
+#team62 { grid-row: 32; grid-column: 13; }
+#team55 { grid-row: 33; grid-column: 13; }
+#team58 { grid-row: 34; grid-column: 13; }
+#team50 { grid-row: 35; grid-column: 13; }
+#team63 { grid-row: 36; grid-column: 13; }
