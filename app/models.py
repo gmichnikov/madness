@@ -84,3 +84,17 @@ class Game(db.Model):
 
     def __repr__(self):
         return f'<Game {self.id} - Round {self.round_id}>'
+    
+class Pick(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+
+    # Relationships
+    user = db.relationship('User', backref='picks')
+    game = db.relationship('Game', backref='picks')
+    team = db.relationship('Team', backref='picks')
+
+    def __repr__(self):
+        return f'<Pick {self.id} - User {self.user_id}, Game {self.game_id}, Team {self.team_id}>'

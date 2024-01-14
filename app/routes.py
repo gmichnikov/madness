@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request
 from app import app, db
-from app.models import User, Region, Team, Round, LogEntry, Game
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm
 from functools import wraps
@@ -345,3 +345,35 @@ def repopulate_game_table():
             if row[1]:
                 game.winner_goes_to_game_id = int(row[1])
         db.session.commit()
+
+@app.route('/make_picks', methods=['GET', 'POST'])
+@login_required
+def make_picks():
+    games = Game.query.order_by(Game.id).all()
+    teams = Team.query.all()
+    rounds = {round.id: round.name for round in Round.query.all()}
+    user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
+
+    if request.method == 'POST':
+        for game in games:
+            selected_team_id = request.form.get(f'game{game.id}')
+            if selected_team_id:
+                selected_team_id = int(selected_team_id)
+                pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
+
+                if pick:
+                    # Update the existing pick
+                    pick.team_id = selected_team_id
+                else:
+                    # Create a new pick
+                    pick = Pick(user_id=current_user.id, game_id=game.id, team_id=selected_team_id)
+                    db.session.add(pick)
+            else:
+                # Delete existing pick if it exists
+                Pick.query.filter_by(user_id=current_user.id, game_id=game.id).delete()
+
+        db.session.commit()
+        flash('Your picks have been saved.')
+        return redirect(url_for('make_picks'))
+
+    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, user_picks=user_picks)
