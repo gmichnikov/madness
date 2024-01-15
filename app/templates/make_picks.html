@@ -3,7 +3,11 @@
     <h1>Make Your Picks</h1>
     <form method="post">
         <input type="submit" value="Save Picks" class="bracket-grid-submit btn btn-primary">
-        <p>Each time you Save Picks, all dropdowns will be updated to only show available teams, based on your picks in earlier rounds. Note that picks are not saved automatically.</p>
+        <p>Note that picks are NOT saved automatically. Each time you Save Picks</p>
+        <ul>
+            <li>All dropdowns will be updated to only show available teams, based on your picks in earlier rounds.</li>
+            <li>Picks for later rounds will be backfilled into the associated earlier rounds.</li>
+        </ul>
         <div class="bracket-grid">
             {% for game in games %}
                 <div class="game-dropdown" id="game{{ game.id }}">

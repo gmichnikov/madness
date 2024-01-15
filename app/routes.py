@@ -356,32 +356,35 @@ def make_picks():
     user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
 
     teams_dict = {team.id: team for team in teams}
-    potential_picks_map = {game.id: get_potential_picks(game.id, False) for game in games}
+    potential_picks_map = {game.id: get_potential_picks(game.id, return_current_pick=False) for game in games}
 
     if request.method == 'POST':
         for game in games:
             selected_team_id = request.form.get(f'game{game.id}')
+            pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
             if selected_team_id:
                 selected_team_id = int(selected_team_id)
-                pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
-
-                if pick:
-                    # Update the existing pick
-                    pick.team_id = selected_team_id
-                else:
-                    # Create a new pick
-                    pick = Pick(user_id=current_user.id, game_id=game.id, team_id=selected_team_id)
-                    db.session.add(pick)
+                add_or_update_pick(pick, selected_team_id, game.id)
             else:
-                # Delete existing pick if it exists
-                Pick.query.filter_by(user_id=current_user.id, game_id=game.id).delete()
+                later_round_pick_team_id = get_later_round_pick(game, request.form)
+                if later_round_pick_team_id and later_round_pick_team_id in potential_picks_map[game.id]:
+                    add_or_update_pick(pick, later_round_pick_team_id, game.id)
+                else:
+                    # Delete existing pick if it exists
+                    Pick.query.filter_by(user_id=current_user.id, game_id=game.id).delete()
 
         db.session.commit()
         flash('Your picks have been saved.')
         return redirect(url_for('make_picks'))
 
-    # return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks)
     return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map)
+
+def add_or_update_pick(pick, team_id, game_id):
+    if pick:
+        pick.team_id = team_id
+    else:
+        pick = Pick(user_id=current_user.id, game_id=game_id, team_id=team_id)
+        db.session.add(pick)
 
 def get_potential_winners(game_id):
     game = Game.query.get(game_id)
@@ -402,6 +405,7 @@ def get_potential_winners(game_id):
 
     return potential_winners
 
+# When return_current_pick is False (the initial call for each game), we ignore the current pick, so that we populate the dropdowns based on previous rounds. This also means an invalid pick (team lost in earlier round) will not appear in the dropdown as an option at all, though it will still be in the DB until picks are saved again.
 def get_potential_picks(game_id, return_current_pick):
     game = Game.query.get(game_id)
 
@@ -417,8 +421,19 @@ def get_potential_picks(game_id, return_current_pick):
     previous_games = Game.query.filter_by(winner_goes_to_game_id=game_id).all()
     potential_picks = []
 
-    # Recursively call this function on the previous games
+    # Recursively call this function on the previous games, with return_current_pick=True
     for prev_game in previous_games:
-        potential_picks.extend(get_potential_picks(prev_game.id, True))
+        potential_picks.extend(get_potential_picks(prev_game.id, return_current_pick=True))
 
     return potential_picks
+
+def get_later_round_pick(game, form):
+    if game and game.winner_goes_to_game_id:
+        next_game_pick_id = form.get(f'game{game.winner_goes_to_game_id}')
+        
+        if next_game_pick_id:
+            return int(next_game_pick_id)
+        else:
+            return get_later_round_pick(game.winner_goes_to_game, form)
+
+    return None
