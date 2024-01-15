@@ -359,23 +359,28 @@ def make_picks():
     potential_picks_map = {game.id: get_potential_picks(game.id, return_current_pick=False) for game in games}
 
     if request.method == 'POST':
-        for game in games:
-            selected_team_id = request.form.get(f'game{game.id}')
-            pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
-            if selected_team_id:
-                selected_team_id = int(selected_team_id)
-                add_or_update_pick(pick, selected_team_id, game.id)
-            else:
-                later_round_pick_team_id = get_later_round_pick(game, request.form)
-                if later_round_pick_team_id and later_round_pick_team_id in potential_picks_map[game.id]:
-                    add_or_update_pick(pick, later_round_pick_team_id, game.id)
+        if request.form['action'] == 'save_picks':
+            for game in games:
+                selected_team_id = request.form.get(f'game{game.id}')
+                pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
+                if selected_team_id:
+                    selected_team_id = int(selected_team_id)
+                    add_or_update_pick(pick, selected_team_id, game.id)
                 else:
-                    # Delete existing pick if it exists
-                    Pick.query.filter_by(user_id=current_user.id, game_id=game.id).delete()
+                    later_round_pick_team_id = get_later_round_pick(game, request.form)
+                    if later_round_pick_team_id and later_round_pick_team_id in potential_picks_map[game.id]:
+                        add_or_update_pick(pick, later_round_pick_team_id, game.id)
+                    else:
+                        # Delete existing pick if it exists
+                        Pick.query.filter_by(user_id=current_user.id, game_id=game.id).delete()
 
-        db.session.commit()
-        flash('Your picks have been saved.')
-        return redirect(url_for('make_picks'))
+            db.session.commit()
+            flash('Your picks have been saved.')
+            return redirect(url_for('make_picks'))
+        elif request.form['action'] == 'clear_picks':
+            Pick.query.filter_by(user_id=current_user.id).delete()
+            db.session.commit()
+            return redirect(url_for('make_picks'))
 
     return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map)
 

@@ -2,7 +2,9 @@
 {% block content %}
     <h1>Make Your Picks</h1>
     <form method="post">
-        <input type="submit" value="Save Picks" class="bracket-grid-submit btn btn-primary">
+        <button type="submit" name="action" value="save_picks" class="bracket-grid-submit btn btn-primary">Save Picks</button>
+        <button type="submit" name="action" value="clear_picks" class="bracket-grid-submit btn btn-primary">Clear All Picks</button>
+
         <p>Note that picks are NOT saved automatically. Each time you Save Picks</p>
         <ul>
             <li>All dropdowns will be updated to only show available teams, based on your picks in earlier rounds.</li>
