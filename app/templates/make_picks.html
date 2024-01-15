@@ -27,7 +27,7 @@
 
             {% for team in teams %}
                 <div class="bracket-grid-1st-round-cell" id="team{{ team.id }}">
-                    <div class="bracket-grid-1st-round-team">{{ team.seed }} - {{ team.name }}</div>
+                    <div class="bracket-grid-1st-round-team {% if team.seed in [2, 4, 3, 8] %}bracket-first-round-alternating-top{% endif %}{% if team.seed in [9, 14, 13, 15] %}bracket-first-round-alternating-bottom{% endif %}">{{ team.seed }} - {{ team.name }}</div>
                 </div>
             {% endfor %}
 
@@ -169,6 +169,7 @@
             <div class="grid-blank-row" id="grid-blank-row-18">&nbsp;</div>
             <div class="grid-blank-row" id="grid-blank-row-20">&nbsp;</div>
             <div class="grid-blank-row" id="grid-blank-row-36">&nbsp;</div>
+            <div class="grid-blank-row" id="grid-blank-row-37">&nbsp;</div>
         </div>
     </form>
 {% endblock %}
