@@ -1,9 +1,16 @@
 {% extends 'base.html' %}
 {% block content %}
     <h1>Make Your Picks</h1>
+    {% if is_bracket_valid %}
+        <h3 class="bracket-valid">Your most recently saved bracket is valid.</h3>
+    {% else %}
+        <h3 class="bracket-invalid">Your most recently saved bracket is not valid.</h3>
+    {% endif %}
+
     <form method="post">
-        <button type="submit" name="action" value="save_picks" class="bracket-grid-submit btn btn-primary">Save Picks</button>
-        <button type="submit" name="action" value="clear_picks" class="bracket-grid-submit btn btn-primary">Clear All Picks</button>
+        <button type="submit" name="action" value="save_picks" class="btn btn-primary">Save Picks</button>
+        <button type="submit" name="action" value="clear_picks" class="btn btn-primary">Clear All Picks</button>
+        <button type="submit" name="action" value="fill_in_better_seeds" class="btn btn-primary">Fill In Better Seeds</button>
 
         <p>Note that picks are NOT saved automatically. Each time you Save Picks</p>
         <ul>
@@ -27,7 +34,7 @@
 
             {% for team in teams %}
                 <div class="bracket-grid-1st-round-cell" id="team{{ team.id }}">
-                    <div class="bracket-grid-1st-round-team {% if team.seed in [2, 4, 3, 8] %}bracket-first-round-alternating-top{% endif %}{% if team.seed in [9, 14, 13, 15] %}bracket-first-round-alternating-bottom{% endif %}">{{ team.seed }} - {{ team.name }}</div>
+                    <div class="bracket-grid-1st-round-team {% if team.seed in [2, 4, 3, 8] %}bracket-first-round-alternating-first-top{% endif %}{% if team.seed in [9, 14, 13, 15] %}bracket-first-round-alternating-first-bottom{% endif %}{% if team.seed in [10, 11, 12, 16] %}bracket-first-round-alternating-second-bottom{% endif %}">{{ team.seed }} - {{ team.name }}</div>
                 </div>
             {% endfor %}
 

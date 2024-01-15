@@ -24,6 +24,7 @@ class User(db.Model, UserMixin):
     tiebreaker_winner = db.Column(db.Integer, default=0, nullable=False)
     tiebreaker_loser = db.Column(db.Integer, default=0, nullable=False)
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    is_bracket_valid = db.Column(db.Boolean, default=False, nullable=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)

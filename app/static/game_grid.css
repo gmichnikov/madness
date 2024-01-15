@@ -19,10 +19,6 @@
     font-size: 10px;
 }
 
-.bracket-grid-submit {
-    margin-bottom: 4px;
-}
-
 .bracket-grid-select {
     width: 100%;
     font-size: 10px;
@@ -59,14 +55,27 @@
     text-align: center; /* Centers the text horizontally */
 }
 
-.bracket-first-round-alternating-top {
+.bracket-first-round-alternating-first-top {
     color: brown;
-    border-top: 1px solid brown;
+    /* border-top: 1px solid brown; */
 }
 
-.bracket-first-round-alternating-bottom {
+.bracket-first-round-alternating-first-bottom {
     color: brown;
     border-bottom: 1px solid brown;
+}
+
+.bracket-first-round-alternating-second-bottom {
+    /* color: brown; */
+    border-bottom: 1px solid black;
+}
+
+.bracket-valid {
+    color: green;
+}
+
+.bracket-invalid {
+    color: crimson;
 }
 
 #grid-round-1st-top-left { grid-row: 1; grid-column: 1; }

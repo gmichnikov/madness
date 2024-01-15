@@ -358,6 +358,8 @@ def make_picks():
     teams_dict = {team.id: team for team in teams}
     potential_picks_map = {game.id: get_potential_picks(game.id, return_current_pick=False) for game in games}
 
+    is_bracket_valid = current_user.is_bracket_valid
+
     if request.method == 'POST':
         if request.form['action'] == 'save_picks':
             for game in games:
@@ -376,13 +378,25 @@ def make_picks():
 
             db.session.commit()
             flash('Your picks have been saved.')
+            set_is_bracket_valid()
+
             return redirect(url_for('make_picks'))
         elif request.form['action'] == 'clear_picks':
             Pick.query.filter_by(user_id=current_user.id).delete()
             db.session.commit()
+
+            log_entry = LogEntry(category='Clear Picks', current_user_id=current_user.id, description=f"{current_user.email} cleared their picks")
+            db.session.add(log_entry)
+            db.session.commit()
+
+            set_is_bracket_valid()
+            return redirect(url_for('make_picks'))
+        elif request.form['action'] == 'fill_in_better_seeds':
+            auto_fill_bracket()
+            set_is_bracket_valid()
             return redirect(url_for('make_picks'))
 
-    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map)
+    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid)
 
 def add_or_update_pick(pick, team_id, game_id):
     if pick:
@@ -442,3 +456,57 @@ def get_later_round_pick(game, form):
             return get_later_round_pick(game.winner_goes_to_game, form)
 
     return None
+
+def set_is_bracket_valid():
+    is_bracket_valid = True
+    games = Game.query.all()
+    for game in games:
+        if game.round_id == 1:
+            continue
+
+        user_pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
+        if not user_pick:
+            is_bracket_valid = False
+            break
+
+        previous_games = Game.query.filter_by(winner_goes_to_game_id=game.id).all()
+
+        previous_picks = [Pick.query.filter_by(user_id=current_user.id, game_id=prev_game.id).first() for prev_game in previous_games]
+        if not all(previous_picks) or user_pick.team_id not in [pick.team_id for pick in previous_picks]:
+            is_bracket_valid = False
+
+    current_user.is_bracket_valid = is_bracket_valid
+    db.session.commit()
+
+    if is_bracket_valid:
+        log_entry = LogEntry(category='Valid Bracket', current_user_id=current_user.id, description=f"{current_user.email} saved a valid bracket")
+        db.session.add(log_entry)
+        db.session.commit()
+
+def auto_fill_bracket():
+    games = Game.query.all()
+    teams = Team.query.all()
+    teams_dict = {team.id: team for team in teams}
+
+    for game in games:
+        current_pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
+        if current_pick is None:
+            potential_picks = get_potential_picks(game.id, return_current_pick=False)
+            
+            best_team = None
+            best_seed = float('inf')
+            for team_id in potential_picks:
+                team = teams_dict[team_id]
+                if team.seed < best_seed:
+                    best_seed = team.seed
+                    best_team = team
+
+            if best_team:
+                new_pick = Pick(user_id=current_user.id, game_id=game.id, team_id=best_team.id)
+                db.session.add(new_pick)
+
+    db.session.commit()
+
+    log_entry = LogEntry(category='Fill Better Seeds', current_user_id=current_user.id, description=f"{current_user.email} filled in the better seeds")
+    db.session.add(log_entry)
+    db.session.commit()

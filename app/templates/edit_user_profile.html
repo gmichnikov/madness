@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>Verified?</h1>
+    <h1>Your Profile</h1>
+    <h2>Verified?</h2>
     <p class="{{ 'verified-user' if user.is_verified else 'unverified-user' }}">{{ user.is_verified }}</p>
-    <h1>Edit Profile</h1>
+    <h2>Current Bracket Valid?</h2>
+    <p class="{{ 'bracket-valid' if user.is_bracket_valid else 'bracket-invalid' }}">{{ user.is_bracket_valid }}</p>
+    <h2>Edit Profile</h2>
     <form method="POST">
         {{ form.hidden_tag() }}
         {{ form.full_name.label }}<br>
@@ -13,6 +16,6 @@
         {{ form.tiebreaker_winner() }}<br>
         {{ form.tiebreaker_loser.label }}<br>
         {{ form.tiebreaker_loser() }}<br>
-        {{ form.submit() }}
+        {{ form.submit(class="btn btn-primary") }}
     </form>
 {% endblock %}
