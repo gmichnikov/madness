@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="POST">
+    {% for game in games %}
+        <div>
+            <label for="game_{{ game.id }}">
+                Round {{ game.round.name }}: 
+                {{ game.team1.seed }} - {{ game.team1.name }} vs. 
+                {{ game.team2.seed }} - {{ game.team2.name }}
+            </label>
+            <select name="game_{{ game.id }}">
+                <option value="">--- Select Winner ---</option>
+                <option value="{{ game.team1.id }}">{{ game.team1.name }}</option>
+                <option value="{{ game.team2.id }}">{{ game.team2.name }}</option>
+            </select>
+        </div>
+    {% endfor %}
+    <input type="submit" value="Update Winners">
+</form>
+{% endblock %}

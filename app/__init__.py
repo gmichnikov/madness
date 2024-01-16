@@ -3,6 +3,8 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from dotenv import load_dotenv
+import os
+import csv
 
 load_dotenv()
 
@@ -15,7 +17,7 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-from .models import Region, Team, Round
+from .models import Region, Team, Round, Game
 with app.app_context():
     if Region.query.count() == 0:
         for i in range(1, 5):
@@ -46,3 +48,29 @@ with app.app_context():
         round6 = Round(name="Championship", points=12)
         db.session.add(round6)
         db.session.commit()
+
+with app.app_context():
+    if Round.query.count() == 0:
+        current_dir = os.path.dirname(__file__)
+        file_path = os.path.join(current_dir, 'static', 'games.csv')
+
+        # First Phase: Insert games without winner_goes_to_game_id
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                game = Game(
+                    round_id=int(row[1]),
+                    team1_id=int(row[3]) if row[3] else None,
+                    team2_id=int(row[4]) if row[4] else None,
+                    winning_team_id=int(row[5]) if row[5] else None
+                )
+                db.session.add(game)
+                db.session.commit()
+
+        # Second Phase: Update games with winner_goes_to_game_id
+        with open(file_path, 'r') as file:
+            reader = csv.reader(file)
+            for row, game in zip(reader, Game.query.order_by(Game.id)):
+                if row[2]:
+                    game.winner_goes_to_game_id = int(row[2])
+            db.session.commit()

@@ -22,12 +22,14 @@
                     <br> Admin: 
                     <a href="{{ url_for('admin_view_logs') }}">View Logs</a>
                     <a href="{{ url_for('admin_verify_users') }}">Verify Users</a>
+                    <a href="{{ url_for('admin_set_winners') }}">Set Winners</a>
                     <a href="{{ url_for('admin_reset_password') }}">Reset Passwords</a>
                     <a href="{{ url_for('admin_manage_regions') }}">Manage Regions</a>
                     <a href="{{ url_for('admin_manage_teams') }}">Manage Teams</a>
                     <a href="{{ url_for('admin_manage_rounds') }}">Manage Rounds</a>
                 {% endif %}
                 {% if current_user.is_super_admin %}
+                    <br> Super Admin: 
                     <a href="{{ url_for('super_admin_manage_admins') }}">Manage Admins</a>
                     <a href="{{ url_for('super_admin_reset_games') }}">Reset Games</a>
                 {% endif %}

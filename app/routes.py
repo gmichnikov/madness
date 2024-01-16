@@ -313,38 +313,21 @@ def super_admin_reset_games():
     return render_template('super_admin/reset_games.html')
 
 def reset_game_table():
-    db.session.query(Game).delete()
-
-    db.session.execute(text('ALTER SEQUENCE game_id_seq RESTART WITH 1'))
-
-    repopulate_game_table()
-
-    db.session.commit()
-
-def repopulate_game_table():
     current_dir = os.path.dirname(__file__)
     file_path = os.path.join(current_dir, 'static', 'games.csv')
 
-    # First Phase: Insert games without winner_goes_to_game_id
     with open(file_path, 'r') as file:
         reader = csv.reader(file)
         for row in reader:
-            game = Game(
-                round_id=int(row[0]),
-                team1_id=int(row[2]) if row[2] else None,
-                team2_id=int(row[3]) if row[3] else None,
-                winning_team_id=int(row[4]) if row[4] else None
-            )
-            db.session.add(game)
-            db.session.commit()
-
-    # Second Phase: Update games with winner_goes_to_game_id
-    with open(file_path, 'r') as file:
-        reader = csv.reader(file)
-        for row, game in zip(reader, Game.query.order_by(Game.id)):
-            if row[1]:
-                game.winner_goes_to_game_id = int(row[1])
-        db.session.commit()
+            game_id = int(row[0])
+            game = Game.query.get(game_id)
+            if game:
+                game.round_id = int(row[1])
+                game.winner_goes_to_game_id = int(row[2]) if row[2] else None
+                game.team1_id = int(row[3]) if row[3] else None
+                game.team2_id = int(row[4]) if row[4] else None
+                game.winning_team_id = int(row[5]) if row[5] else None
+                db.session.commit()
 
 @app.route('/make_picks', methods=['GET', 'POST'])
 @login_required
@@ -510,3 +493,44 @@ def auto_fill_bracket():
     log_entry = LogEntry(category='Fill Better Seeds', current_user_id=current_user.id, description=f"{current_user.email} filled in the better seeds")
     db.session.add(log_entry)
     db.session.commit()
+
+@app.route('/admin/set_winners', methods=['GET', 'POST'])
+@admin_required
+@login_required
+def admin_set_winners():
+    games = Game.query.filter(Game.team1_id.isnot(None), 
+                              Game.team2_id.isnot(None), 
+                              Game.winning_team_id.is_(None)).order_by(Game.id).all()
+
+    if request.method == 'POST':
+        for game in games:
+            selected_team_id = request.form.get(f"game_{game.id}")
+            if selected_team_id:
+                game.winning_team_id = int(selected_team_id)
+                
+                # Find the next game where this game's winner should go
+                next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
+                if next_game:
+                    if next_game.team1_id is None:
+                        next_game.team1_id = game.winning_team_id
+                    else:
+                        next_game.team2_id = game.winning_team_id
+
+                # Commit changes to the database
+                db.session.commit()
+                flash(f"Winner updated for Game {game.id}", 'success')
+
+                if game.winning_team_id == game.team1_id:
+                    winner = game.team1.name
+                    loser = game.team2.name
+                else:
+                    loser = game.team1.name
+                    winner = game.team2.name
+
+                log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, description=f"{current_user.email} set a result: In round {game.round_id}, {winner} beat {loser}")
+                db.session.add(log_entry)
+                db.session.commit()
+
+        return redirect(url_for('admin_set_winners'))
+
+    return render_template('admin/set_winners.html', games=games)
