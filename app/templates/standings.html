@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Standings</h1>
+
+    <form method="POST">
+        {{ sort_form.hidden_tag() }}
+        <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field() }}</div>
+        <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order() }}</div>
+        <div>{{ sort_form.submit() }}</div>
+    </form>
+        
+    <table class="standings-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Round 1 Score</th>
+                <th>Round 2 Score</th>
+
+
+                <th>Current Score</th>
+                <th>Champion Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.full_name }}</td>
+                    <td>{{ user.r1score }}</td>
+                    <td>{{ user.r2score }}</td>
+
+                    <td>{{ user.currentscore }}</td>
+                    <td>{{ user.champion_team_name }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

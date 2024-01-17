@@ -68,3 +68,21 @@ nav a {
     font-size: 18px;
     color: red;
 }
+
+.standings-table {
+    /* width: 100%; */
+    border-collapse: collapse;
+}
+.standings-table, .standings-table th, .standings-table td {
+    border: 1px solid #ddd;
+}
+.standings-table th, .standings-table td {
+    padding: 8px;
+    text-align: left;
+}
+.standings-table th {
+    background-color: #f2f2f2;
+}
+.standings-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}

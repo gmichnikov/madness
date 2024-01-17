@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm
 from functools import wraps
 import os
 import csv
@@ -189,9 +189,10 @@ def admin_manage_rounds():
         db.session.add(log_entry)
         db.session.commit()
 
+        recalculate_standings()
         return redirect(url_for('admin_manage_rounds'))
 
-    # Pre-populate form fields with current region names
+    # Pre-populate form fields with current round points
     for i in range(1, 7):
         round = Round.query.get(i)
         if round:
@@ -555,6 +556,52 @@ def admin_set_winners():
 
         db.session.commit()
         flash('Game winners updated.', 'success')
+
+        recalculate_standings()
         return redirect(url_for('admin_set_winners'))
 
     return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region)
+
+def recalculate_standings():
+    users = User.query.all()
+    for user in users:
+        user.r1score = user.r2score = user.r3score = user.r4score = user.r5score = user.r6score = 0
+
+        for pick in user.picks:
+            if pick.game.winning_team_id is not None and pick.game.winning_team_id == pick.team_id:
+                round_points = pick.game.round.points
+                if pick.game.round_id == 1:
+                    user.r1score += round_points
+                elif pick.game.round_id == 2:
+                    user.r2score += round_points
+                elif pick.game.round_id == 3:
+                    user.r3score += round_points
+                elif pick.game.round_id == 4:
+                    user.r4score += round_points
+                elif pick.game.round_id == 5:
+                    user.r5score += round_points
+                elif pick.game.round_id == 6:
+                    user.r6score += round_points
+
+        user.currentscore = user.r1score + user.r2score + user.r3score + user.r4score + user.r5score + user.r6score
+        db.session.commit()
+
+@app.route('/standings', methods=['GET', 'POST'])
+@login_required
+def standings():
+    sort_form = SortStandingsForm()
+    sort_field = 'currentscore'
+    sort_order = 'desc'
+
+    if sort_form.validate_on_submit():
+        sort_field = sort_form.sort_field.data
+        sort_order = sort_form.sort_order.data
+
+    users = User.query.all()
+    champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
+    for user in users:
+        user.champion_team_name = champion_picks.get(user.id, "?")
+    
+    users.sort(key=lambda x: (getattr(x, sort_field) if sort_field != 'champion_team_name' else getattr(x, 'champion_team_name', "?")), reverse=(sort_order == 'desc'))
+
+    return render_template('standings.html', users=users, sort_form=sort_form)

@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField, RadioField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
 import pytz
 
@@ -117,3 +117,14 @@ class EditProfileForm(FlaskForm):
     tiebreaker_winner = IntegerField('Winner\'s Score in Championship Game', validators=[DataRequired()])
     tiebreaker_loser = IntegerField('Loser\'s Score in Championship Game', validators=[DataRequired()])
     submit = SubmitField('Update Profile')
+
+class SortStandingsForm(FlaskForm):
+    sort_field = SelectField('Sort by', choices=[
+        ('full_name', 'Name'),
+        ('r1score', 'Round 1 Score'),
+        ('r2score', 'Round 2 Score'),
+        ('currentscore', 'Current Score'),
+        ('champion_team_name', 'Champion Team')
+    ])
+    sort_order = RadioField('Order', choices=[('asc', 'Ascending'), ('desc', 'Descending')], default='desc')
+    submit = SubmitField('Sort')
