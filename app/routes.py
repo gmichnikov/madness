@@ -499,38 +499,58 @@ def auto_fill_bracket():
 @login_required
 def admin_set_winners():
     games = Game.query.filter(Game.team1_id.isnot(None), 
-                              Game.team2_id.isnot(None), 
-                              Game.winning_team_id.is_(None)).order_by(Game.id).all()
+                              Game.team2_id.isnot(None)).order_by(Game.id).all()
 
     if request.method == 'POST':
         for game in games:
             selected_team_id = request.form.get(f"game_{game.id}")
             if selected_team_id:
-                game.winning_team_id = int(selected_team_id)
-                
-                # Find the next game where this game's winner should go
+                selected_team_id = int(selected_team_id)
+            else:
+                selected_team_id = None
+
+            previous_winning_team_id = game.winning_team_id
+            if previous_winning_team_id is None and selected_team_id is None:
+                pass
+            elif previous_winning_team_id == selected_team_id:
+                pass
+            elif selected_team_id is None:   # clearing a previously set winner
+                print("Clearing a winner")
+                game.winning_team_id = None
+                next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
+                if next_game:
+                    if next_game.team1_id == previous_winning_team_id:
+                        next_game.team1_id = None
+                    elif next_game.team2_id == previous_winning_team_id:
+                        next_game.team2_id = None
+                log_entry = LogEntry(category='Remove Winner', current_user_id=current_user.id, description=f"{current_user.email} cleared winner of game {game.id}")
+                db.session.add(log_entry)
+            elif previous_winning_team_id is None:   # setting a winner
+                print("Setting a winner")
+                game.winning_team_id = selected_team_id
                 next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
                 if next_game:
                     if next_game.team1_id is None:
-                        next_game.team1_id = game.winning_team_id
-                    else:
-                        next_game.team2_id = game.winning_team_id
-
-                # Commit changes to the database
-                db.session.commit()
-                flash(f"Winner updated for Game {game.id}", 'success')
-
-                if game.winning_team_id == game.team1_id:
-                    winner = game.team1.name
-                    loser = game.team2.name
-                else:
-                    loser = game.team1.name
-                    winner = game.team2.name
-
-                log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, description=f"{current_user.email} set a result: In round {game.round_id}, {winner} beat {loser}")
+                        next_game.team1_id = selected_team_id
+                    elif next_game.team2_id is None:
+                        next_game.team2_id = selected_team_id
+                log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, description=f"{current_user.email} set winner of game {game.id}")
                 db.session.add(log_entry)
-                db.session.commit()
+            else:   # switching winner
+                print("Changing a winner")
+                game.winning_team_id = selected_team_id
+                next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
+                if next_game:
+                    if next_game.team1_id == previous_winning_team_id:
+                        next_game.team1_id = selected_team_id
+                    elif next_game.team2_id == previous_winning_team_id:
+                        next_game.team2_id = selected_team_id
 
+                log_entry = LogEntry(category='Change Winner', current_user_id=current_user.id, description=f"{current_user.email} changed winner of game {game.id}")
+                db.session.add(log_entry)
+
+        db.session.commit()
+        flash('Game winners updated.', 'success')
         return redirect(url_for('admin_set_winners'))
 
     return render_template('admin/set_winners.html', games=games)
