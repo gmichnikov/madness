@@ -8,6 +8,7 @@ import os
 import csv
 from sqlalchemy import text
 import pytz
+from collections import defaultdict
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -501,6 +502,12 @@ def admin_set_winners():
     games = Game.query.filter(Game.team1_id.isnot(None), 
                               Game.team2_id.isnot(None)).order_by(Game.id).all()
 
+    games_by_round_and_region = defaultdict(lambda: defaultdict(list))
+    for game in games:
+        round_name = game.round.name
+        region_name = game.team1.region.name  # Assuming team1 and team2 are always in the same region
+        games_by_round_and_region[round_name][region_name].append(game)
+
     if request.method == 'POST':
         for game in games:
             selected_team_id = request.form.get(f"game_{game.id}")
@@ -515,7 +522,6 @@ def admin_set_winners():
             elif previous_winning_team_id == selected_team_id:
                 pass
             elif selected_team_id is None:   # clearing a previously set winner
-                print("Clearing a winner")
                 game.winning_team_id = None
                 next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
                 if next_game:
@@ -523,10 +529,9 @@ def admin_set_winners():
                         next_game.team1_id = None
                     elif next_game.team2_id == previous_winning_team_id:
                         next_game.team2_id = None
-                log_entry = LogEntry(category='Remove Winner', current_user_id=current_user.id, description=f"{current_user.email} cleared winner of game {game.id}")
+                log_entry = LogEntry(category='Remove Winner', current_user_id=current_user.id, description=f"{current_user.email} cleared winner of {game.team1.name} vs {game.team2.name}")
                 db.session.add(log_entry)
             elif previous_winning_team_id is None:   # setting a winner
-                print("Setting a winner")
                 game.winning_team_id = selected_team_id
                 next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
                 if next_game:
@@ -534,10 +539,9 @@ def admin_set_winners():
                         next_game.team1_id = selected_team_id
                     elif next_game.team2_id is None:
                         next_game.team2_id = selected_team_id
-                log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, description=f"{current_user.email} set winner of game {game.id}")
+                log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, description=f"{current_user.email} set winner of {game.team1.name} vs {game.team2.name}")
                 db.session.add(log_entry)
             else:   # switching winner
-                print("Changing a winner")
                 game.winning_team_id = selected_team_id
                 next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
                 if next_game:
@@ -546,11 +550,11 @@ def admin_set_winners():
                     elif next_game.team2_id == previous_winning_team_id:
                         next_game.team2_id = selected_team_id
 
-                log_entry = LogEntry(category='Change Winner', current_user_id=current_user.id, description=f"{current_user.email} changed winner of game {game.id}")
+                log_entry = LogEntry(category='Change Winner', current_user_id=current_user.id, description=f"{current_user.email} changed winner of {game.team1.name} vs {game.team2.name}")
                 db.session.add(log_entry)
 
         db.session.commit()
         flash('Game winners updated.', 'success')
         return redirect(url_for('admin_set_winners'))
 
-    return render_template('admin/set_winners.html', games=games)
+    return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region)
