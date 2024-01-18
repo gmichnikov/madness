@@ -4,8 +4,9 @@
 
     <form method="POST" class="standings-sort-form">
         {{ sort_form.hidden_tag() }}
-        <div>{{ sort_form.sort_field() }}</div>
-        <div>{{ sort_form.sort_order() }}</div>
+        <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field() }}</div>
+        <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order() }}</div>
+        <div>{{ sort_form.champion_filter.label }} {{ sort_form.champion_filter() }}</div>
         <div>{{ sort_form.submit() }}</div>
     </form>
 

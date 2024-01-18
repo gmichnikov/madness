@@ -595,21 +595,25 @@ def recalculate_standings():
 @app.route('/standings', methods=['GET', 'POST'])
 @login_required
 def standings():
-    # sort_form = SortStandingsForm()
-    sort_form = SortStandingsForm(sort_field='currentscore', sort_order='desc')
+    sort_form = SortStandingsForm(sort_field='currentscore', sort_order='desc', champion_filter = 'Any')
 
     if sort_form.validate_on_submit():
         sort_field = sort_form.sort_field.data
         sort_order = sort_form.sort_order.data
+        champion_filter = sort_form.champion_filter.data
     else:
         sort_field = 'currentscore'
         sort_order = 'desc'
+        champion_filter = 'Any'
 
     users = User.query.all()
     champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
     for user in users:
         user.champion_team_name = champion_picks.get(user.id, "?")
-    
+
+    if champion_filter != 'Any':
+        users = [user for user in users if champion_picks.get(user.id, "?") == champion_filter]
+
     users.sort(key=lambda x: (getattr(x, sort_field) if sort_field != 'champion_team_name' else getattr(x, 'champion_team_name', "?")), reverse=(sort_order == 'desc'))
 
     return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict())
