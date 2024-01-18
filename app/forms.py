@@ -4,14 +4,26 @@ from wtforms.validators import DataRequired, Email, Length, NumberRange
 from app.models import Round
 import pytz
 
+EMAIL = 'Email (used for login, will only be shown to admins)'
+FULL_NAME = 'Full Name (will be shown to all users, please enter your real name, e.g. John Doe)'
+TIEBREAKER_1 = 'Tiebreaker 1: Winner\'s Score in Championship Game'
+TIEBREAKER_2 = 'Tiebreaker 2: Loser\'s Score in Championship Game'
+
 class RegistrationForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    full_name = StringField('Full Name', validators=[DataRequired()])
+    email = StringField(EMAIL, validators=[DataRequired(), Email()])
+    full_name = StringField(FULL_NAME, validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
     time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones], default='US/Eastern')
-    tiebreaker_winner = IntegerField('Winner\'s Score in Championship Game', validators=[DataRequired()], default=0)
-    tiebreaker_loser = IntegerField('Loser\'s Score in Championship Game', validators=[DataRequired()], default=0)
+    tiebreaker_winner = IntegerField(TIEBREAKER_1, validators=[DataRequired()], default=0)
+    tiebreaker_loser = IntegerField(TIEBREAKER_2, validators=[DataRequired()], default=0)
     submit = SubmitField('Register')
+
+class EditProfileForm(FlaskForm):
+    full_name = StringField(FULL_NAME)
+    time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones])
+    tiebreaker_winner = IntegerField(TIEBREAKER_1, validators=[DataRequired()])
+    tiebreaker_loser = IntegerField(TIEBREAKER_2, validators=[DataRequired()])
+    submit = SubmitField('Update Profile')
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -111,13 +123,6 @@ class AdminStatusForm(FlaskForm):
     user_email = SelectField('User', coerce=int)
     is_admin = BooleanField('Is Admin')
     submit = SubmitField('Update Admin Status')
-
-class EditProfileForm(FlaskForm):
-    full_name = StringField('Full Name')
-    time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones])
-    tiebreaker_winner = IntegerField('Winner\'s Score in Championship Game', validators=[DataRequired()])
-    tiebreaker_loser = IntegerField('Loser\'s Score in Championship Game', validators=[DataRequired()])
-    submit = SubmitField('Update Profile')
 
 class SortStandingsForm(FlaskForm):
     def __init__(self, *args, **kwargs):
