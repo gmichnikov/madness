@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm
 from functools import wraps
 import os
 import csv
@@ -337,7 +337,7 @@ def make_picks():
     games = Game.query.order_by(Game.id).all()
     teams = Team.query.all()
     rounds = rounds_dict()
-    regions = {region.id: region.name for region in Region.query.all()}
+    regions = regions_dict()
     user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
 
     teams_dict = {team.id: team for team in teams}
@@ -620,3 +620,26 @@ def standings():
 
 def rounds_dict():
     return {round.id: round.name for round in Round.query.all()}
+
+def regions_dict():
+    return {region.id: region.name for region in Region.query.all()}
+
+@app.route('/view_picks/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def view_picks(user_id):
+    user = User.query.get_or_404(user_id)
+    games = Game.query.order_by(Game.id).all()
+    form = UserSelectionForm()
+    form.user.choices = [(u.id, u.full_name) for u in User.query.order_by(User.full_name).all()]
+
+    if form.validate_on_submit():
+        selected_user_id = form.user.data
+        return redirect(url_for('view_picks', user_id=selected_user_id))
+
+    # Set default selection only if the form has not been submitted
+    form.user.default = user_id
+    form.process()
+
+    user_picks = {pick.game_id: pick.team for pick in Pick.query.filter_by(user_id=user_id).join(Team, Pick.team_id == Team.id)}
+
+    return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all())

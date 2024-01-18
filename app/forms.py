@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField, RadioField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
-from app.models import Round, Team, Pick
+from app.models import Round, Team, Pick, User
 import pytz
 
 EMAIL = 'Email (used for login, will only be shown to admins)'
@@ -141,3 +141,7 @@ class SortStandingsForm(FlaskForm):
     sort_order = SelectField('Order', choices=[('asc', 'Ascending'), ('desc', 'Descending')], default='asc')
     champion_filter = SelectField('Filter by Champion')
     submit = SubmitField('Sort and/or Filter')
+
+class UserSelectionForm(FlaskForm):
+    user = SelectField('View picks for: ', coerce=int)
+    submit = SubmitField('View Picks')

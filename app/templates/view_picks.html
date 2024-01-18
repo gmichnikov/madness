@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>View Picks for {{ user.full_name }}</h1>
+    <a href="{{ url_for('user_profile', user_id=user.id) }}">View {{ user.full_name }}'s Profile</a>
+
+    <br>
+    <form method="POST" style="display: flex; align-items: center; gap: 10px;">
+        {{ form.hidden_tag() }}
+        <div>{{ form.user.label }} {{ form.user() }}</div>
+        <div>{{ form.submit() }}</div>
+    </form>
+    <br>
+
+    <div class="bracket-grid">
+        {% for game in games %}
+            <div class="game-view-pick" id="game{{ game.id }}">
+                <span id="game{{ game.id }}" class="bracket-grid-span">
+                    {% if game.id in user_picks %}
+                        {{ user_picks[game.id].seed }} - {{ user_picks[game.id].name }}
+                    {% else %}
+                        No Pick
+                    {% endif %}
+                </span>
+            </div>
+        {% endfor %}
+
+        {% include '_shared_grid.html' %}
+    </div>
+{% endblock %}

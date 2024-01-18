@@ -1,0 +1,145 @@
+{% for team in teams %}
+<div class="bracket-grid-1st-round-cell" id="team{{ team.id }}">
+    <div class="bracket-grid-1st-round-team {% if team.seed in [2, 4, 3, 8] %}bracket-first-round-alternating-first-top{% endif %}{% if team.seed in [9, 14, 13, 15] %}bracket-first-round-alternating-first-bottom{% endif %}{% if team.seed in [10, 11, 12, 16] %}bracket-first-round-alternating-second-bottom{% endif %}">{{ team.seed }} - {{ team.name }}</div>
+</div>
+{% endfor %}
+
+<div class="grid-blank-region-1" id="grid-blank-4-2"></div>
+<div class="grid-blank-region-1" id="grid-blank-8-2"></div>
+<div class="grid-blank-region-1" id="grid-blank-12-2"></div>
+<div class="grid-blank-region-1" id="grid-blank-16-2"></div>
+<div class="grid-blank-region-2" id="grid-blank-34-2"></div>
+<div class="grid-blank-region-2" id="grid-blank-30-2"></div>
+<div class="grid-blank-region-2" id="grid-blank-26-2"></div>
+<div class="grid-blank-region-2" id="grid-blank-22-2"></div>
+<div class="grid-blank-region-3" id="grid-blank-4-12"></div>
+<div class="grid-blank-region-3" id="grid-blank-8-12"></div>
+<div class="grid-blank-region-3" id="grid-blank-12-12"></div>
+<div class="grid-blank-region-3" id="grid-blank-16-12"></div>
+<div class="grid-blank-region-4" id="grid-blank-34-12"></div>
+<div class="grid-blank-region-4" id="grid-blank-30-12"></div>
+<div class="grid-blank-region-4" id="grid-blank-26-12"></div>
+<div class="grid-blank-region-4" id="grid-blank-22-12"></div>
+<div class="grid-blank-region-1" id="grid-blank-5-3"></div>
+<div class="grid-blank-region-1" id="grid-blank-6-3"></div>
+<div class="grid-blank-region-1" id="grid-blank-7-3"></div>
+<div class="grid-blank-region-1" id="grid-blank-13-3"></div>
+<div class="grid-blank-region-1" id="grid-blank-14-3"></div>
+<div class="grid-blank-region-1" id="grid-blank-15-3"></div>
+<div class="grid-blank-region-2" id="grid-blank-33-3"></div>
+<div class="grid-blank-region-2" id="grid-blank-32-3"></div>
+<div class="grid-blank-region-2" id="grid-blank-31-3"></div>
+<div class="grid-blank-region-2" id="grid-blank-25-3"></div>
+<div class="grid-blank-region-2" id="grid-blank-24-3"></div>
+<div class="grid-blank-region-2" id="grid-blank-23-3"></div>
+<div class="grid-blank-region-3" id="grid-blank-5-11"></div>
+<div class="grid-blank-region-3" id="grid-blank-6-11"></div>
+<div class="grid-blank-region-3" id="grid-blank-7-11"></div>
+<div class="grid-blank-region-3" id="grid-blank-13-11"></div>
+<div class="grid-blank-region-3" id="grid-blank-14-11"></div>
+<div class="grid-blank-region-3" id="grid-blank-15-11"></div>
+<div class="grid-blank-region-4" id="grid-blank-33-11"></div>
+<div class="grid-blank-region-4" id="grid-blank-32-11"></div>
+<div class="grid-blank-region-4" id="grid-blank-31-11"></div>
+<div class="grid-blank-region-4" id="grid-blank-25-11"></div>
+<div class="grid-blank-region-4" id="grid-blank-24-11"></div>
+<div class="grid-blank-region-4" id="grid-blank-23-11"></div>
+<div class="grid-blank-region-1" id="grid-blank-7-4"></div>
+<div class="grid-blank-region-1" id="grid-blank-8-4"></div>
+<div class="grid-blank-region-1" id="grid-blank-9-4"></div>
+<div class="grid-blank-region-1" id="grid-blank-10-4"></div>
+<div class="grid-blank-region-1" id="grid-blank-11-4"></div>
+<div class="grid-blank-region-1" id="grid-blank-12-4"></div>
+<div class="grid-blank-region-1" id="grid-blank-13-4"></div>
+<div class="grid-blank-region-2" id="grid-blank-25-4"></div>
+<div class="grid-blank-region-2" id="grid-blank-26-4"></div>
+<div class="grid-blank-region-2" id="grid-blank-27-4"></div>
+<div class="grid-blank-region-2" id="grid-blank-28-4"></div>
+<div class="grid-blank-region-2" id="grid-blank-29-4"></div>
+<div class="grid-blank-region-2" id="grid-blank-30-4"></div>
+<div class="grid-blank-region-2" id="grid-blank-31-4"></div>
+<div class="grid-blank-region-3" id="grid-blank-7-10"></div>
+<div class="grid-blank-region-3" id="grid-blank-8-10"></div>
+<div class="grid-blank-region-3" id="grid-blank-9-10"></div>
+<div class="grid-blank-region-3" id="grid-blank-10-10"></div>
+<div class="grid-blank-region-3" id="grid-blank-11-10"></div>
+<div class="grid-blank-region-3" id="grid-blank-12-10"></div>
+<div class="grid-blank-region-3" id="grid-blank-13-10"></div>
+<div class="grid-blank-region-4" id="grid-blank-25-10"></div>
+<div class="grid-blank-region-4" id="grid-blank-26-10"></div>
+<div class="grid-blank-region-4" id="grid-blank-27-10"></div>
+<div class="grid-blank-region-4" id="grid-blank-28-10"></div>
+<div class="grid-blank-region-4" id="grid-blank-29-10"></div>
+<div class="grid-blank-region-4" id="grid-blank-30-10"></div>
+<div class="grid-blank-region-4" id="grid-blank-31-10"></div>
+
+<div class="grid-blank-region-1" id="grid-blank-11-5"></div>
+<div class="grid-blank-region-1" id="grid-blank-12-5"></div>
+<div class="grid-blank-region-1" id="grid-blank-13-5"></div>
+<div class="grid-blank-region-1" id="grid-blank-14-5"></div>
+<div class="grid-blank-region-1" id="grid-blank-15-5"></div>
+<div class="grid-blank-region-1" id="grid-blank-16-5"></div>
+<div class="grid-blank-region-1" id="grid-blank-17-5"></div>
+<div class="grid-blank-region-1" id="grid-blank-18-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-20-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-21-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-22-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-23-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-24-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-25-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-26-5"></div>
+<div class="grid-blank-region-2" id="grid-blank-27-5"></div>
+<div class="grid-blank-region-3" id="grid-blank-11-9"></div>
+<div class="grid-blank-region-3" id="grid-blank-12-9"></div>
+<div class="grid-blank-region-3" id="grid-blank-13-9"></div>
+<div class="grid-blank-region-3" id="grid-blank-14-9"></div>
+<div class="grid-blank-region-3" id="grid-blank-15-9"></div>
+<div class="grid-blank-region-3" id="grid-blank-16-9"></div>
+<div class="grid-blank-region-3" id="grid-blank-17-9"></div>
+<div class="grid-blank-region-3" id="grid-blank-18-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-20-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-21-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-22-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-23-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-24-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-25-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-26-9"></div>
+<div class="grid-blank-region-4" id="grid-blank-27-9"></div>
+
+<div class="grid-region" id="grid-region-top-left">{{ regions[1] }}</div>
+<div class="grid-region" id="grid-region-bottom-left">{{ regions[2] }}</div>
+<div class="grid-region" id="grid-region-top-right">{{ regions[3] }}</div>
+<div class="grid-region" id="grid-region-bottom-right">{{ regions[4] }}</div>
+
+<div class="grid-round" id="grid-round-1st-top-left">{{ rounds[1] }}</div>
+<div class="grid-round" id="grid-round-1st-bottom-left">{{ rounds[1] }}</div>
+<div class="grid-round" id="grid-round-1st-top-right">{{ rounds[1] }}</div>
+<div class="grid-round" id="grid-round-1st-bottom-right">{{ rounds[1] }}</div>
+<div class="grid-round" id="grid-round-2nd-top-left">{{ rounds[2] }}</div>
+<div class="grid-round" id="grid-round-2nd-bottom-left">{{ rounds[2] }}</div>
+<div class="grid-round" id="grid-round-2nd-top-right">{{ rounds[2] }}</div>
+<div class="grid-round" id="grid-round-2nd-bottom-right">{{ rounds[2] }}</div>
+<div class="grid-round" id="grid-round-3rd-top-left">{{ rounds[3] }}</div>
+<div class="grid-round" id="grid-round-3rd-bottom-left">{{ rounds[3] }}</div>
+<div class="grid-round" id="grid-round-3rd-top-right">{{ rounds[3] }}</div>
+<div class="grid-round" id="grid-round-3rd-bottom-right">{{ rounds[3] }}</div>
+<div class="grid-round" id="grid-round-4th-top-left">{{ rounds[4] }}</div>
+<div class="grid-round" id="grid-round-4th-bottom-left">{{ rounds[4] }}</div>
+<div class="grid-round" id="grid-round-4th-top-right">{{ rounds[4] }}</div>
+<div class="grid-round" id="grid-round-4th-bottom-right">{{ rounds[4] }}</div>
+<div class="grid-round" id="grid-round-5th-top-left">{{ rounds[5] }}</div>
+<div class="grid-round" id="grid-round-5th-bottom-left">{{ rounds[5] }}</div>
+<div class="grid-round" id="grid-round-5th-top-right">{{ rounds[5] }}</div>
+<div class="grid-round" id="grid-round-5th-bottom-right">{{ rounds[5] }}</div>
+<div class="grid-round" id="grid-round-6th-top-left">{{ rounds[6] }}</div>
+<div class="grid-round" id="grid-round-6th-bottom-left">{{ rounds[6] }}</div>
+<div class="grid-round" id="grid-round-6th-top-right">{{ rounds[6] }}</div>
+<div class="grid-round" id="grid-round-6th-bottom-right">{{ rounds[6] }}</div>
+<div class="grid-round" id="grid-round-7th-top">Winner</div>
+<div class="grid-round" id="grid-round-7th-bottom">Winner</div>
+
+<div class="grid-blank-row" id="grid-blank-row-2">&nbsp;</div>
+<div class="grid-blank-row" id="grid-blank-row-18">&nbsp;</div>
+<div class="grid-blank-row" id="grid-blank-row-20">&nbsp;</div>
+<div class="grid-blank-row" id="grid-blank-row-36">&nbsp;</div>
+<div class="grid-blank-row" id="grid-blank-row-37">&nbsp;</div>

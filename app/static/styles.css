@@ -110,3 +110,12 @@ nav a {
     cursor: pointer;
     padding: 5px 15px;
 }
+
+.game-view-pick {
+    border: 2px solid black;
+    text-align: center;
+}
+
+.game-view-pick .bracket-grid-span{
+    font-size: 12px;
+} 

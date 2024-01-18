@@ -19,7 +19,7 @@
     font-size: 10px;
 }
 
-.bracket-grid-select {
+.bracket-grid-select, .bracket-grid-span {
     width: 100%;
     font-size: 10px;
     box-sizing: border-box;
