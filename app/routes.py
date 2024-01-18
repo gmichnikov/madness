@@ -364,7 +364,7 @@ def make_picks():
             db.session.commit()
             flash('Your picks have been saved.')
             set_is_bracket_valid()
-
+            recalculate_standings()
             return redirect(url_for('make_picks'))
         elif request.form['action'] == 'clear_picks':
             Pick.query.filter_by(user_id=current_user.id).delete()
@@ -375,10 +375,12 @@ def make_picks():
             db.session.commit()
 
             set_is_bracket_valid()
+            recalculate_standings()
             return redirect(url_for('make_picks'))
         elif request.form['action'] == 'fill_in_better_seeds':
             auto_fill_bracket()
             set_is_bracket_valid()
+            recalculate_standings()
             return redirect(url_for('make_picks'))
 
     return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid)
@@ -390,9 +392,7 @@ def add_or_update_pick(pick, team_id, game_id):
         pick = Pick(user_id=current_user.id, game_id=game_id, team_id=team_id)
         db.session.add(pick)
 
-def get_potential_winners(game_id):
-    game = Game.query.get(game_id)
-
+def get_potential_winners(game):
     if game.winning_team_id:
         return [game.winning_team_id]
 
@@ -400,12 +400,12 @@ def get_potential_winners(game_id):
         return [team_id for team_id in [game.team1_id, game.team2_id] if team_id]
 
     # Otherwise, find the two games that lead to this game
-    previous_games = Game.query.filter_by(winner_goes_to_game_id=game_id).all()
+    previous_games = Game.query.filter_by(winner_goes_to_game_id=game.id).all()
     potential_winners = []
 
     # Recursively call this function on the previous games
     for prev_game in previous_games:
-        potential_winners.extend(get_potential_winners(prev_game.id))
+        potential_winners.extend(get_potential_winners(prev_game))
 
     return potential_winners
 
@@ -566,10 +566,11 @@ def recalculate_standings():
     users = User.query.all()
     for user in users:
         user.r1score = user.r2score = user.r3score = user.r4score = user.r5score = user.r6score = 0
+        potential_additional_points = 0
 
         for pick in user.picks:
+            round_points = pick.game.round.points
             if pick.game.winning_team_id is not None and pick.game.winning_team_id == pick.team_id:
-                round_points = pick.game.round.points
                 if pick.game.round_id == 1:
                     user.r1score += round_points
                 elif pick.game.round_id == 2:
@@ -582,8 +583,13 @@ def recalculate_standings():
                     user.r5score += round_points
                 elif pick.game.round_id == 6:
                     user.r6score += round_points
+            if pick.game.winning_team_id is None:
+                if pick.team_id in get_potential_winners(pick.game):
+                    potential_additional_points += round_points
 
-        user.currentscore = user.r1score + user.r2score + user.r3score + user.r4score + user.r5score + user.r6score
+        total_score = user.r1score + user.r2score + user.r3score + user.r4score + user.r5score + user.r6score
+        user.currentscore = total_score
+        user.maxpossiblescore = total_score + potential_additional_points
         db.session.commit()
 
 @app.route('/standings', methods=['GET', 'POST'])

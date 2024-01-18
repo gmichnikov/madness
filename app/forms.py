@@ -125,6 +125,7 @@ class SortStandingsForm(FlaskForm):
         self.sort_field.choices = [
             ('full_name', 'Name'),
             ('currentscore', 'Total Score'),
+            ('maxpossiblescore', 'Max Possible Score'),
             ('champion_team_name', 'Champion')
         ] + [(f'r{round.id}score', f'{round.name}') for round in Round.query.order_by(Round.id).all()]
 
