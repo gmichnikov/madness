@@ -336,7 +336,7 @@ def reset_game_table():
 def make_picks():
     games = Game.query.order_by(Game.id).all()
     teams = Team.query.all()
-    rounds = {round.id: round.name for round in Round.query.all()}
+    rounds = rounds_dict()
     regions = {region.id: region.name for region in Region.query.all()}
     user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
 
@@ -589,13 +589,15 @@ def recalculate_standings():
 @app.route('/standings', methods=['GET', 'POST'])
 @login_required
 def standings():
-    sort_form = SortStandingsForm()
-    sort_field = 'currentscore'
-    sort_order = 'desc'
+    # sort_form = SortStandingsForm()
+    sort_form = SortStandingsForm(sort_field='currentscore', sort_order='desc')
 
     if sort_form.validate_on_submit():
         sort_field = sort_form.sort_field.data
         sort_order = sort_form.sort_order.data
+    else:
+        sort_field = 'currentscore'
+        sort_order = 'desc'
 
     users = User.query.all()
     champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
@@ -604,4 +606,7 @@ def standings():
     
     users.sort(key=lambda x: (getattr(x, sort_field) if sort_field != 'champion_team_name' else getattr(x, 'champion_team_name', "?")), reverse=(sort_order == 'desc'))
 
-    return render_template('standings.html', users=users, sort_form=sort_form)
+    return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict())
+
+def rounds_dict():
+    return {round.id: round.name for round in Round.query.all()}

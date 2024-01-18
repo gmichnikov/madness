@@ -2,34 +2,39 @@
 {% block content %}
     <h1>Standings</h1>
 
-    <form method="POST">
+    <form method="POST" class="standings-sort-form">
         {{ sort_form.hidden_tag() }}
-        <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field() }}</div>
-        <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order() }}</div>
+        <div>{{ sort_form.sort_field() }}</div>
+        <div>{{ sort_form.sort_order() }}</div>
         <div>{{ sort_form.submit() }}</div>
     </form>
-        
+
     <table class="standings-table">
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Round 1 Score</th>
-                <th>Round 2 Score</th>
-
-
-                <th>Current Score</th>
-                <th>Champion Team</th>
+                <th>Total Score</th>
+                <th>Champion</th>
+                <th>{{ rounds[1] }}</th>
+                <th>{{ rounds[2] }}</th>
+                <th>{{ rounds[3] }}</th>
+                <th>{{ rounds[4] }}</th>
+                <th>{{ rounds[5] }}</th>
+                <th>{{ rounds[6] }}</th>
             </tr>
         </thead>
         <tbody>
             {% for user in users %}
                 <tr>
                     <td>{{ user.full_name }}</td>
-                    <td>{{ user.r1score }}</td>
-                    <td>{{ user.r2score }}</td>
-
                     <td>{{ user.currentscore }}</td>
                     <td>{{ user.champion_team_name }}</td>
+                    <td>{{ user.r1score }}</td>
+                    <td>{{ user.r2score }}</td>
+                    <td>{{ user.r3score }}</td>
+                    <td>{{ user.r4score }}</td>
+                    <td>{{ user.r5score }}</td>
+                    <td>{{ user.r6score }}</td>
                 </tr>
             {% endfor %}
         </tbody>

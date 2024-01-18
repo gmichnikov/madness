@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField, RadioField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
+from app.models import Round
 import pytz
 
 class RegistrationForm(FlaskForm):
@@ -119,12 +120,14 @@ class EditProfileForm(FlaskForm):
     submit = SubmitField('Update Profile')
 
 class SortStandingsForm(FlaskForm):
-    sort_field = SelectField('Sort by', choices=[
-        ('full_name', 'Name'),
-        ('r1score', 'Round 1 Score'),
-        ('r2score', 'Round 2 Score'),
-        ('currentscore', 'Current Score'),
-        ('champion_team_name', 'Champion Team')
-    ])
-    sort_order = RadioField('Order', choices=[('asc', 'Ascending'), ('desc', 'Descending')], default='desc')
+    def __init__(self, *args, **kwargs):
+        super(SortStandingsForm, self).__init__(*args, **kwargs)
+        self.sort_field.choices = [
+            ('full_name', 'Name'),
+            ('currentscore', 'Total Score'),
+            ('champion_team_name', 'Champion')
+        ] + [(f'r{round.id}score', f'{round.name}') for round in Round.query.order_by(Round.id).all()]
+
+    sort_field = SelectField('Sort by')
+    sort_order = SelectField('Order', choices=[('asc', 'Ascending'), ('desc', 'Descending')], default='asc')
     submit = SubmitField('Sort')
