@@ -7,10 +7,14 @@
         <h3 class="bracket-invalid">Your most recently saved bracket is not valid.</h3>
     {% endif %}
 
-    <form method="post">
+    <form method="post" id="picks-form">
+        <input type="hidden" name="action" value="" id="action-input">
+
         <button type="submit" name="action" value="save_picks" class="btn btn-primary">Save Picks</button>
-        <button type="submit" name="action" value="clear_picks" class="btn btn-secondary">Clear All Picks</button>
-        <button type="submit" name="action" value="fill_in_better_seeds" class="btn btn-secondary">Fill In Better Seeds</button>
+
+        <button type="button" onclick="submitForm('clear_picks')" class="btn btn-secondary">Clear All Picks</button>
+        <button type="button" onclick="submitForm('fill_in_better_seeds')" class="btn btn-secondary">Fill In Better Seeds</button>
+        
 
         <p>Note that picks are NOT saved automatically. Each time you Save Picks</p>
         <ul>
@@ -20,7 +24,8 @@
         <div class="bracket-grid">
             {% for game in games %}
                 <div class="game-dropdown" id="game{{ game.id }}">
-                    <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select">
+                    <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select" onchange="handleSelectChange();">
+
                         <option value=""></option>
                         {% for team_id in potential_picks_map.get(game.id, []) %}
                             {% set team = teams_dict[team_id] %}
@@ -36,4 +41,16 @@
 
         </div>
     </form>
+
+    <script>
+        function handleSelectChange() {
+            document.getElementById('action-input').value = 'save_picks';
+            document.getElementById('picks-form').submit();
+        }
+
+        function submitForm(actionValue) {
+            document.getElementById('action-input').value = actionValue;
+            document.getElementById('picks-form').submit();
+        }   
+    </script>
 {% endblock %}
