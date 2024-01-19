@@ -6,13 +6,12 @@
         <p>Other users' brackets will be visible once the tournament starts.</p>
     {% endif %}
 
-    <form method="POST" class="standings-sort-form">
+    <form method="POST" class="standings-sort-form" id="standings-sort-form">
         {{ sort_form.hidden_tag() }}
-        <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field() }}</div>
-        <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order() }}</div>
-        <div>{{ sort_form.champion_filter.label }} {{ sort_form.champion_filter() }}</div>
-        <div>{{ sort_form.submit() }}</div>
-    </form>
+        <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field(onchange="this.form.submit()") }}</div>
+        <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order(onchange="this.form.submit()") }}</div>
+        <div>{{ sort_form.champion_filter.label }} {{ sort_form.champion_filter(onchange="this.form.submit()") }}</div>
+    </form>    
 
     <table class="standings-table">
         <thead>
