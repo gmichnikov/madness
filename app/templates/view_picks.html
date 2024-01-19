@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
     <h1>View Picks for {{ user.full_name }}</h1>
-    <a href="{{ url_for('user_profile', user_id=user.id) }}">View {{ user.full_name }}'s Profile</a>
 
     <br>
     <form method="POST" style="display: flex; align-items: center; gap: 10px;">

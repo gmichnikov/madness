@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Cutoff Status</h1>
+    <p>Is it after cutoff? {{ cutoff_status }}</p>
+    <h1>Cutoff Time</h1>
+    <p>{{ cutoff_time }}</p>
+    <h1>Current Time</h1>
+    <p>{{ current_time }}</p>
+{% endblock %}

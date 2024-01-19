@@ -15,19 +15,22 @@
                 <a href="{{ url_for('register') }}">Register</a>
             {% else %}
                 <a href="{{ url_for('logout') }}">Logout</a>
-                <a href="{{ url_for('make_picks') }}">Make Picks</a>
-                <a href="{{ url_for('view_picks', user_id=current_user.id) }}">View Picks</a>
+                <a href="{{ url_for('view_picks', user_id=current_user.id) }}">View My Picks</a>
+
+                {% if not is_after_cutoff %}
+                    <a href="{{ url_for('make_picks') }}">Make Picks</a>
+                    <a href="{{ url_for('user_profile', user_id=current_user.id) }}">Edit Profile</a>
+                {% endif %}
                 <a href="{{ url_for('standings') }}">Standings</a>
-                <a href="{{ url_for('user_profile', user_id=current_user.id) }}">Edit Profile</a>
                 {% if current_user.is_admin %}
                     <br> Admin: 
                     <a href="{{ url_for('admin_view_logs') }}">View Logs</a>
                     <a href="{{ url_for('admin_verify_users') }}">Verify Users</a>
-                    <a href="{{ url_for('admin_set_winners') }}">Set Winners</a>
+                    <a href="{{ url_for('admin_set_winners') }}">Set Game Winners</a>
                     <a href="{{ url_for('admin_reset_password') }}">Reset Passwords</a>
-                    <a href="{{ url_for('admin_manage_regions') }}">Manage Regions</a>
-                    <a href="{{ url_for('admin_manage_teams') }}">Manage Teams</a>
-                    <a href="{{ url_for('admin_manage_rounds') }}">Manage Rounds</a>
+                    <a href="{{ url_for('admin_manage_regions') }}">Edit Regions</a>
+                    <a href="{{ url_for('admin_manage_teams') }}">Edit Teams</a>
+                    <a href="{{ url_for('admin_manage_rounds') }}">Edit Round Points</a>
                 {% endif %}
                 {% if current_user.is_super_admin %}
                     <br> Super Admin: 

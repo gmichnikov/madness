@@ -17,6 +17,12 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+from app.utils import is_after_cutoff
+
+@app.context_processor
+def context_processor():
+    return dict(is_after_cutoff=is_after_cutoff())
+
 from .models import Region, Team, Round, Game
 with app.app_context():
     if Region.query.count() == 0:

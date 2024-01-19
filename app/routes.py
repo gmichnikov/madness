@@ -9,6 +9,7 @@ import csv
 from sqlalchemy import text
 import pytz
 from collections import defaultdict
+from app.utils import is_after_cutoff, get_current_time, get_cutoff_time
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -34,7 +35,7 @@ def load_user(user_id):
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        return render_template('index.html', logged_in=True, full_name=current_user.full_name, email=current_user.email)
+        return render_template('index.html', logged_in=True, user=current_user)
     else:
         return render_template('index.html', logged_in=False)
 
@@ -243,6 +244,9 @@ def admin_view_logs():
 @app.route('/user/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def user_profile(user_id):
+    if is_after_cutoff():
+        return redirect(url_for('standings'))
+
     user = User.query.get_or_404(user_id)
     form = EditProfileForm()
 
@@ -334,6 +338,9 @@ def reset_game_table():
 @app.route('/make_picks', methods=['GET', 'POST'])
 @login_required
 def make_picks():
+    if is_after_cutoff():
+        return redirect(url_for('standings'))
+
     games = Game.query.order_by(Game.id).all()
     teams = Team.query.all()
     rounds = rounds_dict()
@@ -627,6 +634,9 @@ def regions_dict():
 @app.route('/view_picks/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def view_picks(user_id):
+    if not current_user.is_admin and not is_after_cutoff() and user_id != current_user.id:
+        return redirect(url_for('standings'))
+
     user = User.query.get_or_404(user_id)
     games = Game.query.order_by(Game.id).all()
     form = UserSelectionForm()
@@ -643,3 +653,9 @@ def view_picks(user_id):
     user_picks = {pick.game_id: pick.team for pick in Pick.query.filter_by(user_id=user_id).join(Team, Pick.team_id == Team.id)}
 
     return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all())
+
+@app.route('/admin/cutoff_status')
+@admin_required
+@login_required
+def admin_cutoff_status():
+    return render_template('admin/cutoff_status.html', cutoff_status=is_after_cutoff(), current_time = get_current_time(), cutoff_time=get_cutoff_time())
