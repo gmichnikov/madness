@@ -3,7 +3,7 @@
     grid-template-columns: repeat(13, 1fr);
     grid-template-rows: repeat(38, auto);
     grid-gap: 0px 2px;
-    background-color: lightblue;
+    background-color: #efefef;
     padding: 8px;
 }
 
@@ -35,7 +35,7 @@
 .grid-round{
     font-size: 16px;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
-    color: maroon;
+    color: blue;
     text-align: center;
 }
 
@@ -56,13 +56,13 @@
 }
 
 .bracket-first-round-alternating-first-top {
-    color: brown;
-    /* border-top: 1px solid brown; */
+    color: blue;
+    /* border-top: 1px solid blue; */
 }
 
 .bracket-first-round-alternating-first-bottom {
-    color: brown;
-    border-bottom: 1px solid brown;
+    color: blue;
+    border-bottom: 1px solid blue;
 }
 
 .bracket-first-round-alternating-second-bottom {

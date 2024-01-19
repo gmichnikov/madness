@@ -5,7 +5,7 @@
     <p class="{{ 'verified-user' if user.is_verified else 'unverified-user' }}">{{ user.is_verified }}</p>
     <h2>Current Bracket Valid?</h2>
     <p class="{{ 'bracket-valid' if user.is_bracket_valid else 'bracket-invalid' }}">{{ user.is_bracket_valid }}</p>
-    <a href="{{ url_for('view_picks', user_id=user.id) }}">View Picks</a>
+    <a href="{{ url_for('make_picks') }}">Make Picks</a>
 
     <h2>Edit Profile</h2>
     <form method="POST">

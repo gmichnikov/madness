@@ -26,6 +26,10 @@
     background-color: #007bff;
 }
 
+.btn-secondary {
+    background-color: cornflowerblue;
+}
+
 /* CSS for navigation links */
 nav a {
     font-size: 18px; /* Adjust the font size as needed */
@@ -118,4 +122,8 @@ nav a {
 
 .game-view-pick .bracket-grid-span{
     font-size: 12px;
-} 
+}
+
+.bracket-no-pick {
+    color: red;
+}
