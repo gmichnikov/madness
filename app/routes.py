@@ -229,18 +229,38 @@ def super_admin_manage_admins():
 
     return render_template('super_admin/manage_admins.html', form=form, current_admins=current_admins)
 
-@app.route('/admin/view_logs')
+@app.route('/admin/view_logs', methods=['GET', 'POST'])
 @admin_required
 @login_required
 def admin_view_logs():
     user_tz = pytz.timezone(current_user.time_zone)
-    log_entries = LogEntry.query.order_by(LogEntry.timestamp.desc()).all()
+
+    users = User.query.order_by(User.full_name).all()
+    categories = db.session.query(LogEntry.category).distinct().order_by(LogEntry.category).all()
+
+    selected_user = 'Any'
+    selected_category = 'Any'
+
+    if request.method == 'POST':
+        selected_user = request.form.get('user_full_name', 'Any')
+        selected_category = request.form.get('category', 'Any')
+
+        log_entries = LogEntry.query
+        if selected_user != 'Any':
+            log_entries = log_entries.join(User).filter(User.full_name == selected_user)
+        if selected_category != 'Any':
+            log_entries = log_entries.filter(LogEntry.category == selected_category)
+    else:
+        log_entries = LogEntry.query
+
+    log_entries = log_entries.order_by(LogEntry.timestamp.desc()).all()
+
     for log in log_entries:
         localized_timestamp = log.timestamp.replace(tzinfo=pytz.utc).astimezone(user_tz)
         tz_abbr = localized_timestamp.tzname()  # Gets the time zone abbreviation
-        # log.formatted_timestamp = localized_timestamp.strftime('%Y-%m-%d, %I:%M:%S %p')
         log.formatted_timestamp = localized_timestamp.strftime('%Y-%m-%d, %I:%M:%S %p ') + tz_abbr
-    return render_template('admin/view_logs.html', log_entries=log_entries)
+        log.user_full_name = log.current_user.full_name if log.current_user else "Unknown User"
+    return render_template('admin/view_logs.html', log_entries=log_entries, users=users, categories=categories, selected_user=selected_user, selected_category=selected_category)
 
 @app.route('/user/<int:user_id>', methods=['GET', 'POST'])
 @login_required

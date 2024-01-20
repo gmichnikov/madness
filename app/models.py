@@ -66,6 +66,8 @@ class LogEntry(db.Model):
     current_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     description = db.Column(db.Text, nullable=False)
 
+    current_user = db.relationship('User')
+
     def __repr__(self):
         return f'<LogEntry {self.timestamp} - {self.category}>'
     

@@ -190,10 +190,10 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-#admin-users-filter-form {
+#admin-users-filter-form, #logs-filter-form {
     margin-bottom: 12px;
 }
 
-#admin-users-filter-form select {
+#admin-users-filter-form select, #logs-filter-form select {
     margin-right: 12px;
 }

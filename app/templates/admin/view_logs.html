@@ -4,15 +4,36 @@
 
 {% block content %}
     <h1>Log Entries</h1>
+
+    <form method="post" id="logs-filter-form">
+        User: 
+        <select name="user_full_name" onchange="document.getElementById('logs-filter-form').submit();">
+            <option value="Any" {{ 'selected' if selected_user == 'Any' else '' }}>Any</option>
+            {% for user in users %}
+                <option value="{{ user.full_name }}" {{ 'selected' if user.full_name == selected_user else '' }}>{{ user.full_name }}</option>
+            {% endfor %}
+        </select>
+    
+        Category: 
+        <select name="category" onchange="document.getElementById('logs-filter-form').submit();">
+            <option value="Any" {{ 'selected' if selected_category == 'Any' else '' }}>Any</option>
+            {% for category in categories %}
+                <option value="{{ category[0] }}" {{ 'selected' if category[0] == selected_category else '' }}>{{ category[0] }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
     <table class="table-logs">
         <tr>
             <th>Date + Time</th>
+            <th>User</th>
             <th>Category</th>
             <th>Description</th>
         </tr>
         {% for log in log_entries %}
         <tr>
             <td>{{ log.formatted_timestamp }}</td>
+            <td>{{ log.user_full_name }}</td>
             <td>{{ log.category }}</td>
             <td>{{ log.description }}</td>
         </tr>
