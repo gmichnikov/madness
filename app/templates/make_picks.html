@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
 {% block content %}
     <h1>Make Your Picks</h1>
+
     {% if is_bracket_valid %}
-        <h3 class="bracket-valid">Your most recently saved bracket is valid.</h3>
+        <p><span class="bracket-valid">Your most recently saved bracket is valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
     {% else %}
-        <h3 class="bracket-invalid">Your most recently saved bracket is not valid.</h3>
+        <p><span class="bracket-invalid">Your most recently saved bracket is not valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
     {% endif %}
 
     <form method="post" id="picks-form">

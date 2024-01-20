@@ -10,6 +10,7 @@ from sqlalchemy import text
 import pytz
 from collections import defaultdict
 from app.utils import is_after_cutoff, get_current_time, get_cutoff_time
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -351,6 +352,11 @@ def make_picks():
     potential_picks_map = {game.id: get_potential_picks(game.id, return_current_pick=False) for game in games}
 
     is_bracket_valid = current_user.is_bracket_valid
+    user_tz = pytz.timezone(current_user.time_zone)
+    last_save_formatted = None
+    if current_user.last_bracket_save:
+        last_save_localized = current_user.last_bracket_save.replace(tzinfo=pytz.utc).astimezone(user_tz)
+        last_save_formatted = last_save_localized.strftime('%Y-%m-%d, %I:%M:%S %p ') + last_save_localized.tzname()
 
     if request.method == 'POST':
         if request.form['action'] == 'save_picks':
@@ -390,7 +396,7 @@ def make_picks():
             recalculate_standings()
             return redirect(url_for('make_picks'))
 
-    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid)
+    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted)
 
 def add_or_update_pick(pick, team_id, game_id):
     if pick:
@@ -468,6 +474,7 @@ def set_is_bracket_valid():
             is_bracket_valid = False
 
     current_user.is_bracket_valid = is_bracket_valid
+    current_user.last_bracket_save = datetime.utcnow()
     db.session.commit()
 
     if is_bracket_valid:

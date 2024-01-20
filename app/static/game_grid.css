@@ -73,10 +73,12 @@
 
 .bracket-valid {
     color: green;
+    font-weight: 700;
 }
 
 .bracket-invalid {
     color: crimson;
+    font-weight: 700;
 }
 
 #grid-round-1st-top-left { grid-row: 1; grid-column: 1; }
