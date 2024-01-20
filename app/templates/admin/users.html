@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h1>Users Status</h1>
+
+    <form method="post" id="admin-users-filter-form">    
+        Verified: 
+        <select name="verified" onchange="document.getElementById('admin-users-filter-form').submit();">
+            <option value="Any" {{ 'selected' if verified_filter == 'Any' else '' }}>Any</option>
+            <option value="Yes" {{ 'selected' if verified_filter == 'Yes' else '' }}>Yes</option>
+            <option value="No" {{ 'selected' if verified_filter == 'No' else '' }}>No</option>
+        </select>
+
+        Valid Bracket:
+        <select name="valid_bracket" onchange="document.getElementById('admin-users-filter-form').submit();">
+            <option value="Any" {{ 'selected' if valid_bracket_filter == 'Any' else '' }}>Any</option>
+            <option value="Yes" {{ 'selected' if valid_bracket_filter == 'Yes' else '' }}>Yes</option>
+            <option value="No" {{ 'selected' if valid_bracket_filter == 'No' else '' }}>No</option>
+        </select>
+    </form>
+    
+    <table class="table-logs">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Verified</th>
+                <th>Bracket Valid</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.full_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ 'Yes' if user.is_verified else 'No' }}</td>
+                <td>{{ 'Yes' if user.is_bracket_valid else 'No' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

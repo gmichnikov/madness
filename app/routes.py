@@ -666,3 +666,23 @@ def view_picks(user_id):
 @login_required
 def admin_cutoff_status():
     return render_template('admin/cutoff_status.html', cutoff_status=is_after_cutoff(), current_time = get_current_time(), cutoff_time=get_cutoff_time())
+
+@app.route('/admin/users', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_users():
+    valid_bracket_filter = 'Any'
+    verified_filter = 'Any'
+    users = User.query
+
+    if request.method == 'POST':
+        valid_bracket_filter = request.form.get('valid_bracket', 'Any')
+        verified_filter = request.form.get('verified', 'Any')
+
+        if valid_bracket_filter in ['Yes', 'No']:
+            users = users.filter_by(is_bracket_valid=(valid_bracket_filter == 'Yes'))
+        if verified_filter in ['Yes', 'No']:
+            users = users.filter_by(is_verified=(verified_filter == 'Yes'))
+
+    users = users.all()
+    return render_template('admin/users.html', users=users, valid_bracket_filter=valid_bracket_filter, verified_filter=verified_filter)

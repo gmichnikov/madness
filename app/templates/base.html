@@ -24,6 +24,7 @@
                 <a href="{{ url_for('standings') }}">Standings</a>
                 {% if current_user.is_admin %}
                     <br> Admin: 
+                    <a href="{{ url_for('admin_users') }}">Users Status</a>
                     <a href="{{ url_for('admin_view_logs') }}">View Logs</a>
                     <a href="{{ url_for('admin_verify_users') }}">Verify Users</a>
                     <a href="{{ url_for('admin_set_winners') }}">Set Game Winners</a>
