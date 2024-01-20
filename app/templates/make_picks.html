@@ -8,19 +8,27 @@
     {% endif %}
 
     <form method="post" id="picks-form">
+
+        <div>
+            <span>Autosave: </span>
+            <label class="switch">
+                <input type="checkbox" id="autosave-toggle" onchange="toggleAutosave(this.checked);">
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <p style="display: none;" id="autosave-on-note">Autosave ON. Picks will be saved automatically. This may take a couple of seconds. Turn Autosave off to make picks faster and save them yourself.</p>
+
+        <p id="autosave-off-note">Autosave OFF. Picks will NOT be saved automatically. <b>You must click Save Picks to save.</b> Turn Autosave on to change this.</p>
+
+        <p>Either way, Clear All Picks and Fill In Better Seeds will automatically save after clearing/filling.</p>
+
         <input type="hidden" name="action" value="" id="action-input">
 
-        <button type="submit" name="action" value="save_picks" class="btn btn-primary">Save Picks</button>
-
+        <button type="button" onclick="submitForm('save_picks')" class="btn btn-primary" id="save-picks-button">Save Picks</button>
         <button type="button" onclick="submitForm('clear_picks')" class="btn btn-secondary">Clear All Picks</button>
         <button type="button" onclick="submitForm('fill_in_better_seeds')" class="btn btn-secondary">Fill In Better Seeds</button>
-        
 
-        <p>Note that picks are NOT saved automatically. Each time you Save Picks</p>
-        <ul>
-            <li>All dropdowns will be updated to only show available teams, based on your picks in earlier rounds.</li>
-            <li>Picks for later rounds will be backfilled into the associated earlier rounds.</li>
-        </ul>
         <div class="bracket-grid">
             {% for game in games %}
                 <div class="game-dropdown" id="game{{ game.id }}">
@@ -43,14 +51,25 @@
     </form>
 
     <script>
+        var autosaveEnabled = false;
+
+        function toggleAutosave(isChecked) {
+            autosaveEnabled = isChecked;
+            document.getElementById('save-picks-button').style.display = autosaveEnabled ? 'none' : 'inline-block';
+            document.getElementById('autosave-off-note').style.display = autosaveEnabled ? 'none' : 'block';
+            document.getElementById('autosave-on-note').style.display = autosaveEnabled ? 'block' : 'none';
+        }
+
         function handleSelectChange() {
-            document.getElementById('action-input').value = 'save_picks';
-            document.getElementById('picks-form').submit();
+            if (autosaveEnabled) {
+                document.getElementById('action-input').value = 'save_picks';
+                document.getElementById('picks-form').submit();
+            }
         }
 
         function submitForm(actionValue) {
             document.getElementById('action-input').value = actionValue;
             document.getElementById('picks-form').submit();
-        }   
+        }
     </script>
 {% endblock %}
