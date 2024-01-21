@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
+<h1>Set Game Winners</h1>
 <form method="POST">
+    <input type="submit" value="Update Winners" class="btn btn-primary btn-top-margin">
     {% for round_name, regions in games_by_round_and_region.items() %}
         <h2>{{ round_name }}</h2>
         {% for region_name, games in regions.items() %}
@@ -20,6 +22,6 @@
             {% endfor %}
         {% endfor %}
     {% endfor %}
-    <input type="submit" value="Update Winners">
+    <input type="submit" value="Update Winners" class="btn btn-primary btn-top-margin">
 </form>
 {% endblock %}

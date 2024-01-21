@@ -30,6 +30,10 @@
     background-color: cornflowerblue;
 }
 
+.btn-top-margin {
+    margin-top: 8px;
+}
+
 /* CSS for navigation links */
 nav a {
     font-size: 18px; /* Adjust the font size as needed */

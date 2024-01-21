@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>Your Profile</h1>
+    <h1>Edit Your Profile</h1>
+    <p>Email (cannot be changed): {{ user.email }}</p>
     <h2>Verified?</h2>
     <p class="{{ 'verified-user' if user.is_verified else 'unverified-user' }}">{{ user.is_verified }}</p>
     <h2>Current Bracket Valid?</h2>
@@ -18,6 +19,6 @@
         {{ form.tiebreaker_winner() }}<br>
         {{ form.tiebreaker_loser.label }}<br>
         {{ form.tiebreaker_loser() }}<br>
-        {{ form.submit(class="btn btn-primary") }}
+        {{ form.submit(class="btn btn-primary btn-top-margin") }}
     </form>
 {% endblock %}

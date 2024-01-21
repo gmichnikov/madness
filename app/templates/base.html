@@ -38,7 +38,10 @@
                     <a href="{{ url_for('super_admin_manage_admins') }}">Manage Admins</a>
                     <a href="{{ url_for('super_admin_reset_games') }}">Reset Games</a>
                 {% endif %}
-            {% endif %}
+                <br>
+                Logged in: {{ current_user.full_name }} ({{ current_user.email }})
+
+                {% endif %}
         </nav>
     </header>
 
