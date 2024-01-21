@@ -12,15 +12,28 @@
 
     <div class="bracket-grid">
         {% for game in games %}
-            <div class="game-view-pick" id="game{{ game.id }}">
-                <span id="game{{ game.id }}" class="bracket-grid-span {% if game.id not in user_picks %} bracket-no-pick {% endif %}">
-                    {% if game.id in user_picks %}
-                        {{ user_picks[game.id].name }}
-                    {% else %}
-                        No Pick
-                    {% endif %}
-                </span>
-            </div>
+
+        {% set pick_class = 'pick-unmade' %}
+        {% if game.id in user_picks %}
+            {% if game.winning_team_id or user_picks[game.id].id in lost_teams %}
+                {% if user_picks[game.id].id == game.winning_team_id %}
+                    {% set pick_class = 'pick-correct' %}
+                {% else %}
+                    {% set pick_class = 'pick-incorrect' %}
+                {% endif %}
+            {% else %}
+                {% set pick_class = 'pick-undecided' %}
+            {% endif %}
+        {% endif %}
+        <div class="game-view-pick {{ pick_class }}" id="game{{ game.id }}">
+            <span id="game{{ game.id }}" class="bracket-grid-span">
+                {% if game.id in user_picks %}
+                    {{ user_picks[game.id].name }}
+                {% else %}
+                    No Pick
+                {% endif %}
+            </span>
+        </div>
         {% endfor %}
 
         {% include '_shared_grid.html' %}

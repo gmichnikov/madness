@@ -699,8 +699,9 @@ def view_picks(user_id):
     form.process()
 
     user_picks = {pick.game_id: pick.team for pick in Pick.query.filter_by(user_id=user_id).join(Team, Pick.team_id == Team.id)}
+    lost_teams = get_teams_that_lost()
 
-    return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all())
+    return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all(), lost_teams=lost_teams)
 
 @app.route('/admin/cutoff_status')
 @admin_required
@@ -727,3 +728,16 @@ def admin_users():
 
     users = users.all()
     return render_template('admin/users.html', users=users, valid_bracket_filter=valid_bracket_filter, verified_filter=verified_filter)
+
+def get_teams_that_lost():
+    lost_teams = []
+    games = Game.query.all()
+    
+    for game in games:
+        if game.winning_team_id:
+            if game.team1_id != game.winning_team_id:
+                lost_teams.append(game.team1_id)
+            elif game.team2_id != game.winning_team_id:
+                lost_teams.append(game.team2_id)
+
+    return lost_teams

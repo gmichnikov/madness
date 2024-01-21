@@ -128,11 +128,24 @@ nav a {
     font-size: 12px;
 }
 
-.bracket-no-pick {
-    color: red;
+.pick-unmade {
+    color: white;
+    background-color: purple;
 }
 
+.pick-correct {
+    color: white;
+    background-color: green;
+}
 
+.pick-incorrect {
+    background-color: darkred;
+    color: white;
+}
+
+.pick-undecided {
+    color: black;
+}
 
 .switch {
   position: relative;
