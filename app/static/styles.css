@@ -201,3 +201,135 @@ input:checked + .slider:before {
 #admin-users-filter-form select, #logs-filter-form select {
     margin-right: 12px;
 }
+
+/* Header and Nav Styles */
+header {
+    background: navy;
+    color: white;
+    padding: 0.5em;
+}
+
+#navbar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Navigation Links Styles */
+.nav-links {
+    list-style: none;
+    display: flex;
+    padding: 0;
+}
+
+.nav-links li {
+    padding: 0 1em;
+}
+
+.nav-links li a {
+    color: white;
+    text-decoration: none;
+    /* padding: 0.5em 0; */
+    display: block;
+}
+
+.nav-links li a.non-dropdown:hover {
+    background-color: #555;
+    color: #fff;
+}
+
+/* Dropdown Menu Styles */
+.dropdown {
+    position: relative;
+    font-size: 18px;
+    color: yellowgreen;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: darkslategrey;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+
+.dropdown-content li a {
+    color: white; /* Text color for the dropdown items */
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+}
+
+.dropdown-content li:hover {
+    background-color: #ddd; /* Light grey background on hover */
+}
+
+.dropdown-content li a:hover {
+    color: black;
+}
+
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Hamburger Menu Style */
+.nav-menu {
+    display: none;
+    cursor: pointer;
+}
+
+.nav-menu div {
+    width: 30px;
+    height: 4px;
+    background-color: white;
+    margin: 6px 0;
+    transition: all 0.3s;
+}
+
+/* Media Query for Mobile Devices */
+@media screen and (max-width: 768px) {
+    .nav-links {
+        flex-direction: column;
+        width: 100%;
+        display: none;
+    }
+
+    .nav-links li {
+        text-align: center;
+    }
+
+    .nav-menu {
+        display: block;
+    }
+
+    /* When active state is toggled via JavaScript */
+    .nav-links.active {
+        display: flex;
+    }
+
+    .dropdown-content {
+        position: static;
+    }
+}
+
+/* User Info Style */
+.user-info {
+    font-size: 18px;
+    margin-left: auto; /* Move to the far right */
+    padding: 0.5em 1em;
+    color: lightblue;
+}
