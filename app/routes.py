@@ -650,6 +650,27 @@ def standings():
 
     users.sort(key=lambda x: (getattr(x, sort_field) if sort_field != 'champion_team_name' else getattr(x, 'champion_team_name', "?")), reverse=(sort_order == 'desc'))
 
+    if sort_field == 'champion_team_name':
+        for user in users:
+            user.rank = ""
+    else:
+        last_score = None
+        last_rank = 0
+        tie_count = 1
+
+        for user in users:
+            current_score = getattr(user, sort_field)
+
+            if current_score == last_score:
+                user.rank = last_rank  # Tie
+                tie_count += 1
+            else:
+                last_rank += tie_count  # Increment rank by the number of tied users
+                user.rank = last_rank
+                tie_count = 1
+
+            last_score = current_score
+
     return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict())
 
 def rounds_dict():
