@@ -28,6 +28,7 @@
                         <li><a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="non-dropdown">Edit Profile</a></li>
                     {% endif %}
                     <li><a href="{{ url_for('standings') }}" class="non-dropdown">Standings</a></li>
+                    <li><a href="{{ url_for('message_board') }}" class="non-dropdown">Message Board</a></li>
                     <li><a href="{{ url_for('logout') }}" class="non-dropdown">Logout</a></li>
                     {% if current_user.is_admin %}
                         <li class="dropdown">Admin

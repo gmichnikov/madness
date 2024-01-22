@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="create-thread-container">
+    <h1 class="create-thread-title">Create New Thread</h1>
+
+    <form method="post" class="create-thread-form">
+        <div class="form-group">
+            <label for="title">Title:</label>
+            <input type="text" name="title" id="title" maxlength="100" required class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label for="content">Initial Post:</label>
+            <textarea name="content" id="content" maxlength="1000" required class="form-control"></textarea>
+        </div>
+
+        <button type="submit" class="btn-create-thread">Create Thread</button>
+    </form>
+</div>
+{% endblock %}
+

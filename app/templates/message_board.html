@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="message-board">
+    <div class="board-header">
+        <h1>Message Board</h1>
+        <a href="{{ url_for('create_thread') }}" class="create-thread-btn">Create New Thread</a>
+    </div>
+    <ul class="thread-list">
+        {% for thread in threads %}
+            <li class="thread-item">
+                <a href="{{ url_for('thread', thread_id=thread.id) }}" class="thread-title">{{ thread.title }}</a>
+                <div class="thread-meta">
+                    <span class="thread-creator">by {{ thread.creator.full_name }}</span>
+                    <span class="thread-updated">Last updated: {{ thread.last_updated }}</span>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}
+
+

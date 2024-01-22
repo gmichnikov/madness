@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request
 from app import app, db
-from app.models import User, Region, Team, Round, LogEntry, Game, Pick
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm
 from functools import wraps
@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
+CASUAL_DATETIME_FORMAT = '%b %d, %Y, %-I:%M %p '
 
 def admin_required(f):
     @wraps(f)
@@ -741,3 +742,69 @@ def get_teams_that_lost():
                 lost_teams.append(game.team2_id)
 
     return lost_teams
+
+@app.route('/message_board')
+@login_required
+def message_board():
+    threads = Thread.query.all()
+
+    user_tz = pytz.timezone(current_user.time_zone)
+    for thread in threads:
+        last_post = Post.query.filter_by(thread_id=thread.id).order_by(Post.created_at.desc()).first()
+        last_updated_utc = last_post.created_at if last_post else thread.created_at
+        localized_last_updated = last_updated_utc.replace(tzinfo=pytz.utc).astimezone(user_tz)
+        thread.last_updated = localized_last_updated.strftime(CASUAL_DATETIME_FORMAT) + localized_last_updated.tzname()
+
+    # Sort threads by last updated time in descending order
+    threads.sort(key=lambda x: x.last_updated, reverse=True)
+
+    return render_template('message_board.html', threads=threads)
+
+@app.route('/create_thread', methods=['GET', 'POST'])
+@login_required
+def create_thread():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+
+        if not title or not content:
+            flash('Title and content are required.')
+            return redirect(url_for('create_thread'))
+
+        new_thread = Thread(title=title[:100], creator_id=current_user.id)
+        db.session.add(new_thread)
+        db.session.commit()
+
+        new_post = Post(content=content[:1000], author_id=current_user.id, thread_id=new_thread.id)
+        db.session.add(new_post)
+        db.session.commit()
+
+        flash('New thread created.')
+        return redirect(url_for('message_board'))
+
+    return render_template('create_thread.html')
+
+@app.route('/thread/<int:thread_id>', methods=['GET', 'POST'])
+@login_required
+def thread(thread_id):
+    thread = Thread.query.get_or_404(thread_id)
+    posts = Post.query.filter_by(thread_id=thread_id).order_by(Post.created_at.desc()).all()
+
+    user_tz = pytz.timezone(current_user.time_zone)
+    for post in posts:
+        localized_timestamp = post.created_at.replace(tzinfo=pytz.utc).astimezone(user_tz)
+        post.formatted_timestamp = localized_timestamp.strftime(CASUAL_DATETIME_FORMAT)  + localized_timestamp.tzname()
+
+    if request.method == 'POST':
+        content = request.form.get('content')
+
+        if not content:
+            flash('Post content cannot be empty.')
+        else:
+            new_post = Post(content=content[:1000], author_id=current_user.id, thread_id=thread.id)
+            db.session.add(new_post)
+            db.session.commit()
+            flash('Your post has been added.')
+            return redirect(url_for('thread', thread_id=thread_id))
+
+    return render_template('thread.html', thread=thread, posts=posts)

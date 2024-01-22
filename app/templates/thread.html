@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="thread-container">
+    <h1 class="single-thread-title">{{ thread.title }}</h1>
+
+    <form method="post" class="new-post-form">
+        <textarea name="content" id="content" maxlength="1000" required placeholder="Write your post here..."></textarea>
+        <button type="submit" class="btn-add-post">Add Post</button>
+    </form>
+
+    <div class="posts-container">
+        {% for post in posts %}
+            <div class="post">
+                <div class="post-meta">
+                    <span class="post-author">{{ post.author.full_name }}</span>
+                    <span class="post-timestamp">{{ post.formatted_timestamp }}</span>
+                </div>
+                <div class="post-content">{{ post.content }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+
