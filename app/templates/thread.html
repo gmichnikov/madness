@@ -2,18 +2,35 @@
 {% block content %}
 <div class="thread-container">
     <h1 class="single-thread-title">{{ thread.title }}</h1>
-
+    {% if current_user.is_admin %}
+        {% if thread.hidden %}
+            <span class="admin-action">[Hidden]</span>
+            <a href="{{ url_for('unhide_thread', thread_id=thread.id) }}">Unhide Thread</a>
+        {% else %}
+            <a href="{{ url_for('hide_thread', thread_id=thread.id) }}">Hide Thread</a>
+        {% endif %}
+    {% endif %}
+    <br>
     <form method="post" class="new-post-form">
         <textarea name="content" id="content" maxlength="1000" required placeholder="Write your post here..."></textarea>
         <button type="submit" class="btn-add-post">Add Post</button>
     </form>
 
+
     <div class="posts-container">
         {% for post in posts %}
-            <div class="post">
+            <div class="post {% if post.hidden %}hidden{% endif %}">
                 <div class="post-meta">
                     <span class="post-author">{{ post.author.full_name }}</span>
                     <span class="post-timestamp">{{ post.formatted_timestamp }}</span>
+                    {% if current_user.is_admin %}
+                        {% if post.hidden %}
+                            <span class="admin-action">[Hidden]</span>
+                            <a href="{{ url_for('unhide_post', post_id=post.id) }}">Unhide Post</a>
+                        {% else %}
+                            <a href="{{ url_for('hide_post', post_id=post.id) }}">Hide Post</a>
+                        {% endif %}
+                    {% endif %}
                 </div>
                 <div class="post-content">{{ post.content }}</div>
             </div>

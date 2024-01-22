@@ -746,7 +746,10 @@ def get_teams_that_lost():
 @app.route('/message_board')
 @login_required
 def message_board():
-    threads = Thread.query.all()
+    if current_user.is_admin:
+        threads = Thread.query.order_by(Thread.created_at.desc()).all()
+    else:
+        threads = Thread.query.filter_by(hidden=False).order_by(Thread.created_at.desc()).all()
 
     user_tz = pytz.timezone(current_user.time_zone)
     for thread in threads:
@@ -790,6 +793,11 @@ def thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
     posts = Post.query.filter_by(thread_id=thread_id).order_by(Post.created_at.desc()).all()
 
+    if current_user.is_admin:
+        posts = Post.query.filter_by(thread_id=thread_id).order_by(Post.created_at.desc()).all()
+    else:
+        posts = Post.query.filter_by(thread_id=thread_id).filter_by(hidden=False).order_by(Post.created_at.desc()).all()
+
     user_tz = pytz.timezone(current_user.time_zone)
     for post in posts:
         localized_timestamp = post.created_at.replace(tzinfo=pytz.utc).astimezone(user_tz)
@@ -808,3 +816,35 @@ def thread(thread_id):
             return redirect(url_for('thread', thread_id=thread_id))
 
     return render_template('thread.html', thread=thread, posts=posts)
+
+@app.route('/hide_thread/<int:thread_id>')
+@admin_required
+def hide_thread(thread_id):
+    thread = Thread.query.get_or_404(thread_id)
+    thread.hidden = True
+    db.session.commit()
+    return redirect(url_for('message_board'))
+
+@app.route('/unhide_thread/<int:thread_id>')
+@admin_required
+def unhide_thread(thread_id):
+    thread = Thread.query.get_or_404(thread_id)
+    thread.hidden = False
+    db.session.commit()
+    return redirect(url_for('message_board'))
+
+@app.route('/hide_post/<int:post_id>')
+@admin_required
+def hide_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    post.hidden = True
+    db.session.commit()
+    return redirect(url_for('thread', thread_id=post.thread_id))
+
+@app.route('/unhide_post/<int:post_id>')
+@admin_required
+def unhide_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    post.hidden = False
+    db.session.commit()
+    return redirect(url_for('thread', thread_id=post.thread_id))

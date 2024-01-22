@@ -108,6 +108,7 @@ class Thread(db.Model):
     title = db.Column(db.String(255), nullable=False)
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    hidden = db.Column(db.Boolean, default=False)
 
     creator = db.relationship('User')
     posts = db.relationship('Post', backref='thread', lazy='dynamic')
@@ -118,5 +119,6 @@ class Post(db.Model):
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     thread_id = db.Column(db.Integer, db.ForeignKey('thread.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    hidden = db.Column(db.Boolean, default=False)
 
     author = db.relationship('User')
