@@ -96,3 +96,88 @@ def init_db_command():
     click.echo('Initialized the database.')
 
 app.cli.add_command(init_db_command)
+
+def update_team_names():
+    from .models import Team
+    team_updates = {
+        1: 'Siena',
+        2: 'Rutgers',
+        3: 'Wagner',
+        4: 'Marist',
+        5: 'Wofford',
+        6: 'Elon',
+        7: 'Troy',
+        8: 'Iona',
+        9: 'Yale',
+        10: 'Duke',
+        11: 'Rider',
+        12: 'Brown',
+        13: 'Drake',
+        14: 'Davidson',
+        15: 'Lamar',
+        16: 'Miami',
+        17: 'Dartmouth',
+        18: 'Boston',
+        19: 'Lafayette',
+        20: 'Merrimack',
+        21: 'DePaul',
+        22: 'Butler',
+        23: 'Bryant',
+        24: 'Towson',
+        25: 'Mercer',
+        26: 'Lehigh',
+        27: 'Manhattan',
+        28: 'Furman',
+        29: 'Temple',
+        30: 'Baylor',
+        31: 'Purdue',
+        32: 'Xavier',
+        33: 'Drexel',
+        34: 'Auburn',
+        35: 'Howard',
+        36: 'Seattle',
+        37: 'Cornell',
+        38: 'Harvard',
+        39: 'Stetson',
+        40: 'Bradley',
+        41: 'Liberty',
+        42: 'Providence',
+        43: 'Niagara',
+        44: 'Clemson',
+        45: 'Utah',
+        46: 'Radford',
+        47: 'Samford',
+        48: 'Gonzaga',
+        49: 'Belmont',
+        50: 'Hofstra',
+        51: 'Fordham',
+        52: 'Oakland',
+        53: 'Colgate',
+        54: 'Hampton',
+        55: 'Syracuse',
+        56: 'Canisius',
+        57: 'La Salle',
+        58: 'Ohio',
+        59: 'Campbell',
+        60: 'Marshall',
+        61: 'Longwood',
+        62: 'Maine',
+        63: 'Miami',
+        64: 'Winthrop'
+    }
+
+    for team_id, team_name in team_updates.items():
+        team = Team.query.get(team_id)
+        if team:
+            team.name = team_name
+            db.session.add(team)
+    
+    db.session.commit()
+
+@click.command('update-team-names')
+@with_appcontext
+def update_team_names_command():
+    update_team_names()
+    click.echo('Updated team names.')
+
+app.cli.add_command(update_team_names_command)
