@@ -783,6 +783,11 @@ def create_thread():
         db.session.commit()
 
         flash('New thread created.')
+
+        log_entry = LogEntry(category='Create Thread', current_user_id=current_user.id, description=f"{current_user.email} created thread \"{title}\"")
+        db.session.add(log_entry)
+        db.session.commit()
+
         return redirect(url_for('message_board'))
 
     return render_template('create_thread.html')
@@ -823,6 +828,8 @@ def thread(thread_id):
 def hide_thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
     thread.hidden = True
+    log_entry = LogEntry(category='Hide Thread', current_user_id=current_user.id, description=f"Hid thread \"{thread.title}\"")
+    db.session.add(log_entry)
     db.session.commit()
     return redirect(url_for('message_board'))
 
@@ -831,6 +838,8 @@ def hide_thread(thread_id):
 def unhide_thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
     thread.hidden = False
+    log_entry = LogEntry(category='Unhide Thread', current_user_id=current_user.id, description=f"Unhid thread \"{thread.title}\"")
+    db.session.add(log_entry)
     db.session.commit()
     return redirect(url_for('message_board'))
 
@@ -839,6 +848,8 @@ def unhide_thread(thread_id):
 def hide_post(post_id):
     post = Post.query.get_or_404(post_id)
     post.hidden = True
+    log_entry = LogEntry(category='Hide Post', current_user_id=current_user.id, description=f"Hid post on thread \"{post.thread.title}\"")
+    db.session.add(log_entry)
     db.session.commit()
     return redirect(url_for('thread', thread_id=post.thread_id))
 
@@ -847,5 +858,7 @@ def hide_post(post_id):
 def unhide_post(post_id):
     post = Post.query.get_or_404(post_id)
     post.hidden = False
+    log_entry = LogEntry(category='Unhide Post', current_user_id=current_user.id, description=f"Unhid post on thread \"{post.thread.title}\"")
+    db.session.add(log_entry)
     db.session.commit()
     return redirect(url_for('thread', thread_id=post.thread_id))
