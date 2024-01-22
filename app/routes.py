@@ -791,11 +791,12 @@ def create_thread():
 @login_required
 def thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
-    posts = Post.query.filter_by(thread_id=thread_id).order_by(Post.created_at.desc()).all()
 
     if current_user.is_admin:
         posts = Post.query.filter_by(thread_id=thread_id).order_by(Post.created_at.desc()).all()
     else:
+        if thread.hidden:
+            return redirect(url_for('message_board'))
         posts = Post.query.filter_by(thread_id=thread_id).filter_by(hidden=False).order_by(Post.created_at.desc()).all()
 
     user_tz = pytz.timezone(current_user.time_zone)
