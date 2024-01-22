@@ -54,7 +54,9 @@
                     {% endif %}
                 {% endif %}
             </ul>
-            <div class="user-info">Logged in: {{ current_user.email }}</div>
+            {% if current_user.is_authenticated %}
+                <div class="user-info">Logged in: {{ current_user.email }}</div>
+            {% endif %}
         </nav>
     </header>
     <main>
