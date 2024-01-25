@@ -1,0 +1,66 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.hero {
+    background-image: url('basketballs-hero.jpg');
+    height: 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    color: white;
+    padding-top: 20px;
+    padding-left: 180px;
+}
+
+.hero .content h1 {
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'Pacifico', cursive;
+}
+
+.hero .buttons {
+    display: flex;
+    justify-content: center;
+}
+
+.hero button {
+    background-color: orangered;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.hero button:hover {
+    background-color: darkorange;
+}
+
+
+/* Responsive styles for screens smaller than 768px (common breakpoint for mobile devices) */
+@media (max-width: 768px) {
+    .hero {
+        padding: 20px; /* Reduced padding */
+        text-align: center; /* Center text for mobile */
+    }
+
+    .hero .content h1 {
+        font-size: 24px; /* Smaller font size */
+    }
+
+    .hero .buttons {
+        flex-direction: column; /* Stack buttons vertically */
+        gap: 10px; /* Add space between buttons */
+    }
+
+    .hero button {
+        width: 100%;
+    }
+}

@@ -39,7 +39,11 @@ def index():
     if current_user.is_authenticated:
         return render_template('index.html', logged_in=True, user=current_user)
     else:
-        return render_template('index.html', logged_in=False)
+        return render_template('hero.html', logged_in=False)
+
+@app.route('/hero')
+def hero():
+    return render_template('hero.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
