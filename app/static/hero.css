@@ -49,6 +49,7 @@ body, html {
     .hero {
         padding: 20px; /* Reduced padding */
         text-align: center; /* Center text for mobile */
+        background-position: calc(50% + 200px) center;
     }
 
     .hero .content h1 {
