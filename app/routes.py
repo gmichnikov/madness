@@ -57,7 +57,7 @@ def hero():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
         if user:
             flash('Email already registered.')
             return redirect(url_for('register'))
@@ -67,7 +67,8 @@ def register():
             full_name=form.full_name.data,
             time_zone=form.time_zone.data,
             tiebreaker_winner=form.tiebreaker_winner.data,
-            tiebreaker_loser=form.tiebreaker_loser.data
+            tiebreaker_loser=form.tiebreaker_loser.data,
+            pool_id=POOL_ID
         )
         new_user.set_password(form.password.data)
         # Automatically make user with ADMIN_EMAIL an admin
@@ -90,7 +91,7 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
         if user and user.check_password(form.password.data):
             login_user(user)
             return redirect(url_for('index'))
@@ -109,10 +110,10 @@ def logout():
 @admin_required
 def admin_reset_password():
     form = AdminPasswordResetForm()
-    form.email.choices = [(user.email, user.email) for user in User.query.all()]
+    form.email.choices = [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()]
 
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
+        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
         if user:
             user.set_password(form.new_password.data)
             db.session.commit()
@@ -222,13 +223,13 @@ def super_admin_manage_admins():
         return redirect(url_for('index'))
 
     form = AdminStatusForm()
-    form.user_email.choices = [(user.id, user.email) for user in User.query.filter(User.is_super_admin == False)]
+    form.user_email.choices = [(user.id, user.email) for user in User.query.filter(User.is_super_admin == False, User.pool_id == POOL_ID)]
 
-    current_admins = User.query.filter_by(is_admin=True).all()
+    current_admins = User.query.filter_by(is_admin=True, pool_id=POOL_ID).all()
 
     if request.method == 'POST':
         if form.validate_on_submit():
-            user = User.query.get(form.user_email.data)
+            user = User.query.filter_by(id=form.user_email.data, pool_id=POOL_ID).first()
             if user:
                 user.is_admin = form.is_admin.data
                 db.session.commit()
@@ -248,7 +249,7 @@ def super_admin_manage_admins():
 def admin_view_logs():
     user_tz = pytz.timezone(current_user.time_zone)
 
-    users = User.query.order_by(User.full_name).all()
+    users = User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()
     categories = db.session.query(LogEntry.category).distinct().order_by(LogEntry.category).all()
 
     selected_user = 'Any'
@@ -258,13 +259,13 @@ def admin_view_logs():
         selected_user = request.form.get('user_full_name', 'Any')
         selected_category = request.form.get('category', 'Any')
 
-        log_entries = LogEntry.query
+        log_entries = LogEntry.query.join(User, LogEntry.current_user_id == User.id).filter(User.pool_id == POOL_ID)
         if selected_user != 'Any':
-            log_entries = log_entries.join(User).filter(User.full_name == selected_user)
+            log_entries = log_entries.filter(User.full_name == selected_user)
         if selected_category != 'Any':
             log_entries = log_entries.filter(LogEntry.category == selected_category)
     else:
-        log_entries = LogEntry.query
+        log_entries = LogEntry.query.join(User, LogEntry.current_user_id == User.id).filter(User.pool_id == POOL_ID)
 
     log_entries = log_entries.order_by(LogEntry.timestamp.desc()).all()
 
@@ -282,6 +283,9 @@ def user_profile(user_id):
         return redirect(url_for('standings'))
 
     user = User.query.get_or_404(user_id)
+    if user.pool_id != POOL_ID:
+        return redirect(url_for('standings'))
+
     form = EditProfileForm()
 
     if user_id != current_user.id:
@@ -311,14 +315,14 @@ def user_profile(user_id):
 @app.route('/users')
 @login_required
 def users():
-    users = User.query.order_by(User.full_name).all()
+    users = User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()
     return render_template('users.html', users=users)
 
 @app.route('/admin/verify_users', methods=['GET', 'POST'])
 @admin_required
 @login_required
 def admin_verify_users():
-    users = User.query.order_by(User.full_name).all()
+    users = User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()
 
     if request.method == 'POST':
         for user in users:
@@ -653,7 +657,7 @@ def standings():
         sort_order = 'desc'
         champion_filter = 'Any'
 
-    users = User.query.all()
+    users = User.query.filter(User.pool_id == POOL_ID).all()
     champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
     for user in users:
         user.champion_team_name = champion_picks.get(user.id, "?")
@@ -699,9 +703,12 @@ def view_picks(user_id):
         return redirect(url_for('standings'))
 
     user = User.query.get_or_404(user_id)
+    if user.pool_id != POOL_ID:
+        return redirect(url_for('standings'))
+
     games = Game.query.order_by(Game.id).all()
     form = UserSelectionForm()
-    form.user.choices = [(u.id, u.full_name) for u in User.query.order_by(User.full_name).all()]
+    form.user.choices = [(u.id, u.full_name) for u in User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()]
 
     if form.validate_on_submit():
         selected_user_id = form.user.data
@@ -728,7 +735,7 @@ def admin_cutoff_status():
 def admin_users():
     valid_bracket_filter = 'Any'
     verified_filter = 'Any'
-    users = User.query
+    users = User.query.filter(User.pool_id == POOL_ID)
 
     if request.method == 'POST':
         valid_bracket_filter = request.form.get('valid_bracket', 'Any')
@@ -759,10 +766,9 @@ def get_teams_that_lost():
 @login_required
 def message_board():
     if current_user.is_admin:
-        threads = Thread.query.order_by(Thread.created_at.desc()).all()
+        threads = Thread.query.join(User, Thread.creator_id == User.id).filter(User.pool_id == POOL_ID).order_by(Thread.created_at.desc()).all()
     else:
-        threads = Thread.query.filter_by(hidden=False).order_by(Thread.created_at.desc()).all()
-
+        threads = Thread.query.join(User, Thread.creator_id == User.id).filter(User.pool_id == POOL_ID, Thread.hidden == False).order_by(Thread.created_at.desc()).all()
     user_tz = pytz.timezone(current_user.time_zone)
     for thread in threads:
         last_post = Post.query.filter_by(thread_id=thread.id).order_by(Post.created_at.desc()).first()
@@ -808,6 +814,8 @@ def create_thread():
 @login_required
 def thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
+    if thread.creator.pool_id != POOL_ID:
+        return redirect(url_for('message_board'))
 
     if current_user.is_admin:
         posts = Post.query.filter_by(thread_id=thread_id).order_by(Post.created_at.desc()).all()

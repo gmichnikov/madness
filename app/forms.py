@@ -3,11 +3,13 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, Intege
 from wtforms.validators import DataRequired, Email, Length, NumberRange
 from app.models import Round, Team, Pick, User
 import pytz
+import os
 
 EMAIL = 'Email (used for login, will only be shown to admins)'
 FULL_NAME = 'Full Name (will be shown to all users, please enter your real name, e.g. John Doe)'
 TIEBREAKER_1 = 'Tiebreaker 1: Winner\'s Score in Championship Game'
 TIEBREAKER_2 = 'Tiebreaker 2: Loser\'s Score in Championship Game'
+POOL_ID = int(os.getenv('POOL_ID'))
 
 class RegistrationForm(FlaskForm):
     email = StringField(EMAIL, validators=[DataRequired(), Email()])
@@ -134,7 +136,7 @@ class SortStandingsForm(FlaskForm):
             ('champion_team_name', 'Champion')
         ] + [(f'r{round.id}score', f'{round.name}') for round in Round.query.order_by(Round.id).all()]
 
-        champion_teams = set(pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id))
+        champion_teams = set(pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id).join(User, Pick.user_id == User.id).filter(User.pool_id == POOL_ID))
         self.champion_filter.choices = [('Any', 'Any')] + [(team, team) for team in sorted(champion_teams)]
 
     sort_field = SelectField('Sort by')
