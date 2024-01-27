@@ -35,6 +35,10 @@ def pool_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
 # Initialize the LoginManager
 login_manager = LoginManager()
 login_manager.init_app(app)
