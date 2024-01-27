@@ -771,7 +771,8 @@ def admin_users():
             users = users.filter_by(is_verified=(verified_filter == 'Yes'))
 
     users = users.all()
-    return render_template('admin/users.html', users=users, valid_bracket_filter=valid_bracket_filter, verified_filter=verified_filter)
+    user_emails = ', '.join([user.email for user in users])
+    return render_template('admin/users.html', users=users, valid_bracket_filter=valid_bracket_filter, verified_filter=verified_filter, user_emails=user_emails)
 
 def get_teams_that_lost():
     lost_teams = []
