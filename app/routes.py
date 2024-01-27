@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request
 from app import app, db
-from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm
 from functools import wraps
@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL')
+POOL_ID = int(os.getenv('POOL_ID'))
 CASUAL_DATETIME_FORMAT = '%b %d, %Y, %-I:%M %p '
 
 def admin_required(f):
@@ -36,10 +37,17 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
+    pool_name = 'Default Pool Name'
+
+    if POOL_ID:
+        pool = Pool.query.filter_by(id=POOL_ID).first()
+        if pool:
+            pool_name = pool.name
+
     if current_user.is_authenticated:
-        return render_template('index.html', logged_in=True, user=current_user)
+        return render_template('index.html', logged_in=True, user=current_user, pool_name=pool_name)
     else:
-        return render_template('hero.html', logged_in=False)
+        return render_template('hero.html', logged_in=False, pool_name=pool_name)
 
 @app.route('/hero')
 def hero():

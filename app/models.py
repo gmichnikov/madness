@@ -5,6 +5,13 @@ from datetime import datetime
 
 from app import db
 
+class Pool(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+
+    def __repr__(self):
+        return f'<Pool {self.name}>'
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -26,6 +33,9 @@ class User(db.Model, UserMixin):
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     is_bracket_valid = db.Column(db.Boolean, default=False, nullable=False)
     last_bracket_save = db.Column(db.DateTime, nullable=True)
+    pool_id = db.Column(db.Integer, db.ForeignKey('pool.id'), nullable=True)
+
+    pool = db.relationship('Pool', backref='users')
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
