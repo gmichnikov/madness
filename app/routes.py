@@ -27,6 +27,14 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def pool_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.pool_id != POOL_ID:
+            return redirect(url_for('logout'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Initialize the LoginManager
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -107,6 +115,7 @@ def logout():
 
 @app.route('/admin/reset_password', methods=['GET', 'POST'])
 @login_required
+@pool_required
 @admin_required
 def admin_reset_password():
     form = AdminPasswordResetForm()
@@ -130,6 +139,7 @@ def admin_reset_password():
 
 @app.route('/admin/manage_regions', methods=['GET', 'POST'])
 @login_required
+@pool_required
 @admin_required
 def admin_manage_regions():
     form = ManageRegionsForm()
@@ -160,6 +170,7 @@ def admin_manage_regions():
 
 @app.route('/admin/manage_teams', methods=['GET', 'POST'])
 @login_required
+@pool_required
 @admin_required
 def admin_manage_teams():
     form = ManageTeamsForm()
@@ -189,6 +200,7 @@ def admin_manage_teams():
 
 @app.route('/admin/manage_rounds', methods=['GET', 'POST'])
 @login_required
+@pool_required
 @admin_required
 def admin_manage_rounds():
     form = ManageRoundsForm()
@@ -218,6 +230,7 @@ def admin_manage_rounds():
 
 @app.route('/super_admin/manage_admins', methods=['GET', 'POST'])
 @login_required
+@pool_required
 def super_admin_manage_admins():
     if not current_user.is_super_admin:
         return redirect(url_for('index'))
@@ -245,6 +258,7 @@ def super_admin_manage_admins():
 
 @app.route('/admin/view_logs', methods=['GET', 'POST'])
 @admin_required
+@pool_required
 @login_required
 def admin_view_logs():
     user_tz = pytz.timezone(current_user.time_zone)
@@ -277,6 +291,7 @@ def admin_view_logs():
     return render_template('admin/view_logs.html', log_entries=log_entries, users=users, categories=categories, selected_user=selected_user, selected_category=selected_category)
 
 @app.route('/user/<int:user_id>', methods=['GET', 'POST'])
+@pool_required
 @login_required
 def user_profile(user_id):
     if is_after_cutoff():
@@ -313,6 +328,7 @@ def user_profile(user_id):
     return render_template('edit_user_profile.html', form=form, user=user)
 
 @app.route('/users')
+@pool_required
 @login_required
 def users():
     users = User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()
@@ -320,6 +336,7 @@ def users():
 
 @app.route('/admin/verify_users', methods=['GET', 'POST'])
 @admin_required
+@pool_required
 @login_required
 def admin_verify_users():
     users = User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()
@@ -339,6 +356,7 @@ def admin_verify_users():
     return render_template('admin/verify_users.html', users=users)
 
 @app.route('/super_admin/reset_games', methods=['GET', 'POST'])
+@pool_required
 @login_required
 def super_admin_reset_games():
     if not current_user.is_super_admin:
@@ -374,6 +392,7 @@ def reset_game_table():
                 db.session.commit()
 
 @app.route('/make_picks', methods=['GET', 'POST'])
+@pool_required
 @login_required
 def make_picks():
     if is_after_cutoff():
@@ -549,6 +568,7 @@ def auto_fill_bracket():
 
 @app.route('/admin/set_winners', methods=['GET', 'POST'])
 @admin_required
+@pool_required
 @login_required
 def admin_set_winners():
     games = Game.query.filter(Game.team1_id.isnot(None), 
@@ -645,6 +665,7 @@ def recalculate_standings():
 
 @app.route('/standings', methods=['GET', 'POST'])
 @login_required
+@pool_required
 def standings():
     sort_form = SortStandingsForm(sort_field='currentscore', sort_order='desc', champion_filter = 'Any')
 
@@ -698,6 +719,7 @@ def regions_dict():
 
 @app.route('/view_picks/<int:user_id>', methods=['GET', 'POST'])
 @login_required
+@pool_required
 def view_picks(user_id):
     if not current_user.is_admin and not is_after_cutoff() and user_id != current_user.id:
         return redirect(url_for('standings'))
@@ -725,11 +747,13 @@ def view_picks(user_id):
 
 @app.route('/admin/cutoff_status')
 @admin_required
+@pool_required
 @login_required
 def admin_cutoff_status():
     return render_template('admin/cutoff_status.html', cutoff_status=is_after_cutoff(), current_time = get_current_time(), cutoff_time=get_cutoff_time())
 
 @app.route('/admin/users', methods=['GET', 'POST'])
+@pool_required
 @login_required
 @admin_required
 def admin_users():
@@ -764,6 +788,7 @@ def get_teams_that_lost():
 
 @app.route('/message_board')
 @login_required
+@pool_required
 def message_board():
     if current_user.is_admin:
         threads = Thread.query.join(User, Thread.creator_id == User.id).filter(User.pool_id == POOL_ID).order_by(Thread.created_at.desc()).all()
@@ -783,6 +808,7 @@ def message_board():
 
 @app.route('/create_thread', methods=['GET', 'POST'])
 @login_required
+@pool_required
 def create_thread():
     if request.method == 'POST':
         title = request.form.get('title')
@@ -812,6 +838,7 @@ def create_thread():
 
 @app.route('/thread/<int:thread_id>', methods=['GET', 'POST'])
 @login_required
+@pool_required
 def thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
     if thread.creator.pool_id != POOL_ID:
@@ -845,6 +872,7 @@ def thread(thread_id):
 
 @app.route('/hide_thread/<int:thread_id>')
 @admin_required
+@pool_required
 def hide_thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
     thread.hidden = True
@@ -855,6 +883,7 @@ def hide_thread(thread_id):
 
 @app.route('/unhide_thread/<int:thread_id>')
 @admin_required
+@pool_required
 def unhide_thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
     thread.hidden = False
@@ -865,6 +894,7 @@ def unhide_thread(thread_id):
 
 @app.route('/hide_post/<int:post_id>')
 @admin_required
+@pool_required
 def hide_post(post_id):
     post = Post.query.get_or_404(post_id)
     post.hidden = True
@@ -874,6 +904,7 @@ def hide_post(post_id):
     return redirect(url_for('thread', thread_id=post.thread_id))
 
 @app.route('/unhide_post/<int:post_id>')
+@pool_required
 @admin_required
 def unhide_post(post_id):
     post = Post.query.get_or_404(post_id)
