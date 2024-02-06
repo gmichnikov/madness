@@ -22,14 +22,16 @@
                     <li><a href="{{ url_for('login') }}" class="non-dropdown">Login</a></li>
                     <li><a href="{{ url_for('register') }}" class="non-dropdown">Register</a></li>
                 {% else %}
-                    <li><a href="{{ url_for('view_picks', user_id=current_user.id) }}" class="non-dropdown">View Picks <i class="fa-regular fa-eye"></i></a></li>
+                {% if not is_after_cutoff %}
+                    <li><a href="{{ url_for('make_picks') }}" class="non-dropdown">Your Bracket <i class="fa-solid fa-dice"></i></a></li>
+                    <li><a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="non-dropdown">Profile <i class="fa-solid fa-pencil"></i></a></li>
+                {% endif %}
+                {% if is_after_cutoff %}
+                    <li><a href="{{ url_for('view_picks', user_id=current_user.id) }}" class="non-dropdown">Brackets <i class="fa-regular fa-eye"></i></a></li>
+                {% endif %}
     
-                    {% if not is_after_cutoff %}
-                        <li><a href="{{ url_for('make_picks') }}" class="non-dropdown">Make Picks <i class="fa-solid fa-dice"></i></a></li>
-                        <li><a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="non-dropdown">Edit Profile <i class="fa-solid fa-pencil"></i></a></li>
-                    {% endif %}
                     <li><a href="{{ url_for('standings') }}" class="non-dropdown">Standings <i class="fa-solid fa-list-ol"></i></a></li>
-                    <li><a href="{{ url_for('message_board') }}" class="non-dropdown">Message Board <i class="fa-regular fa-comments"></i></a></li>
+                    <li><a href="{{ url_for('message_board') }}" class="non-dropdown">Forum <i class="fa-regular fa-comments"></i></a></li>
                     {% if current_user.is_admin %}
                         <li class="dropdown">Admin
                             <ul class="dropdown-content">
