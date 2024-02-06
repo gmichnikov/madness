@@ -570,3 +570,28 @@ header {
 .hidden .admin-action {
     color: #dc3545;
 }
+
+.verified-cursor, .unverified-cursor {
+    cursor: help;
+}
+
+.unverified-cursor {
+    color: yellow;
+}
+
+.user-info i {
+    margin: 0 5px;
+}
+
+.user-info a {
+    color: #add8e6;
+    text-decoration: none;
+}
+
+.user-info a:hover {
+    color: #ffffff;
+}
+
+.logout-cursor {
+    cursor: pointer;
+}

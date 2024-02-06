@@ -57,7 +57,11 @@ def index():
             pool_name = pool.name
 
     if current_user.is_authenticated:
-        return render_template('index.html', logged_in=True, user=current_user, pool_name=pool_name)
+        # return render_template('index.html', logged_in=True, user=current_user, pool_name=pool_name)
+        if is_after_cutoff():
+            return redirect(url_for('standings'))
+        else:
+            return redirect(url_for('make_picks'))
     else:
         return render_template('hero.html', logged_in=False, pool_name=pool_name)
 
