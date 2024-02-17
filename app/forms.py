@@ -1,19 +1,19 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField, RadioField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
 from app.models import Round, Team, Pick, User
 import pytz
 import os
 
-EMAIL = 'Email (used for login, will only be shown to admins)'
-FULL_NAME = 'Full Name (will be shown to all users, please enter your real name, e.g. John Doe)'
-TIEBREAKER_1 = 'Tiebreaker 1: Winner\'s Score in Championship Game'
-TIEBREAKER_2 = 'Tiebreaker 2: Loser\'s Score in Championship Game'
+EMAIL = 'Email (used for login, shown to admins)'
+FULL_NAME = 'Full Name (shown to all users, please enter your real name, e.g. John Doe)'
+TIEBREAKER_1 = 'Tiebreaker 1: Winner\'s Score in Final'
+TIEBREAKER_2 = 'Tiebreaker 2: Loser\'s Score in Final'
 POOL_ID = int(os.getenv('POOL_ID'))
 
 class RegistrationForm(FlaskForm):
     email = StringField(EMAIL, validators=[DataRequired(), Email()])
-    full_name = StringField(FULL_NAME, validators=[DataRequired()])
+    full_name = StringField(FULL_NAME, validators=[DataRequired()], render_kw={"placeholder": "Ryan Appleby"})
     password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
     time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones], default='US/Eastern')
     tiebreaker_winner = IntegerField(TIEBREAKER_1, validators=[DataRequired()], default=0)

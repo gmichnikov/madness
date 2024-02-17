@@ -49,12 +49,7 @@ def load_user(user_id):
 
 @app.route('/')
 def index():
-    pool_name = 'Default Pool Name'
-
-    if POOL_ID:
-        pool = Pool.query.filter_by(id=POOL_ID).first()
-        if pool:
-            pool_name = pool.name
+    pool_name = get_pool_name()
 
     if current_user.is_authenticated:
         # return render_template('index.html', logged_in=True, user=current_user, pool_name=pool_name)
@@ -65,12 +60,21 @@ def index():
     else:
         return render_template('hero.html', logged_in=False, pool_name=pool_name)
 
+def get_pool_name():
+    pool_name = 'Default Pool Name'
+    if POOL_ID:
+        pool = Pool.query.filter_by(id=POOL_ID).first()
+        if pool:
+            pool_name = pool.name
+    return pool_name
+
 @app.route('/hero')
 def hero():
     return render_template('hero.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    pool_name = get_pool_name()
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
@@ -101,16 +105,11 @@ def register():
 
         flash('Registration successful. Please log in.')
         return redirect(url_for('login'))
-    return render_template('register.html', form=form)
+    return render_template('register.html', form=form, pool_name=pool_name)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    pool_name = 'Default Pool Name'
-
-    if POOL_ID:
-        pool = Pool.query.filter_by(id=POOL_ID).first()
-        if pool:
-            pool_name = pool.name
+    pool_name = get_pool_name()
 
     form = LoginForm()
     if form.validate_on_submit():
