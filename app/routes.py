@@ -105,6 +105,13 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    pool_name = 'Default Pool Name'
+
+    if POOL_ID:
+        pool = Pool.query.filter_by(id=POOL_ID).first()
+        if pool:
+            pool_name = pool.name
+
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
@@ -113,7 +120,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Invalid email or password')
-    return render_template('login.html', form=form)
+    return render_template('login.html', form=form, pool_name=pool_name)
 
 @app.route('/logout')
 def logout():
