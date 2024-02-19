@@ -595,3 +595,65 @@ header {
 .logout-cursor {
     cursor: pointer;
 }
+
+#winners {
+    background-color: #f0f8ff;
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    padding: 20px;
+}
+
+#winners h1 {
+    color: darkgoldenrod;
+}
+
+#winners ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#winners li {
+    background-color: #ffffe0;
+    color: #ff4500;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    display: inline-block;
+    width: 70%;
+}
+
+#winners .trophy {
+    background-image: url('trophy.png');
+    background-size: cover;
+    display: inline-block;
+    width: 45px;
+    height: 60px;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+@keyframes celebrate {
+    0% { background-color: #ffffe0; }
+    50% { background-color: #add8e6; }
+    100% { background-color: #ffffe0; }
+}
+
+#winners li:hover {
+    animation: celebrate 1s infinite;
+}
+
+@media (max-width: 768px) {
+    #winners li {
+        width: 90%;
+        margin: 5px auto;
+    }
+    #winners h1 {
+        font-size: 24px; /* Adjust font size for smaller screens */
+    }
+    #winners .trophy {
+        width: 30px;
+        height: 40px;
+    }
+}

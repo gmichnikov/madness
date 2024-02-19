@@ -928,3 +928,18 @@ def unhide_post(post_id):
     db.session.add(log_entry)
     db.session.commit()
     return redirect(url_for('thread', thread_id=post.thread_id))
+
+@app.route('/winners')
+@login_required
+@pool_required
+def winners():
+    current_dir = os.path.dirname(__file__)
+    file_path = os.path.join(current_dir, 'static', 'winners.csv')
+    winners = []
+
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            winners.append({'year': row[0], 'winner': row[1]})
+    
+    return render_template('winners.html', winners=winners)
