@@ -33,6 +33,8 @@
             {{ form.tiebreaker_loser.label }}<br>
             {{ form.tiebreaker_loser() }}
 
+            <div class="tiebreaker-note">Tiebreakers must be non-zero, can be updated later</div>
+
             {{ form.submit() }}
     </form>
 {% endblock %}
