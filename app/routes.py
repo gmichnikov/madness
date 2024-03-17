@@ -105,7 +105,7 @@ def register():
 
         flash('Registration successful. Please log in.')
         return redirect(url_for('login'))
-    return render_template('register.html', form=form, pool_name=pool_name)
+    return render_template('register.html', form=form, pool_name=pool_name, is_login=False)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -119,7 +119,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Invalid email or password')
-    return render_template('login.html', form=form, pool_name=pool_name)
+    return render_template('login.html', form=form, pool_name=pool_name, is_login=True)
 
 @app.route('/logout')
 def logout():
