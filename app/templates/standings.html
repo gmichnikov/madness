@@ -2,16 +2,16 @@
 {% block content %}
     <h1>Standings</h1>
 
-    {% if not is_after_cutoff %}
+    {% if not show_champion %}
         <p>Other users' brackets will be visible once the tournament starts.</p>
-    {% endif %}
-
-    <form method="POST" class="standings-sort-form" id="standings-sort-form">
-        {{ sort_form.hidden_tag() }}
-        <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field(onchange="this.form.submit()") }}</div>
-        <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order(onchange="this.form.submit()") }}</div>
-        <div>{{ sort_form.champion_filter.label }} {{ sort_form.champion_filter(onchange="this.form.submit()") }}</div>
-    </form>    
+    {% else %}
+        <form method="POST" class="standings-sort-form" id="standings-sort-form">
+            {{ sort_form.hidden_tag() }}
+            <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field(onchange="this.form.submit()") }}</div>
+            <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order(onchange="this.form.submit()") }}</div>
+            <div>{{ sort_form.champion_filter.label }} {{ sort_form.champion_filter(onchange="this.form.submit()") }}</div>
+        </form>
+    {% endif %}   
 
     <table class="standings-table">
         <thead>
@@ -20,7 +20,9 @@
                 <th>Name</th>
                 <th>Total Score</th>
                 <th>Max Possible Score</th>
-                <th>Champion</th>
+                {% if show_champion %}
+                    <th>Champion</th>
+                {% endif %}
                 <th>{{ rounds[1] }}</th>
                 <th>{{ rounds[2] }}</th>
                 <th>{{ rounds[3] }}</th>
@@ -36,7 +38,9 @@
                     <td><a href="{{ url_for('view_picks', user_id=user.id) }}">{{ user.full_name }}</a></td>
                     <td>{{ user.currentscore }}</td>
                     <td>{{ user.maxpossiblescore }}</td>
-                    <td>{{ user.champion_team_name }}</td>
+                    {% if show_champion %}
+                        <td>{{ user.champion_team_name }}</td>
+                    {% endif %}
                     <td>{{ user.r1score }}</td>
                     <td>{{ user.r2score }}</td>
                     <td>{{ user.r3score }}</td>

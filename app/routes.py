@@ -681,6 +681,7 @@ def recalculate_standings():
 @login_required
 @pool_required
 def standings():
+    show_champion = is_after_cutoff() or current_user.is_admin
     sort_form = SortStandingsForm(sort_field='currentscore', sort_order='desc', champion_filter = 'Any')
 
     if sort_form.validate_on_submit():
@@ -696,6 +697,9 @@ def standings():
     champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
     for user in users:
         user.champion_team_name = champion_picks.get(user.id, "?")
+
+    if not show_champion:
+        champion_filter = 'Any'
 
     if champion_filter != 'Any':
         users = [user for user in users if champion_picks.get(user.id, "?") == champion_filter]
@@ -723,7 +727,7 @@ def standings():
 
             last_score = current_score
 
-    return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict())
+    return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict(), show_champion=show_champion)
 
 def rounds_dict():
     return {round.id: round.name for round in Round.query.all()}
