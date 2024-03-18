@@ -4,7 +4,7 @@
     <h1>🎉 Past Winners 🎉</h1>
     <ul>
         {% for winner in winners %}
-            <li><span class="trophy"></span> {{ winner.year }}: {{ winner.winner }}</li>
+            <li><span class="trophy"></span> {{ winner.year }}  ||  {{ winner.place1 }}: {{ winner.winner1 }}, {{ winner.place2 }}: {{ winner.winner2 }}, {{ winner.place3 }}: {{ winner.winner3 }}</li>
         {% endfor %}
     </ul>
 </div>

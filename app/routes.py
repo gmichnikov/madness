@@ -940,6 +940,6 @@ def winners():
     with open(file_path, 'r') as file:
         reader = csv.reader(file)
         for row in reader:
-            winners.append({'year': row[0], 'winner': row[1]})
+            winners.append({'year': row[0], 'place1': row[1], 'winner1': row[2], 'place2': row[3], 'winner2': row[4], 'place3': row[5], 'winner3': row[6]})
     
     return render_template('winners.html', winners=winners)
