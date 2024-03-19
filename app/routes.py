@@ -114,7 +114,7 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        get_user_from_form_email(form)
+        user = get_user_from_form_email(form)
         if user and user.check_password(form.password.data):
             login_user(user)
             return redirect(url_for('index'))
