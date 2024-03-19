@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Delete User{% endblock %}
+{% block content %}
+<h2>Delete User</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+        {{ form.email.label }}<br>
+        {{ form.email(class='form-control-wide') }}
+    </div>
+    <div>
+        {{ form.submit(class="btn btn-primary btn-top-margin") }}
+    </div>
+</form>
+{% endblock %}

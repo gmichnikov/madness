@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm
 from functools import wraps
 import os
 import csv
@@ -1014,3 +1014,43 @@ def reset_password(user_id):
             return redirect(url_for('login'))
 
     return render_template('reset_password.html', form=form, user=user)
+
+@app.route('/super_admin/delete_user', methods=['GET', 'POST'])
+@login_required
+@pool_required
+def super_admin_delete_user():
+    if not current_user.is_super_admin:
+        return redirect(url_for('index'))
+
+    form = SuperAdminDeleteUserForm()
+    form.email.choices = [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()]
+
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        if user:
+            full_name = user.full_name
+            user_id = user.id
+            email = user.email
+
+            log_entries = LogEntry.query.filter_by(current_user_id=user_id).all()
+            for entry in log_entries:
+                db.session.delete(entry)
+            db.session.commit()
+
+            picks = Pick.query.filter_by(user_id=user_id).all()
+            for pick in picks:
+                db.session.delete(pick)
+            db.session.commit()
+
+            db.session.delete(user)
+            db.session.commit()
+            flash('User deleted successfully.', 'success')
+
+            log_entry = LogEntry(category='Delete User', current_user_id=current_user.id, description=f"{current_user.full_name} deleted the user {full_name} whose id was {user_id} and whose email was {email}")
+            db.session.add(log_entry)
+            db.session.commit()
+        else:
+            flash('User not found.', 'error')
+        return redirect(url_for('super_admin_delete_user'))
+
+    return render_template('super_admin/delete_user.html', form=form)

@@ -52,6 +52,10 @@ class ResetPasswordForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Reset Password')
 
+class SuperAdminDeleteUserForm(FlaskForm):
+    email = SelectField('Select User', choices=[])
+    submit = SubmitField('Delete User')
+
 class ManageRegionsForm(FlaskForm):
     region_1 = StringField('Region 1', default="Region 1")
     region_2 = StringField('Region 2', default="Region 2")
