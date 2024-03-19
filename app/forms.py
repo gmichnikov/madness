@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, IntegerField, BooleanField
-from wtforms.validators import DataRequired, Email, Length, NumberRange
+from wtforms.validators import DataRequired, Email, Length, NumberRange, EqualTo
 from app.models import Round, Team, Pick, User
 import pytz
 import os
@@ -35,6 +35,21 @@ class LoginForm(FlaskForm):
 class AdminPasswordResetForm(FlaskForm):
     email = SelectField('Select User', choices=[])  # Assuming this will be populated with user emails
     new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=4)])
+    submit = SubmitField('Reset Password')
+
+class AdminPasswordResetCodeForm(FlaskForm):
+    email = SelectField('Select User', choices=[])
+    submit = SubmitField('Generate Code')
+
+class ResetPasswordRequestForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    reset_code = StringField('Reset Code', validators=[DataRequired()])
+    submit = SubmitField('Verify Code')
+
+class ResetPasswordForm(FlaskForm):
+    reset_code = StringField('Reset Code', validators=[DataRequired()])
+    password = PasswordField('New Password', validators=[DataRequired(), Length(min=4)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Reset Password')
 
 class ManageRegionsForm(FlaskForm):

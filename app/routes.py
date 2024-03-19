@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm
 from functools import wraps
 import os
 import csv
@@ -10,7 +10,7 @@ from sqlalchemy import text
 import pytz
 from collections import defaultdict
 from app.utils import is_after_cutoff, get_current_time, get_cutoff_time
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -947,3 +947,70 @@ def winners():
             winners.append({'year': row[0], 'place1': row[1], 'winner1': row[2], 'place2': row[3], 'winner2': row[4], 'place3': row[5], 'winner3': row[6]})
     
     return render_template('winners.html', winners=winners)
+
+@app.route('/admin/reset_password_code', methods=['GET', 'POST'])
+@login_required
+@admin_required
+@pool_required
+def admin_reset_password_code():
+    if not current_user.is_admin:
+        return redirect(url_for('index'))
+
+    form = AdminPasswordResetCodeForm()
+    form.email.choices = [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()]
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        user_email = user.email
+        user.reset_code = os.urandom(16).hex()
+        user.reset_code_expiration = datetime.utcnow() + timedelta(hours=24)
+        db.session.commit()
+
+        log_entry = LogEntry(category='Generate Password Code', current_user_id=current_user.id, description=f"{current_user.full_name} generated a password reset code for {user.full_name}")
+        db.session.add(log_entry)
+        db.session.commit()
+
+        return render_template('admin/reset_password_code.html', form=form, reset_code=user.reset_code, user_email=user_email)
+
+    return render_template('admin/reset_password_code.html', form=form)
+
+@app.route('/reset_password_request', methods=['GET', 'POST'])
+def reset_password_request():
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        if user and user.reset_code == form.reset_code.data:
+            if user.reset_code_expiration > datetime.utcnow():
+                log_entry = LogEntry(category='Enter Password Code', current_user_id=user.id, description=f"{user.full_name} entered a valid password reset code")
+                db.session.add(log_entry)
+                db.session.commit()
+                return redirect(url_for('reset_password', user_id=user.id))
+            else:
+                flash('Reset code has expired.', 'error')
+        else:
+            flash('Invalid email or reset code.', 'error')
+
+    return render_template('reset_password_request.html', form=form)
+
+@app.route('/reset_password/<int:user_id>', methods=['GET', 'POST'])
+def reset_password(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.reset_code_expiration < datetime.utcnow():
+        flash('Reset code has expired.', 'error')
+        return redirect(url_for('reset_password_request'))
+    
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        if user.reset_code == form.reset_code.data:
+            user.set_password(form.password.data)
+            user.reset_code = None
+            user.reset_code_expiration = None
+            db.session.commit()
+
+            log_entry = LogEntry(category='Password Reset', current_user_id=user.id, description=f"{user.full_name} reset their password after entering a valid password reset code")
+            db.session.add(log_entry)
+            db.session.commit()
+
+            flash('Your password has been updated.', 'success')
+            return redirect(url_for('login'))
+
+    return render_template('reset_password.html', form=form, user=user)

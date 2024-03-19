@@ -13,6 +13,13 @@
     border-radius: 4px;
 }
 
+.form-control-wide {
+    width: 300px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
 .btn {
     padding: 10px 15px;
     background-color: blue;

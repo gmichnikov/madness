@@ -34,6 +34,8 @@ class User(db.Model, UserMixin):
     is_bracket_valid = db.Column(db.Boolean, default=False, nullable=False)
     last_bracket_save = db.Column(db.DateTime, nullable=True)
     pool_id = db.Column(db.Integer, db.ForeignKey('pool.id'), nullable=True)
+    reset_code = db.Column(db.String(120), nullable=True)
+    reset_code_expiration = db.Column(db.DateTime, nullable=True)
 
     pool = db.relationship('Pool', backref='users')
 
