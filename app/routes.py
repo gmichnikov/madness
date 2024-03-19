@@ -77,7 +77,8 @@ def register():
     pool_name = get_pool_name()
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        user = get_user_from_form_email(form)
+
         if user:
             flash('Email already registered.')
             return redirect(url_for('register'))
@@ -113,7 +114,7 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        get_user_from_form_email(form)
         if user and user.check_password(form.password.data):
             login_user(user)
             return redirect(url_for('index'))
@@ -126,6 +127,11 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+def get_user_from_form_email(form):
+    return User.query.filter(
+        func.lower(User.email) == func.lower(form.email.data), 
+        User.pool_id == POOL_ID
+    ).first()
 
 @app.route('/admin/reset_password', methods=['GET', 'POST'])
 @login_required
@@ -139,7 +145,7 @@ def admin_reset_password():
     )
 
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        user = get_user_from_form_email(form)
         if user:
             user.set_password(form.new_password.data)
             db.session.commit()
@@ -966,7 +972,7 @@ def admin_reset_password_code():
     )
 
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        user = get_user_from_form_email(form)
         user_email = user.email
         user.reset_code = os.urandom(16).hex()
         user.reset_code_expiration = datetime.utcnow() + timedelta(hours=24)
@@ -984,7 +990,7 @@ def admin_reset_password_code():
 def reset_password_request():
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
+        user = get_user_from_form_email(form)
         if user and user.reset_code == form.reset_code.data:
             if user.reset_code_expiration > datetime.utcnow():
                 log_entry = LogEntry(category='Enter Password Code', current_user_id=user.id, description=f"{user.full_name} entered a valid password reset code")
