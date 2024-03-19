@@ -6,7 +6,7 @@ from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, Manag
 from functools import wraps
 import os
 import csv
-from sqlalchemy import text
+from sqlalchemy import text, func
 import pytz
 from collections import defaultdict
 from app.utils import is_after_cutoff, get_current_time, get_cutoff_time
@@ -133,7 +133,10 @@ def logout():
 @admin_required
 def admin_reset_password():
     form = AdminPasswordResetForm()
-    form.email.choices = [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()]
+    form.email.choices = sorted(
+        [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()],
+        key=lambda x: x[0].lower()
+    )
 
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
@@ -777,7 +780,7 @@ def admin_cutoff_status():
 def admin_users():
     valid_bracket_filter = 'Any'
     verified_filter = 'Any'
-    users = User.query.filter(User.pool_id == POOL_ID)
+    users = User.query.filter(User.pool_id == POOL_ID).order_by(func.lower(User.full_name))
 
     if request.method == 'POST':
         valid_bracket_filter = request.form.get('valid_bracket', 'Any')
@@ -957,7 +960,11 @@ def admin_reset_password_code():
         return redirect(url_for('index'))
 
     form = AdminPasswordResetCodeForm()
-    form.email.choices = [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()]
+    form.email.choices = sorted(
+        [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()],
+        key=lambda x: x[0].lower()
+    )
+
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
         user_email = user.email
@@ -1023,7 +1030,10 @@ def super_admin_delete_user():
         return redirect(url_for('index'))
 
     form = SuperAdminDeleteUserForm()
-    form.email.choices = [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()]
+    form.email.choices = sorted(
+        [(user.email, user.email) for user in User.query.filter_by(pool_id=POOL_ID).all()],
+        key=lambda x: x[0].lower()
+    )
 
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
