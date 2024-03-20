@@ -503,7 +503,7 @@ def memoize_get_potential_winners(func):
 
     return wrapper
 
-@memoize_get_potential_winners
+# @memoize_get_potential_winners
 def get_potential_winners(game):
     if game.winning_team_id:
         return [game.winning_team_id]
@@ -539,7 +539,7 @@ def memoize_get_potential_picks(func):
     return wrapper
 
 # When return_current_pick is False (the initial call for each game), we ignore the current pick, so that we populate the dropdowns based on previous rounds. This also means an invalid pick (team lost in earlier round) will not appear in the dropdown as an option at all, though it will still be in the DB until picks are saved again.
-@memoize_get_potential_picks
+# @memoize_get_potential_picks
 def get_potential_picks(game_id, return_current_pick):
     game = Game.query.get(game_id)
 
