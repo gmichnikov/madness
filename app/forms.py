@@ -166,3 +166,14 @@ class SortStandingsForm(FlaskForm):
 class UserSelectionForm(FlaskForm):
     user = SelectField('View picks for: ', coerce=int)
     submit = SubmitField('View Picks')
+
+class AnalyticsForm(FlaskForm):
+    granularity = SelectField('Time Granularity', choices=[
+        ('1', '1 minute'), 
+        ('5', '5 minutes'), 
+        ('10', '10 minutes'), 
+        ('30', '30 minutes'), 
+        ('60', '1 hour'), 
+        ('1440', '1 day')], validators=[DataRequired()])
+    category = SelectField('Category', choices=[], validators=[DataRequired()])
+    submit = SubmitField('Submit')

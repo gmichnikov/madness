@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='fa/css/fontawesome.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='fa/css/regular.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='fa/css/solid.css') }}">
+    {% block chartjs %}{% endblock %}
 </head>
 <body>
     <header>
@@ -38,6 +39,7 @@
                             <ul class="dropdown-content">
                                 <li><a href="{{ url_for('admin_users') }}">Users Status</a></li>
                                 <li><a href="{{ url_for('admin_view_logs') }}">View Logs</a></li>
+                                <li><a href="{{ url_for('admin_analytics') }}">Logs Analytics</a></li>
                                 <li><a href="{{ url_for('admin_verify_users') }}">Verify Users</a></li>
                                 <li><a href="{{ url_for('admin_set_winners') }}">Set Game Winners</a></li>
                                 <li><a href="{{ url_for('admin_reset_password') }}">Reset Passwords</a></li>

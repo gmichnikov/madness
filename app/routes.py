@@ -2,13 +2,14 @@ from flask import render_template, redirect, url_for, flash, request
 from app import app, db
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm, AnalyticsForm
 from functools import wraps
 import os
 import csv
 import functools
 from sqlalchemy import text, func
 import pytz
+import pandas as pd
 from collections import defaultdict
 from app.utils import is_after_cutoff, get_current_time, get_cutoff_time
 from datetime import datetime, timedelta
@@ -1115,3 +1116,52 @@ def super_admin_delete_user():
         return redirect(url_for('super_admin_delete_user'))
 
     return render_template('super_admin/delete_user.html', form=form)
+
+
+@app.route('/admin/analytics', methods=['GET', 'POST'])
+def admin_analytics():
+    form = AnalyticsForm()
+    results = None
+    timestamps=None
+    unique_users=None
+    event_counts=None
+
+    form.category.choices = sorted(
+        [(c.category, c.category) for c in LogEntry.query.with_entities(LogEntry.category).distinct()],
+        key=lambda x: x[0]
+    )
+
+    if form.validate_on_submit():
+        granularity = int(form.granularity.data)
+        category = form.category.data
+
+        logs = LogEntry.query.filter_by(category=category).all()
+
+        df = pd.DataFrame([(log.current_user_id, log.timestamp) for log in logs], columns=['user_id', 'timestamp'])        
+        df['rounded_timestamp'] = round_timestamp(df['timestamp'], granularity)
+
+        agg_data = df.groupby('rounded_timestamp').agg(
+            unique_users=('user_id', 'nunique'),
+            event_count=('user_id', 'count')
+        ).reset_index()
+
+        agg_data.rename(columns={'rounded_timestamp': 'period'}, inplace=True)
+        results = agg_data.to_dict('records')
+
+        timestamps = [result['period'].isoformat() for result in results]
+        unique_users = [result['unique_users'] for result in results]
+        event_counts = [result['event_count'] for result in results]
+
+    return render_template('admin/analytics.html', form=form, results=results, timestamps=timestamps, unique_users=unique_users, event_counts=event_counts)
+
+
+def round_timestamp(ts, granularity):
+    """
+    Round a timestamp to the start of its granularity period.
+    """
+    if granularity <= 60:
+        return ts.dt.floor(f'{granularity}min')
+    elif granularity == 1440:
+        return ts.dt.floor('D')
+    else:
+        raise ValueError("Unsupported granularity")

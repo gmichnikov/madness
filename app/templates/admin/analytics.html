@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Logs Analytics{% endblock %}
+{% block chartjs %}
+<script src="https://cdn.jsdelivr.net/npm/luxon@^2.0.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@^3.0.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1.0.0"></script>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>{{ form.granularity.label }} {{ form.granularity(class='form-control') }}</div>
+    <div>{{ form.category.label }} {{ form.category(class='form-control') }}</div>
+    <div>{{ form.submit(class="btn btn-primary btn-top-margin") }}</div>
+</form>
+
+{% if results %}
+<table class="table-logs">
+    <thead>
+        <tr>
+            <th>Time Period</th>
+            <th>Unique Users</th>
+            <th>Total Events</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in results %}
+        <tr>
+            <td>{{ row['period'] }}</td>
+            <td>{{ row['unique_users'] }}</td>
+            <td>{{ row['event_count'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="chart-container">
+    <canvas id="uniqueUsersChart"></canvas>
+</div>
+<div class="chart-container">
+    <canvas id="eventCountsChart"></canvas>
+</div>
+
+<script>
+    const timestamps = JSON.parse('{{ timestamps | tojson | safe }}');
+    const uniqueUsers = JSON.parse('{{ unique_users | tojson | safe }}');
+    const eventCounts = JSON.parse('{{ event_counts | tojson | safe }}');
+
+    const ctxUniqueUsers = document.getElementById('uniqueUsersChart').getContext('2d');
+    const uniqueUsersChart = new Chart(ctxUniqueUsers, {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [{
+                label: 'Unique Users',
+                data: timestamps.map((t, index) => ({ x: t, y: uniqueUsers[index] })), // Map timestamps to x, values to y
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        tooltipFormat: 'yyyy-MM-dd HH:mm',
+                        displayFormats: {
+                            'minute': 'yyyy-MM-dd HH:mm',
+                            'hour': 'yyyy-MM-dd HH:mm',
+                            'day': 'yyyy-MM-dd'
+                        }
+                    },
+                    title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Count'
+                        }
+                    }
+                }
+            }
+        });
+
+    const ctxEventCounts = document.getElementById('eventCountsChart').getContext('2d');
+    const eventCountsChart = new Chart(ctxEventCounts, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: 'Event Counts',
+                data: timestamps.map((t, index) => ({ x: t, y: eventCounts[index] })), // Map timestamps to x, values to y
+                borderColor: 'rgb(153, 102, 255)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        tooltipFormat: 'yyyy-MM-dd HH:mm',
+                        displayFormats: {
+                            'minute': 'yyyy-MM-dd HH:mm',
+                            'hour': 'yyyy-MM-dd HH:mm',
+                            'day': 'yyyy-MM-dd'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+{% endif %}
+{% endblock %}
