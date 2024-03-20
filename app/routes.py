@@ -438,6 +438,10 @@ def make_picks():
         last_save_localized = current_user.last_bracket_save.replace(tzinfo=pytz.utc).astimezone(user_tz)
         last_save_formatted = last_save_localized.strftime('%Y-%m-%d, %I:%M:%S %p ') + last_save_localized.tzname()
 
+    log_entry = LogEntry(category='Load Make Picks Page', current_user_id=current_user.id, description=f"{current_user.email} loaded make picks page")
+    db.session.add(log_entry)
+    db.session.commit()
+
     if request.method == 'POST':
         if request.form['action'] == 'save_picks':
             for game in games:
@@ -591,6 +595,10 @@ def set_is_bracket_valid():
 
     if is_bracket_valid:
         log_entry = LogEntry(category='Valid Bracket', current_user_id=current_user.id, description=f"{current_user.email} saved a valid bracket")
+        db.session.add(log_entry)
+        db.session.commit()
+    else:
+        log_entry = LogEntry(category='Invalid Bracket', current_user_id=current_user.id, description=f"{current_user.email} saved an invalid bracket")
         db.session.add(log_entry)
         db.session.commit()
 
