@@ -1135,10 +1135,15 @@ def admin_analytics():
         granularity = int(form.granularity.data)
         category = form.category.data
 
-        logs = LogEntry.query.filter_by(category=category).all()
+        cutoff_datetime = datetime(2024, 3, 17, 23, 0, 0)
+        logs = LogEntry.query.filter(LogEntry.category == category, LogEntry.timestamp > cutoff_datetime).all()
 
         df = pd.DataFrame([(log.current_user_id, log.timestamp) for log in logs], columns=['user_id', 'timestamp'])        
-        df['rounded_timestamp'] = round_timestamp(df['timestamp'], granularity)
+
+        user_tz = pytz.timezone(current_user.time_zone)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['localized_timestamp'] = df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(user_tz)
+        df['rounded_timestamp'] = round_timestamp(df['localized_timestamp'], granularity)
 
         agg_data = df.groupby('rounded_timestamp').agg(
             unique_users=('user_id', 'nunique'),
