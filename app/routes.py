@@ -6,6 +6,7 @@ from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, Manag
 from functools import wraps
 import os
 import csv
+import functools
 from sqlalchemy import text, func
 import pytz
 from collections import defaultdict
@@ -456,7 +457,7 @@ def make_picks():
             db.session.commit()
             flash('Your picks have been saved.')
             set_is_bracket_valid()
-            recalculate_standings()
+            recalculate_standings(current_user)
             return redirect(url_for('make_picks'))
         elif request.form['action'] == 'clear_picks':
             Pick.query.filter_by(user_id=current_user.id).delete()
@@ -467,12 +468,12 @@ def make_picks():
             db.session.commit()
 
             set_is_bracket_valid()
-            recalculate_standings()
+            recalculate_standings(current_user)
             return redirect(url_for('make_picks'))
         elif request.form['action'] == 'fill_in_better_seeds':
             auto_fill_bracket()
             set_is_bracket_valid()
-            recalculate_standings()
+            recalculate_standings(current_user)
             return redirect(url_for('make_picks'))
 
     return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted)
@@ -484,6 +485,20 @@ def add_or_update_pick(pick, team_id, game_id):
         pick = Pick(user_id=current_user.id, game_id=game_id, team_id=team_id)
         db.session.add(pick)
 
+def memoize_get_potential_winners(func):
+    cache = {}
+
+    def wrapper(game):
+        if game.id in cache:
+            return cache[game.id]
+        else:
+            result = func(game)
+            cache[game.id] = result
+            return result
+
+    return wrapper
+
+@memoize_get_potential_winners
 def get_potential_winners(game):
     if game.winning_team_id:
         return [game.winning_team_id]
@@ -501,7 +516,25 @@ def get_potential_winners(game):
 
     return potential_winners
 
+def memoize_get_potential_picks(func):
+    cache = {}  # Cache for storing results
+    @functools.wraps(func)
+    def wrapper(game_id, return_current_pick, *args, **kwargs):
+        # Creating a unique key based on function's critical arguments
+        cache_key = (game_id, return_current_pick)
+        
+        # Check if result is already cached
+        if cache_key in cache:
+            return cache[cache_key]
+        
+        # Call the function and cache the result if not already in cache
+        result = func(game_id, return_current_pick, *args, **kwargs)
+        cache[cache_key] = result
+        return result
+    return wrapper
+
 # When return_current_pick is False (the initial call for each game), we ignore the current pick, so that we populate the dropdowns based on previous rounds. This also means an invalid pick (team lost in earlier round) will not appear in the dropdown as an option at all, though it will still be in the DB until picks are saved again.
+@memoize_get_potential_picks
 def get_potential_picks(game_id, return_current_pick):
     game = Game.query.get(game_id)
 
@@ -656,8 +689,12 @@ def admin_set_winners():
 
     return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region)
 
-def recalculate_standings():
-    users = User.query.all()
+def recalculate_standings(user=None):
+    if user is None:
+        users = User.query.all()
+    else:
+        users = [user]
+
     for user in users:
         user.r1score = user.r2score = user.r3score = user.r4score = user.r5score = user.r6score = 0
         potential_additional_points = 0
