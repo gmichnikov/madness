@@ -76,6 +76,9 @@ def hero():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if is_after_cutoff():
+        return redirect(url_for('login'))
+
     pool_name = get_pool_name()
     form = RegistrationForm()
     if form.validate_on_submit():
