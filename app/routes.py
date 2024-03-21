@@ -695,17 +695,25 @@ def admin_set_winners():
 
         db.session.commit()
         flash('Game winners updated.', 'success')
+        do_admin_update_potential_winners()
 
         recalculate_standings()
         return redirect(url_for('admin_set_winners'))
 
     return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region)
 
+# this is now going to assume that the potential winners db table has been updated before this is called
 def recalculate_standings(user=None):
     if user is None:
         users = User.query.all()
     else:
         users = [user]
+
+    potential_winners_dict = {}
+    potential_winner_entries = PotentialWinner.query.all()
+    for entry in potential_winner_entries:
+        potential_winner_ids = [int(team_id) for team_id in entry.potential_winner_ids.split(',') if team_id.isdigit()]
+        potential_winners_dict[entry.game_id] = potential_winner_ids
 
     for user in users:
         user.r1score = user.r2score = user.r3score = user.r4score = user.r5score = user.r6score = 0
@@ -727,7 +735,8 @@ def recalculate_standings(user=None):
                 elif pick.game.round_id == 6:
                     user.r6score += round_points
             if pick.game.winning_team_id is None:
-                if pick.team_id in get_potential_winners(pick.game):
+                potential_winner_ids = potential_winners_dict.get(pick.game.id, [])
+                if pick.team_id in potential_winner_ids:
                     potential_additional_points += round_points
 
         total_score = user.r1score + user.r2score + user.r3score + user.r4score + user.r5score + user.r6score
@@ -1180,6 +1189,10 @@ def round_timestamp(ts, granularity):
 @admin_required
 @pool_required
 def admin_update_potential_winners():
+    do_admin_update_potential_winners()
+    return jsonify({"status": "success", "message": "Potential winners updated."})
+
+def do_admin_update_potential_winners():
     games = Game.query.all()
 
     for game in games:
@@ -1196,7 +1209,6 @@ def admin_update_potential_winners():
             db.session.add(new_entry)
 
     db.session.commit()
-    return jsonify({"status": "success", "message": "Potential winners updated."})
 
 @app.route('/show_potential_winners')
 @login_required
