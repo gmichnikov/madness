@@ -1,6 +1,6 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, jsonify
 from app import app, db
-from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm, AnalyticsForm
 from functools import wraps
@@ -1170,3 +1170,48 @@ def round_timestamp(ts, granularity):
         return ts.dt.floor('D')
     else:
         raise ValueError("Unsupported granularity")
+    
+
+@app.route('/admin/update_potential_winners')
+@login_required
+@admin_required
+@pool_required
+def update_potential_winners():
+    games = Game.query.all()
+
+    for game in games:
+        potential_winners = get_potential_winners(game)
+        potential_winner_ids_str = ",".join(map(str, potential_winners))  # Convert list of IDs to comma-separated string
+
+        potential_winner_entry = PotentialWinner.query.filter_by(game_id=game.id).first()
+
+        if potential_winner_entry:
+            potential_winner_entry.potential_winner_ids = potential_winner_ids_str
+            potential_winner_entry.last_updated = datetime.utcnow()
+        else:
+            new_entry = PotentialWinner(game_id=game.id, potential_winner_ids=potential_winner_ids_str)
+            db.session.add(new_entry)
+
+    db.session.commit()
+    return jsonify({"status": "success", "message": "Potential winners updated."})
+
+@app.route('/show_potential_winners')
+@login_required
+@pool_required
+def show_potential_winners():
+    potential_winners_data = []
+    potential_winners = PotentialWinner.query.order_by(PotentialWinner.game_id).all()
+    
+    for pw in potential_winners:
+        game = Game.query.get(pw.game_id)
+        team_ids = [int(id) for id in pw.potential_winner_ids.split(',') if id.isdigit()]
+        teams = Team.query.filter(Team.id.in_(team_ids)).all() if team_ids else []
+        team_names = ', '.join(team.name for team in teams)
+        
+        potential_winners_data.append({
+            'game_id': pw.game_id,
+            'round_name': game.round.name if game and game.round else 'N/A',
+            'team_names': team_names
+        })
+    
+    return render_template('show_potential_winners.html', potential_winners=potential_winners_data)

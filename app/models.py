@@ -134,3 +134,11 @@ class Post(db.Model):
     hidden = db.Column(db.Boolean, default=False)
 
     author = db.relationship('User')
+
+class PotentialWinner(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    potential_winner_ids = db.Column(db.String, nullable=False)  # Storing team IDs as a string
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    game = db.relationship('Game', backref='potential_winners')

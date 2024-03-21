@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Potential Winners{% endblock %}
+{% block content %}
+<h2>Potential Winners</h2>
+<table class="table-logs">
+    <thead>
+        <tr>
+            <th>Game ID</th>
+            <th>Round</th>
+            <th>Potential Winning Teams</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pw in potential_winners %}
+        <tr>
+            <td>{{ pw.game_id }}</td>
+            <td>{{ pw.round_name }}</td>
+            <td>{{ pw.team_names }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
