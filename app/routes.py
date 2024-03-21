@@ -1176,7 +1176,7 @@ def round_timestamp(ts, granularity):
 @login_required
 @admin_required
 @pool_required
-def update_potential_winners():
+def admin_update_potential_winners():
     games = Game.query.all()
 
     for game in games:
@@ -1201,7 +1201,7 @@ def update_potential_winners():
 def show_potential_winners():
     potential_winners_data = []
     potential_winners = PotentialWinner.query.order_by(PotentialWinner.game_id).all()
-    
+
     for pw in potential_winners:
         game = Game.query.get(pw.game_id)
         team_ids = [int(id) for id in pw.potential_winner_ids.split(',') if id.isdigit()]
