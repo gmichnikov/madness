@@ -25,6 +25,9 @@
                 <th>Email</th>
                 <th>Verified</th>
                 <th>Bracket Valid</th>
+                <th>Current Score</th>
+                <th>Max Possible Score</th>
+                <th>ID</th>
             </tr>
         </thead>
         <tbody>
@@ -34,6 +37,9 @@
                 <td>{{ user.email }}</td>
                 <td>{{ 'Yes' if user.is_verified else 'No' }}</td>
                 <td>{{ 'Yes' if user.is_bracket_valid else 'No' }}</td>
+                <td>{{ user.currentscore }}</td>
+                <td>{{ user.maxpossiblescore }}</td>
+                <td>{{ user.id }}</td>
             </tr>
             {% endfor %}
         </tbody>
