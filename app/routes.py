@@ -1188,8 +1188,9 @@ def round_timestamp(ts, granularity):
 @login_required
 @admin_required
 @pool_required
-def admin_update_potential_winners():
+def admin_update_potential_winners_and_standings():
     do_admin_update_potential_winners()
+    recalculate_standings()
     return jsonify({"status": "success", "message": "Potential winners updated."})
 
 def do_admin_update_potential_winners():
