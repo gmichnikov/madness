@@ -1297,7 +1297,7 @@ def game_stats():
             "seed": row.seed,
             "team_name": row.team_name,
             "num_picks": row.num_picks,
-            "picks_percent": round(row.picks_percent, 1)
+            "picks_percent": round(row.picks_percent, 0)
         })
 
     return render_template('game_stats.html', organized_data=organized_data)
