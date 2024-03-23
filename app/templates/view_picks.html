@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h1>View Picks for {{ user.full_name }}</h1>
+    <h1>{{ user.full_name }}'s Bracket || Rank: {{ user_rank }} (Score: {{ user.currentscore }}) </h1>
 
     <br>
     <form method="POST" style="display: flex; align-items: center; gap: 10px;">

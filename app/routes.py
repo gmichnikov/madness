@@ -840,7 +840,10 @@ def view_picks(user_id):
     user_picks = {pick.game_id: pick.team for pick in Pick.query.filter_by(user_id=user_id).join(Team, Pick.team_id == Team.id)}
     lost_teams = get_teams_that_lost()
 
-    return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all(), lost_teams=lost_teams)
+    count_higher_scores = User.query.filter(User.currentscore > user.currentscore).count()
+    user_rank = count_higher_scores + 1
+
+    return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all(), lost_teams=lost_teams, user_rank=user_rank)
 
 @app.route('/admin/cutoff_status')
 @admin_required
