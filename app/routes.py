@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from app import app, db
-from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, GamePicksStats
 from flask_login import login_user, logout_user, login_required, current_user, LoginManager
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm, AnalyticsForm
 from functools import wraps
@@ -8,6 +8,7 @@ import os
 import csv
 import functools
 from sqlalchemy import text, func
+from sqlalchemy.sql.expression import cast
 import pytz
 import pandas as pd
 from collections import defaultdict
@@ -1251,3 +1252,30 @@ def show_potential_winners():
         })
     
     return render_template('show_potential_winners.html', potential_winners=potential_winners_data)
+
+@app.route('/game_stats')
+def game_picks():
+    game_data = GamePicksStats.query.with_entities(
+        GamePicksStats.game_id,
+        GamePicksStats.round_name,
+        GamePicksStats.region_name,
+        GamePicksStats.team_name,
+        GamePicksStats.num_picks,
+        (cast(GamePicksStats.num_picks, db.Float) / 167 * 100).label('picks_percent')
+    ).order_by(GamePicksStats.game_id, GamePicksStats.num_picks.desc()).all()
+
+    organized_data = {}
+    for row in game_data:
+        if row.game_id not in organized_data:
+            organized_data[row.game_id] = {
+                "round_name": row.round_name,
+                "teams": []
+            }
+        organized_data[row.game_id]["teams"].append({
+            "region_name": row.region_name,
+            "team_name": row.team_name,
+            "num_picks": row.num_picks,
+            "picks_percent": round(row.picks_percent, 1)
+        })
+
+    return render_template('game_stats.html', organized_data=organized_data)

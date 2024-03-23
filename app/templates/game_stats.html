@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Game Stats{% endblock %}
+
+{% block content %}
+  {% for game_id, game_info in organized_data.items() %}
+    <h2>{{ game_info.round_name }} (Game {{ game_id }})</h2>
+    <ul>
+      {% for team in game_info.teams %}
+        <li>
+          {{ team.team_name }}: {{ team.num_picks }} picks ({{ team.picks_percent }}%)
+        </li>
+      {% endfor %}
+    </ul>
+  {% endfor %}
+{% endblock %}
