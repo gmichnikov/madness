@@ -33,7 +33,7 @@
         <tbody>
             {% for user in users %}
             <tr>
-                <td>{{ user.full_name }}</td>
+                <td><a href="{{ url_for('view_picks', user_id=user.id) }}">{{ user.full_name }}</a></td>
                 <td>{{ user.email }}</td>
                 <td>{{ 'Yes' if user.is_verified else 'No' }}</td>
                 <td>{{ 'Yes' if user.is_bracket_valid else 'No' }}</td>

@@ -760,8 +760,14 @@ def standings():
         sort_order = 'desc'
         champion_filter = 'Any'
 
-    users = User.query.filter(User.pool_id == POOL_ID).all()
-    champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
+    users = champion_picks = None
+    if is_after_cutoff():
+        users = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid == True).all()
+        champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.join(User).filter(User.is_bracket_valid == True, Pick.game_id == 63).join(Team, Pick.team_id == Team.id)}
+    else:
+        users = User.query.filter(User.pool_id == POOL_ID).all()
+        champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
+
     for user in users:
         user.champion_team_name = champion_picks.get(user.id, "?")
 
