@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Standings</h1>
+    <h1>Standings (Your rank: {{ user_rank }}, Your score: {{ user_score }})</h1>
 
     {% if not show_champion %}
         <p>Other users' brackets will be visible once the tournament starts.</p>

@@ -806,7 +806,10 @@ def standings():
 
             last_score = current_score
 
-    return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict(), show_champion=show_champion)
+    count_higher_scores = User.query.filter(User.currentscore > current_user.currentscore, User.pool_id == POOL_ID).count()
+    user_rank = count_higher_scores + 1
+
+    return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict(), show_champion=show_champion, user_rank=user_rank, user_score=current_user.currentscore)
 
 def rounds_dict():
     return {round.id: round.name for round in Round.query.all()}
@@ -840,7 +843,8 @@ def view_picks(user_id):
     user_picks = {pick.game_id: pick.team for pick in Pick.query.filter_by(user_id=user_id).join(Team, Pick.team_id == Team.id)}
     lost_teams = get_teams_that_lost()
 
-    count_higher_scores = User.query.filter(User.currentscore > user.currentscore).count()
+    count_higher_scores = User.query.filter(User.currentscore > user.currentscore, User.pool_id == POOL_ID).count()
+
     user_rank = count_higher_scores + 1
 
     return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all(), lost_teams=lost_teams, user_rank=user_rank)
