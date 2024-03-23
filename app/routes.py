@@ -809,7 +809,7 @@ def standings():
     count_higher_scores = User.query.filter(User.currentscore > current_user.currentscore, User.pool_id == POOL_ID).count()
     user_rank = count_higher_scores + 1
 
-    return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict(), show_champion=show_champion, user_rank=user_rank, user_score=current_user.currentscore)
+    return render_template('standings.html', users=users, sort_form=sort_form, rounds=rounds_dict(), show_champion=show_champion, user_rank=user_rank, user_score=current_user.currentscore, current_user_id=current_user.id)
 
 def rounds_dict():
     return {round.id: round.name for round in Round.query.all()}

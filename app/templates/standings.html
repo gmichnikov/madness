@@ -34,7 +34,7 @@
         </thead>
         <tbody>
             {% for user in users %}
-                <tr>
+                <tr {% if user.id == current_user_id %}id="current-user-row"{% endif %}>
                     <td>{{ user.rank }}</td>
                     <td><a href="{{ url_for('view_picks', user_id=user.id) }}">{{ user.full_name }}</a></td>
                     <td>{{ user.currentscore }}</td>

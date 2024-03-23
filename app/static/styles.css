@@ -102,6 +102,10 @@ nav a {
     background-color: #f9f9f9;
 }
 
+#current-user-row {
+    background-color: LightSkyBlue	;
+}
+
 .standings-sort-form {
     display: flex;
     align-items: center;
