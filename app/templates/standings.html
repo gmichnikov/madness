@@ -10,6 +10,7 @@
             <div>{{ sort_form.sort_field.label }} {{ sort_form.sort_field(onchange="this.form.submit()") }}</div>
             <div>{{ sort_form.sort_order.label }} {{ sort_form.sort_order(onchange="this.form.submit()") }}</div>
             <div>{{ sort_form.champion_filter.label }} {{ sort_form.champion_filter(onchange="this.form.submit()") }}</div>
+            <div>{{ sort_form.name_filter.label }} {{ sort_form.name_filter(id="nameFilterInput", oninput="this.form.submit()") }}</div>
         </form>
     {% endif %}   
 
@@ -51,4 +52,18 @@
             {% endfor %}
         </tbody>
     </table>
+{% endblock %}
+
+{% block morejs %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+        var inputField = document.getElementById("nameFilterInput");
+        if (inputField) {
+            inputField.focus();
+            var val = inputField.value; // Store the value of the input
+            inputField.value = ''; // Clear the value of the input
+            inputField.value = val; // Set that value back. (cursor moves to the end)
+        }
+        });
+    </script>
 {% endblock %}

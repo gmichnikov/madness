@@ -755,18 +755,24 @@ def standings():
         sort_field = sort_form.sort_field.data
         sort_order = sort_form.sort_order.data
         champion_filter = sort_form.champion_filter.data
+        name_filter = sort_form.name_filter.data
     else:
         sort_field = 'currentscore'
         sort_order = 'desc'
         champion_filter = 'Any'
+        name_filter = ""
 
     users = champion_picks = None
     if is_after_cutoff():
-        users = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid == True).all()
+        user_query = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid == True)
         champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.join(User).filter(User.is_bracket_valid == True, Pick.game_id == 63).join(Team, Pick.team_id == Team.id)}
     else:
-        users = User.query.filter(User.pool_id == POOL_ID).all()
+        user_query = User.query.filter(User.pool_id == POOL_ID)
         champion_picks = {pick.user_id: pick.team.name for pick in Pick.query.filter_by(game_id=63).join(Team, Pick.team_id == Team.id)}
+
+    if name_filter:
+        user_query = user_query.filter(User.full_name.ilike(f'%{name_filter}%'))
+    users = user_query.all()
 
     for user in users:
         user.champion_team_name = champion_picks.get(user.id, "?")
