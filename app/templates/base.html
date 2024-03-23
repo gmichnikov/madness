@@ -42,6 +42,7 @@
                     <li><a href="{{ url_for('standings') }}" class="non-dropdown">Standings <i class="fa-solid fa-list-ol"></i></a></li>
                     <li><a href="{{ url_for('winners') }}" class="non-dropdown">Winners <i class="fa-solid fa-trophy"></i></a></li>
                     <li><a href="{{ url_for('message_board') }}" class="non-dropdown">Forum <i class="fa-regular fa-comments"></i></a></li>
+                    <li><a href="{{ url_for('game_stats') }}" class="non-dropdown">Stats <i class="fa-solid fa-chart-bar"></i></a></li>
                     {% if current_user.is_admin %}
                         <li class="dropdown">Admin
                             <ul class="dropdown-content">

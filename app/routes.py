@@ -9,6 +9,7 @@ import csv
 import functools
 from sqlalchemy import text, func
 from sqlalchemy.sql.expression import cast
+from sqlalchemy.orm import aliased
 import pytz
 import pandas as pd
 from collections import defaultdict
@@ -1254,14 +1255,31 @@ def show_potential_winners():
     return render_template('show_potential_winners.html', potential_winners=potential_winners_data)
 
 @app.route('/game_stats')
-def game_picks():
-    game_data = GamePicksStats.query.with_entities(
+def game_stats():
+
+    Team1 = aliased(Team)
+    Team2 = aliased(Team)
+    WinningTeam = aliased(Team)
+
+    game_data = db.session.query(
         GamePicksStats.game_id,
         GamePicksStats.round_name,
         GamePicksStats.region_name,
+        GamePicksStats.seed,
         GamePicksStats.team_name,
         GamePicksStats.num_picks,
-        (cast(GamePicksStats.num_picks, db.Float) / 167 * 100).label('picks_percent')
+        (cast(GamePicksStats.num_picks, db.Float) / 167 * 100).label('picks_percent'),
+        Team1.name.label('team1_name'),
+        Team2.name.label('team2_name'),
+        WinningTeam.name.label('winning_team_name')
+    ).join(
+        Game, GamePicksStats.game_id == Game.id
+    ).outerjoin(
+        Team1, Game.team1_id == Team1.id
+    ).outerjoin(
+        Team2, Game.team2_id == Team2.id
+    ).outerjoin(
+        WinningTeam, Game.winning_team_id == WinningTeam.id
     ).order_by(GamePicksStats.game_id, GamePicksStats.num_picks.desc()).all()
 
     organized_data = {}
@@ -1269,10 +1287,14 @@ def game_picks():
         if row.game_id not in organized_data:
             organized_data[row.game_id] = {
                 "round_name": row.round_name,
+                "team1_name": row.team1_name if row.team1_name else "TBD",
+                "team2_name": row.team2_name if row.team2_name else "TBD",
+                "winning_team_name": row.winning_team_name if row.winning_team_name else "TBD",
                 "teams": []
             }
         organized_data[row.game_id]["teams"].append({
             "region_name": row.region_name,
+            "seed": row.seed,
             "team_name": row.team_name,
             "num_picks": row.num_picks,
             "picks_percent": round(row.picks_percent, 1)

@@ -3,13 +3,13 @@
 
 {% block content %}
   {% for game_id, game_info in organized_data.items() %}
-    <h2>{{ game_info.round_name }} (Game {{ game_id }})</h2>
+    <h2>{{ game_info.round_name }} (Game {{ game_id }}): {{ game_info.team1_name }} vs {{ game_info.team2_name }} </h2>
     <ul>
-      {% for team in game_info.teams %}
-        <li>
-          {{ team.team_name }}: {{ team.num_picks }} picks ({{ team.picks_percent }}%)
-        </li>
-      {% endfor %}
+        {% for team in game_info.teams %}
+            <li class="{{ 'stats-winning-team' if team.team_name == game_info.winning_team_name else '' }}">
+                [{{ team.region_name }} #{{ team.seed }}] {{ team.team_name }}: {{ team.num_picks }} of 167 ({{ team.picks_percent }}%)
+            </li>
+        {% endfor %}
     </ul>
   {% endfor %}
 {% endblock %}
