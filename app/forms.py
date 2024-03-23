@@ -161,7 +161,7 @@ class SortStandingsForm(FlaskForm):
     sort_field = SelectField('Sort by')
     sort_order = SelectField('Order', choices=[('asc', 'Ascending'), ('desc', 'Descending')], default='asc')
     champion_filter = SelectField('Filter by Champion')
-    name_filter = StringField('Filter by Name')
+    name_filter = StringField('Filter by Name (press enter)')
     submit = SubmitField('Sort and/or Filter')
 
 class UserSelectionForm(FlaskForm):
