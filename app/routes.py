@@ -888,6 +888,7 @@ def message_board():
         threads = Thread.query.join(User, Thread.creator_id == User.id).filter(User.pool_id == POOL_ID, Thread.hidden == False).order_by(Thread.created_at.desc()).all()
     user_tz = pytz.timezone(current_user.time_zone)
     for thread in threads:
+        thread.post_count = thread.posts.count()
         last_post = Post.query.filter_by(thread_id=thread.id).order_by(Post.created_at.desc()).first()
         last_updated_utc = last_post.created_at if last_post else thread.created_at
         localized_last_updated = last_updated_utc.replace(tzinfo=pytz.utc).astimezone(user_tz)

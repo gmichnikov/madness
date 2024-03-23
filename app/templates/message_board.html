@@ -9,7 +9,7 @@
     <ul class="thread-list">
         {% for thread in threads %}
             <li class="thread-item {% if thread.hidden %}hidden{% endif %}">
-                <a href="{{ url_for('thread', thread_id=thread.id) }}" class="thread-title">{{ thread.title }}</a>
+                <a href="{{ url_for('thread', thread_id=thread.id) }}" class="thread-title">{{ thread.title }} ({{ thread.post_count }})</a>
                 <div class="thread-meta">
                     <span class="thread-creator">by {{ thread.creator.full_name }}</span>
                     <span class="thread-updated">Last updated: {{ thread.last_updated }}</span>
