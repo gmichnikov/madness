@@ -25,6 +25,11 @@ from app.utils import is_after_cutoff
 def context_processor():
     return dict(is_after_cutoff=is_after_cutoff())
 
+@app.context_processor
+def inject_globals():
+    return dict(measurement_id=os.environ.get('MEASUREMENT_ID'))
+
+
 def init_db():
     """ Function to initialize database with default values. """
     from .models import Region, Team, Round, Game
