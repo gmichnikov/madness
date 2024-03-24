@@ -3,6 +3,10 @@
 {% block content %}
 <h1>Simulate Standings</h1>
 
+{% if show_results %}
+    <span class="simulated-standings-note">Scroll down for simulated standings!</span>
+{% endif %}
+
 <form method="POST">
     {% for round_name, games in games_data.items() %}
         <h2>{{ round_name }}</h2>
@@ -11,13 +15,17 @@
                 <label for="game_{{ game.id }}">Game {{ game.id }}: </label>
                 <select name="game_{{ game.id }}">
                     <option value="">--- Select Winner ---</option>
+
                     {% for team in potential_winners_data[game.id] %}
-                        <option value="{{ team.id }}">{{ team.seed }} - {{ team.name }}</option>
+                    <option value="{{ team.id }}" {% if selected_teams.get('game_' ~ game.id|string) == (team.id|string) %}selected{% endif %}>
+                        {{ team.seed }} - {{ team.name }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
         {% endfor %}
     {% endfor %}
+    <br>
     <input type="submit" value="Simulate" class="btn btn-primary">
 </form>
 

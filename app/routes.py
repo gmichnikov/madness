@@ -1319,12 +1319,15 @@ def simulate_standings():
     for game in games:
         games_data[game.round.name].append(game)
 
+    selected_teams = {}
     if request.method == 'POST':
         users = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid == True).all()
         user_scores = {user.id: user.currentscore for user in users}
 
         for game in games:
-            selected_team_id = request.form.get(f"game_{game.id}")
+            game_key = f"game_{game.id}"
+            selected_team_id = request.form.get(game_key)
+            selected_teams[game_key] = selected_team_id
             if selected_team_id:
                 selected_team_id = int(selected_team_id)
 
@@ -1341,6 +1344,6 @@ def simulate_standings():
         simulated_standings.sort(key=lambda x: x[1], reverse=True)  # Sort by score in descending order
         simulated_standings_with_rank = [(rank + 1, user_id, score, name) for rank, (user_id, score, name) in enumerate(simulated_standings)]
 
-        return render_template('simulate_standings.html', games_data=games_data, potential_winners_data=potential_winners_data, simulated_standings_with_rank=simulated_standings_with_rank, show_results=True)
+        return render_template('simulate_standings.html', games_data=games_data, selected_teams=selected_teams, potential_winners_data=potential_winners_data, simulated_standings_with_rank=simulated_standings_with_rank, show_results=True)
 
-    return render_template('simulate_standings.html', games_data=games_data, potential_winners_data=potential_winners_data, show_results=False)
+    return render_template('simulate_standings.html', games_data=games_data, selected_teams=selected_teams, potential_winners_data=potential_winners_data, show_results=False)
