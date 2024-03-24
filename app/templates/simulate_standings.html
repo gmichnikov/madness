@@ -3,11 +3,13 @@
 {% block content %}
 <h1>Simulate Standings</h1>
 
+<span>Select as many or as few winners of future games as you would like. Then hit Simulate to see what the standings would look like with those results.</span>
 {% if show_results %}
-    <span class="simulated-standings-note">Scroll down for simulated standings!</span>
+    <br><span class="simulated-standings-note">Scroll down for simulated standings!</span>
 {% endif %}
 
 <form method="POST">
+    <input type="submit" value="Simulate" class="btn btn-primary">
     {% for round_name, games in games_data.items() %}
         <h2>{{ round_name }}</h2>
         {% for game in games %}
@@ -25,8 +27,6 @@
             </div>
         {% endfor %}
     {% endfor %}
-    <br>
-    <input type="submit" value="Simulate" class="btn btn-primary">
 </form>
 
 {% if show_results %}
