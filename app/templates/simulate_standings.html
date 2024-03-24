@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Simulate Standings{% endblock %}
+{% block content %}
+<h1>Simulate Standings</h1>
+
+<form method="POST">
+    {% for round_name, games in games_data.items() %}
+        <h2>{{ round_name }}</h2>
+        {% for game in games %}
+            <div>
+                <label for="game_{{ game.id }}">Game {{ game.id }}: </label>
+                <select name="game_{{ game.id }}">
+                    <option value="">--- Select Winner ---</option>
+                    {% for team in potential_winners_data[game.id] %}
+                        <option value="{{ team.id }}">{{ team.seed }} - {{ team.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    <input type="submit" value="Simulate" class="btn btn-primary">
+</form>
+
+{% if show_results %}
+    <h2>Simulated Standings</h2>
+    <table class="standings-table">
+
+        <tr>
+            <th>Rank</th>
+            <th>User</th>
+            <th>Score</th>
+        </tr>
+        {% for rank, user_id, score, user_name in simulated_standings_with_rank %}
+            <tr>
+                <td>{{ rank }}</td>
+                <td>{{ user_name }}</td>
+                <td>{{ score }}</td>
+            </tr>
+        {% endfor %}
+
+    </table>
+{% endif %}
+{% endblock %}

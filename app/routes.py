@@ -9,7 +9,7 @@ import csv
 import functools
 from sqlalchemy import text, func
 from sqlalchemy.sql.expression import cast
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, joinedload
 import pytz
 import pandas as pd
 from collections import defaultdict
@@ -1255,6 +1255,8 @@ def show_potential_winners():
     return render_template('show_potential_winners.html', potential_winners=potential_winners_data)
 
 @app.route('/game_stats')
+@login_required
+@pool_required
 def game_stats():
 
     Team1 = aliased(Team)
@@ -1301,3 +1303,44 @@ def game_stats():
         })
 
     return render_template('game_stats.html', organized_data=organized_data)
+
+@app.route('/simulate_standings', methods=['GET', 'POST'])
+@pool_required
+@login_required
+def simulate_standings():
+    games = Game.query.filter(Game.winning_team_id.is_(None)).order_by(Game.id).all()
+    potential_winners_data = {}
+    for pw in PotentialWinner.query.all():
+        team_ids = [int(tid) for tid in pw.potential_winner_ids.split(',') if tid.isdigit()]
+        teams = Team.query.filter(Team.id.in_(team_ids)).all()
+        potential_winners_data[pw.game_id] = teams
+
+    games_data = defaultdict(list)
+    for game in games:
+        games_data[game.round.name].append(game)
+
+    if request.method == 'POST':
+        users = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid == True).all()
+        user_scores = {user.id: user.currentscore for user in users}
+
+        for game in games:
+            selected_team_id = request.form.get(f"game_{game.id}")
+            if selected_team_id:
+                selected_team_id = int(selected_team_id)
+
+
+                picks = Pick.query.join(User).filter(Pick.game_id == game.id, 
+                                                        Pick.team_id == selected_team_id, User.pool_id == POOL_ID,
+                                                        User.is_bracket_valid == True).options(joinedload(Pick.user)).all()
+                for pick in picks:
+                    user_scores[pick.user_id] += game.round.points
+
+        user_names = {user.id: user.full_name for user in User.query.all()}
+
+        simulated_standings = [(user_id, user_scores[user_id], user_names[user_id]) for user_id in user_scores]
+        simulated_standings.sort(key=lambda x: x[1], reverse=True)  # Sort by score in descending order
+        simulated_standings_with_rank = [(rank + 1, user_id, score, name) for rank, (user_id, score, name) in enumerate(simulated_standings)]
+
+        return render_template('simulate_standings.html', games_data=games_data, potential_winners_data=potential_winners_data, simulated_standings_with_rank=simulated_standings_with_rank, show_results=True)
+
+    return render_template('simulate_standings.html', games_data=games_data, potential_winners_data=potential_winners_data, show_results=False)
