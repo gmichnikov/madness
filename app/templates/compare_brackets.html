@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Compare Brackets{% endblock %}
+{% block content %}
+
+<h2>Compare Brackets</h2>
+<form action="{{ url_for('compare_brackets') }}">
+    <select name="user1">
+        {% for user in users %}
+        <option value="{{ user.id }}" {% if user.id|string == user1_id %}selected{% endif %}>{{ user.full_name }}</option>
+        {% endfor %}
+    </select>
+    <select name="user2">
+        {% for user in users %}
+        <option value="{{ user.id }}" {% if user.id|string == user2_id %}selected{% endif %}>{{ user.full_name }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Compare">
+</form>
+
+<br>
+{% if comparison_results %}
+<table class="table-logs">
+    <tr>
+        <th>Round</th>
+        <th>Game ID</th>
+        <th><a href="{{ url_for('view_picks', user_id=user1_id) }}">{{ user1_name }}</a>'s Pick</th>
+        <th><a href="{{ url_for('view_picks', user_id=user2_id) }}">{{ user2_name }}</a>'s Pick</th>
+    </tr>
+
+    {% for round_name, game_id, team1_name, team1_status, team2_name, team2_status in comparison_results %}
+    <tr>
+        <td>{{ round_name }}</td>
+        <td>{{ game_id }}</td>
+        <td class="comparison-{{ team1_status }}">{{ team1_name }}</td>
+        <td class="comparison-{{ team2_status }}">{{ team2_name }}</td>
+    </tr>
+    {% endfor %}
+
+</table>
+{% endif %}
+
+{% endblock %}

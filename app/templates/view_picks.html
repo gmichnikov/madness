@@ -3,6 +3,8 @@
 {% block content %}
     <h1>{{ user.full_name }}'s Bracket || Rank: {{ user_rank }} (Score: {{ user.currentscore }}) </h1>
 
+    <i><a href="{{ url_for('compare_brackets', user1=current_user_id, user2=user.id) }}">Compare</a> this bracket to yours or any other!</i><br>
+
     <br>
     <form method="POST" style="display: flex; align-items: center; gap: 10px;">
         {{ form.hidden_tag() }}

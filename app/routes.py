@@ -835,7 +835,10 @@ def view_picks(user_id):
 
     games = Game.query.order_by(Game.id).all()
     form = UserSelectionForm()
-    form.user.choices = [(u.id, u.full_name) for u in User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()]
+    if current_user.is_admin:
+        form.user.choices = [(u.id, u.full_name) for u in User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()]
+    else:
+        form.user.choices = [(u.id, u.full_name) for u in User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid == True).order_by(User.full_name).all()]
 
     if form.validate_on_submit():
         selected_user_id = form.user.data
@@ -852,7 +855,7 @@ def view_picks(user_id):
 
     user_rank = count_higher_scores + 1
 
-    return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all(), lost_teams=lost_teams, user_rank=user_rank)
+    return render_template('view_picks.html', form=form, games=games, user_picks=user_picks, user=user, rounds=rounds_dict(), regions=regions_dict(), teams = Team.query.all(), lost_teams=lost_teams, user_rank=user_rank, current_user_id=current_user.id)
 
 @app.route('/admin/cutoff_status')
 @admin_required
@@ -1361,3 +1364,48 @@ def simulate_standings():
         return render_template('simulate_standings.html', games_data=games_data, selected_teams=selected_teams, potential_winners_data=potential_winners_data, simulated_standings_with_rank=simulated_standings_with_rank, show_results=True)
 
     return render_template('simulate_standings.html', games_data=games_data, selected_teams=selected_teams, potential_winners_data=potential_winners_data, show_results=False)
+
+
+@app.route('/compare_brackets', methods=['GET'])
+@pool_required
+@login_required
+def compare_brackets():
+    users = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid == True).order_by(User.full_name).all()
+
+    user1_id = request.args.get('user1') # request.form.get('user1') or 
+    user2_id = request.args.get('user2') # request.form.get('user2') or 
+    comparison_results = None
+    user1_name = None
+    user2_name = None
+
+    if user1_id and user2_id:
+        user1 = User.query.get(user1_id)
+        user2 = User.query.get(user2_id)
+        if user1 and user2:
+            user1_name = user1.full_name
+            user2_name = user2.full_name
+        comparison_results = perform_comparison(user1_id, user2_id)
+    
+    return render_template('compare_brackets.html', users=users, user1_id=user1_id, user2_id=user2_id, user1_name=user1_name, user2_name=user2_name, comparison_results=comparison_results)
+
+def perform_comparison(user1_id, user2_id):
+    picks_user1 = {pick.game_id: pick.team_id for pick in Pick.query.filter_by(user_id=user1_id).order_by(Pick.game_id).all()}
+    picks_user2 = {pick.game_id: pick.team_id for pick in Pick.query.filter_by(user_id=user2_id).order_by(Pick.game_id).all()}
+    
+    differing_picks = []
+    for game_id, team1_pick in picks_user1.items():
+        team2_pick = picks_user2.get(game_id)
+        if team1_pick != team2_pick:
+            game = Game.query.get(game_id)
+            team1_name = Team.query.get(team1_pick).name if team1_pick else "No Pick"
+            team2_name = Team.query.get(team2_pick).name if team2_pick else "No Pick"
+            
+            if game.winning_team_id is None:
+                team1_status = team2_status = "tbd"
+            else:
+                team1_status = "correct" if team1_pick == game.winning_team_id else "incorrect"
+                team2_status = "correct" if team2_pick == game.winning_team_id else "incorrect"
+                
+            differing_picks.append((game.round.name, game_id, team1_name, team1_status, team2_name, team2_status))
+
+    return differing_picks

@@ -687,3 +687,11 @@ header {
 .simulated-standings-note {
     background-color: yellow;
 }
+
+.comparison-correct {
+    background-color: #d4edda;
+}
+
+.comparison-incorrect {
+    background-color: #f8d7da;
+}
