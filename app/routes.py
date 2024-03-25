@@ -1216,6 +1216,10 @@ def round_timestamp(ts, granularity):
 def admin_update_potential_winners_and_standings():
     do_admin_update_potential_winners()
     recalculate_standings()
+    log_entry = LogEntry(category='Update Potential Winners', current_user_id=current_user.id, description=f"{current_user.full_name} updated the PotentialWinner table")
+    db.session.add(log_entry)
+    db.session.commit()
+
     return jsonify({"status": "success", "message": "Potential winners updated."})
 
 def do_admin_update_potential_winners():
