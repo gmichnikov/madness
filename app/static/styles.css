@@ -679,6 +679,11 @@ header {
     color: green;
 }
 
+.stats-user-pick {
+    background-color: lightsteelblue;
+    border: 1px dashed black;
+}
+
 .simulated-standings-note {
     background-color: yellow;
 }

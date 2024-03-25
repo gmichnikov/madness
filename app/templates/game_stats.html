@@ -2,13 +2,18 @@
 {% block title %}Game Stats{% endblock %}
 
 {% block content %}
+  <h2>Legend</h2>
+  <ul>
+    <li><span class="stats-user-pick">Your pick</span></li>
+    <li><span class="stats-winning-team">Correct pick</span></li>
+  </ul>
   {% for game_id, game_info in organized_data.items() %}
     <h2>{{ game_info.round_name }} (Game {{ game_id }}): {{ game_info.team1_name }} vs {{ game_info.team2_name }} </h2>
     <ul>
         {% for team in game_info.teams %}
-            <li class="{{ 'stats-winning-team' if team.team_name == game_info.winning_team_name else '' }}">
+            <li><span class="{% if team.team_name == game_info.winning_team_name %}stats-winning-team{% endif %} {% if team.is_user_pick %}stats-user-pick{% endif %}">
                 [{{ team.region_name }} #{{ team.seed }}] {{ team.team_name }}: {{ team.num_picks }} of 167 ({{ team.picks_percent }}%)
-            </li>
+            </span></li>
         {% endfor %}
     </ul>
   {% endfor %}

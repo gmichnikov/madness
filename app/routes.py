@@ -1269,6 +1269,7 @@ def game_stats():
         GamePicksStats.region_name,
         GamePicksStats.seed,
         GamePicksStats.team_name,
+        GamePicksStats.team_id,
         GamePicksStats.num_picks,
         (cast(GamePicksStats.num_picks, db.Float) / 167 * 100).label('picks_percent'),
         Team1.name.label('team1_name'),
@@ -1284,6 +1285,9 @@ def game_stats():
         WinningTeam, Game.winning_team_id == WinningTeam.id
     ).order_by(GamePicksStats.game_id, GamePicksStats.num_picks.desc()).all()
 
+    user_picks = Pick.query.filter_by(user_id=current_user.id).all()
+    user_picks_dict = {pick.game_id: pick.team_id for pick in user_picks}
+
     organized_data = {}
     for row in game_data:
         if row.game_id not in organized_data:
@@ -1294,12 +1298,15 @@ def game_stats():
                 "winning_team_name": row.winning_team_name if row.winning_team_name else "TBD",
                 "teams": []
             }
+        is_user_pick = row.team_id == user_picks_dict.get(row.game_id, None)
+
         organized_data[row.game_id]["teams"].append({
             "region_name": row.region_name,
             "seed": row.seed,
             "team_name": row.team_name,
             "num_picks": row.num_picks,
-            "picks_percent": round(row.picks_percent, 0)
+            "picks_percent": round(row.picks_percent, 0),
+            "is_user_pick": is_user_pick
         })
 
     return render_template('game_stats.html', organized_data=organized_data)

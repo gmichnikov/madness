@@ -41,7 +41,7 @@
         {% for rank, user_id, score, user_name in simulated_standings_with_rank %}
             <tr>
                 <td>{{ rank }}</td>
-                <td>{{ user_name }}</td>
+                <td><a href="{{ url_for('view_picks', user_id=user_id) }}">{{ user_name }}</a></td>
                 <td>{{ score }}</td>
             </tr>
         {% endfor %}
