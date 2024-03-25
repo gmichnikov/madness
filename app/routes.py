@@ -369,7 +369,10 @@ def users():
 @pool_required
 @login_required
 def admin_verify_users():
-    users = User.query.filter(User.pool_id == POOL_ID).order_by(User.full_name).all()
+    query = User.query.filter(User.pool_id == POOL_ID)
+    if request.args.get('show_valid_brackets') == '1':
+        query = query.filter(User.is_bracket_valid == True)
+    users = query.order_by(User.full_name).all()
 
     if request.method == 'POST':
         for user in users:
