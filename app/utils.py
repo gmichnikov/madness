@@ -11,7 +11,7 @@ def is_after_cutoff():
     return is_after_cutoff
 
 def get_cutoff_time():
-    naive_cutoff_time = datetime(2024, 3, 21, 12, 10)  # Naive datetime object (no timezone)
+    naive_cutoff_time = datetime(2026, 3, 19, 12, 10)  # Naive datetime object (no timezone)
     cutoff_time = EASTERN.localize(naive_cutoff_time)  # Localize to Eastern Time
     return cutoff_time
 

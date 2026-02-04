@@ -1175,7 +1175,7 @@ def admin_analytics():
         granularity = int(form.granularity.data)
         category = form.category.data
 
-        cutoff_datetime = datetime(2024, 3, 17, 23, 0, 0)
+        cutoff_datetime = datetime(2026, 3, 15, 23, 0, 0)
         logs = LogEntry.query.filter(LogEntry.category == category, LogEntry.timestamp > cutoff_datetime).all()
 
         df = pd.DataFrame([(log.current_user_id, log.timestamp) for log in logs], columns=['user_id', 'timestamp'])        

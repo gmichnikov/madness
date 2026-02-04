@@ -243,3 +243,5 @@ def populate_game_picks_stats_command():
     click.echo('Game picks stats populated.')
 
 app.cli.add_command(populate_game_picks_stats_command)
+
+from app import routes
