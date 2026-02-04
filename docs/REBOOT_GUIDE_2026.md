@@ -27,7 +27,6 @@ This is a Flask-based web application for hosting a March Madness basketball tou
    - LogEntry (audit trail)
    - Thread/Post (message board)
    - PotentialWinner (cached data for standings calculation)
-   - GamePicksStats (statistics table - **likely outdated/unnecessary**)
 
 3. **Frontend Templates** (`app/templates/`)
    - Bootstrap-based responsive design
@@ -43,7 +42,7 @@ This is a Flask-based web application for hosting a March Madness basketball tou
 
 ## 1. Cleanup Steps for 2026
 
-### A. Code Cleanup
+### A. Code Cleanup [DONE]
 
 #### **Remove/Update Outdated Features**
 
@@ -93,58 +92,25 @@ This is a Flask-based web application for hosting a March Madness basketball tou
 
 ### B. Database Cleanup [DONE - FRESH DB]
 
-#### **Reset Tournament Data**
+Your local database is currently empty and represents a fresh start for 2026. The original Heroku database no longer exists.
 
-1. **Clear Old Tournament Results** [N/A - FRESH DB]
+#### **Reset Tournament Data** [N/A - FRESH DB]
+
+The following steps are traditionally used for season-to-season rollovers on an existing database. They are not required for your initial 2026 setup.
+
+1. **Clear Old Tournament Results**
    - All `Game.winning_team_id` should be set to NULL
    - All `Game.team1_id` and `Game.team2_id` for games beyond Round 1 should be NULL
    - All `Pick` records should be deleted (or keep for historical reference in separate table)
    - All `PotentialWinner` records should be reset
 
-2. **Reset User Data** [N/A - FRESH DB]
+2. **Reset User Data**
    - Set all user scores to 0 (r1score through r6score, currentscore, maxpossiblescore)
    - Set all `is_bracket_valid` to FALSE
    - Set all `last_bracket_save` to NULL
-   - Consider keeping old users vs. requiring re-registration
 
-3. **Create Admin Script**
-   - [ ] Create a Flask CLI command to reset all tournament data:
-   ```python
-   @app.cli.command('reset-tournament')
-   @with_appcontext
-   def reset_tournament_command():
-       """Reset all tournament data for new season"""
-       # Delete all picks
-       Pick.query.delete()
-       
-       # Reset all games
-       games = Game.query.all()
-       for game in games:
-           if game.round_id > 1:
-               game.team1_id = None
-               game.team2_id = None
-           game.winning_team_id = None
-       
-       # Reset all users
-       users = User.query.all()
-       for user in users:
-           user.r1score = 0
-           user.r2score = 0
-           user.r3score = 0
-           user.r4score = 0
-           user.r5score = 0
-           user.r6score = 0
-           user.currentscore = 0
-           user.maxpossiblescore = 0
-           user.is_bracket_valid = False
-           user.last_bracket_save = None
-       
-       # Clear potential winners
-       PotentialWinner.query.delete()
-       
-       db.session.commit()
-       click.echo('Tournament data reset successfully')
-   ```
+3. **Admin Utilities**
+   - Consider implementing a `reset-tournament` CLI command in future seasons if needed to automate the above steps.
 
 ### C. Configuration Updates [DONE]
 
@@ -383,7 +349,7 @@ Before going live:
 - [ ] Teams match their region assignments
 - [ ] Round points configured
 - [ ] Cutoff time set correctly
-- [ ] Test user can register
+- [x] Test user can register
 - [ ] Test user can fill out complete bracket
 - [ ] Test user can save bracket
 - [ ] Bracket validation works
@@ -401,15 +367,20 @@ Before going live:
 
 ## 5. Deployment Checklist
 
-### Heroku Deployment
+### Heroku Deployment (New App for 2026)
 
-1. **Create/Update Heroku App**
+Since the original Heroku application has been retired, a new application must be created.
+
+1. **Create New Heroku App**
    ```bash
-   heroku create your-app-name
-   # or use existing app
+   heroku create march-madness-2026
    ```
 
 2. **Set Environment Variables**
+   - [ ] Set `DATABASE_URL` (Done automatically by Postgres addon)
+   - [ ] Set `SECRET_KEY`
+   - [ ] Set `ADMIN_EMAIL`
+   - [ ] Set `POOL_ID`
    ```bash
    heroku config:set SECRET_KEY='your-secret-key'
    heroku config:set ADMIN_EMAIL='your-email@example.com'
@@ -535,9 +506,6 @@ flask init-db
 
 # Update team names
 flask update-team-names
-
-# Reset tournament (create this)
-flask reset-tournament
 ```
 
 ### Heroku
@@ -608,7 +576,7 @@ heroku pg:psql
 - Database: Heroku PostgreSQL
 - Hosting: Heroku
 - Framework: Flask 2.3.3
-- Python: 3.9.18 (update to 3.11+)
+- Python: 3.11
 
 **Remember**: Test everything thoroughly with a small group before opening to all users!
 
@@ -684,7 +652,6 @@ heroku pg:psql
 - `/create_thread` - New forum thread
 - `/thread/<thread_id>` - View thread
 - `/winners` - Past winners
-- `/game_stats` - Statistics (to be removed)
 - `/simulate_standings` - Simulate future scenarios
 - `/compare_brackets` - Compare two brackets
 
