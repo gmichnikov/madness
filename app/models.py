@@ -142,15 +142,3 @@ class PotentialWinner(db.Model):
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     game = db.relationship('Game', backref='potential_winners')
-
-class GamePicksStats(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    game_id = db.Column(db.Integer, nullable=False)
-    round_id = db.Column(db.Integer, nullable=False)
-    round_name = db.Column(db.String(255), nullable=False)
-    team_id = db.Column(db.Integer, nullable=False)
-    team_name = db.Column(db.String(255), nullable=False)
-    seed = db.Column(db.Integer, nullable=False)
-    region_id = db.Column(db.Integer, nullable=False)
-    region_name = db.Column(db.String(255), nullable=False)
-    num_picks = db.Column(db.Integer, nullable=False)
