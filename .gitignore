@@ -1,7 +1,8 @@
 venv
-venv3918
 __pycache__
 pyvenv.cfg
 .env
 *.db
 *.dat
+
+REBOOT_GUIDE_2026.md
