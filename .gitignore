@@ -4,5 +4,3 @@ pyvenv.cfg
 .env
 *.db
 *.dat
-
-REBOOT_GUIDE_2026.md
