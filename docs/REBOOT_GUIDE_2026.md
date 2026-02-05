@@ -86,8 +86,8 @@ This is a Flask-based web application for hosting a March Madness basketball tou
 6. **Update Dependencies** (`requirements.txt`) [DONE]
    - **Issue**: 2-year-old packages with potential security vulnerabilities
    - **Action**: 
-     - [x] Update Flask, SQLAlchemy, and other dependencies to match gmich standards
-     - [ ] Test thoroughly after updating
+    - [x] Update Flask, SQLAlchemy, and other dependencies to match gmich standards
+    - [x] Test thoroughly after updating
      - [ ] Consider using `pip-audit` to check for vulnerabilities
 
 ### B. Database Cleanup [DONE - FRESH DB]
@@ -135,7 +135,7 @@ The following steps are traditionally used for season-to-season rollovers on an 
 
 ### Step-by-Step Process
 
-#### **1. Update Regions** (Sunday, after bracket reveal)
+#### **1. Update Regions** [TESTED]
 - Navigate to: Admin → Edit Regions
 - Update region names:
   - Region 1: [East/West/South/Midwest]
@@ -143,7 +143,7 @@ The following steps are traditionally used for season-to-season rollovers on an 
   - Region 3: [East/West/South/Midwest]
   - Region 4: [East/West/South/Midwest]
 
-#### **2. Update Teams** (Sunday, after bracket reveal)
+#### **2. Update Teams** [TESTED]
 - Navigate to: Admin → Edit Teams
 - Manually enter all 64 teams with their seeds
 - **IMPORTANT**: Teams are pre-assigned to regions by ID:
@@ -158,7 +158,7 @@ The following steps are traditionally used for season-to-season rollovers on an 
   ```
   (After you've updated the dictionary in `app/__init__.py`)
 
-#### **3. Verify Round Points** (Anytime before tournament)
+#### **3. Verify Round Points** [TESTED]
 - Navigate to: Admin → Edit Round Points
 - Default values:
   - Round 1: 1 point
@@ -169,12 +169,12 @@ The following steps are traditionally used for season-to-season rollovers on an 
   - Championship: 12 points
 - Adjust if you want different scoring
 
-#### **4. Set Registration Cutoff** (Before tournament starts)
+#### **4. Set Registration Cutoff** [TESTED]
 - Update `app/utils.py` with the exact cutoff time
 - This is when users can no longer edit brackets
 - Typically set to tip-off of first game (Thursday ~noon ET)
 
-#### **5. Test the Bracket**
+#### **5. Test the Bracket** [TESTED]
 - Create a test account
 - Fill out a complete bracket
 - Verify:
@@ -183,7 +183,7 @@ The following steps are traditionally used for season-to-season rollovers on an 
   - Bracket validation works
   - Dropdown options are correct
 
-#### **6. Open Registration**
+#### **6. Open Registration** [TESTED]
 - Share the registration link with participants
 - Monitor registrations via: Admin → Users Status
 - Verify users as they register: Admin → Verify Users
@@ -194,7 +194,7 @@ The following steps are traditionally used for season-to-season rollovers on an 
 
 ### Daily/As Games Complete
 
-#### **1. Set Game Winners** (After each game)
+#### **1. Set Game Winners** [TESTED]
 - Navigate to: Admin → Set Game Winners
 - Select winner for each completed game
 - **IMPORTANT**: The system automatically:
@@ -202,7 +202,7 @@ The following steps are traditionally used for season-to-season rollovers on an 
   - Clears future round games if you change a winner
   - Logs all winner changes
 
-#### **2. Update Standings** (After setting winners)
+#### **2. Update Standings** [TESTED]
 - The system does NOT auto-update standings
 - Navigate to: Super Admin → Update Potential Winners/Standings
 - Click the link to trigger recalculation
@@ -211,7 +211,7 @@ The following steps are traditionally used for season-to-season rollovers on an 
   - Max possible scores
   - Potential winners cache
 
-#### **3. Monitor the Pool**
+#### **3. Monitor the Pool** [TESTED]
 - Check: Admin → View Logs (for unusual activity)
 - Check: Standings (to see current rankings)
 - Check: Message Board (for user questions/complaints)
@@ -344,22 +344,22 @@ Before going live:
 
 - [x] Migration Test: Run `flask db upgrade` on a local copy of 2024 database to ensure path is clean
 - [x] Database reset successfully
-- [ ] Regions updated with 2026 regions
-- [ ] All 64 teams entered correctly
-- [ ] Teams match their region assignments
-- [ ] Round points configured
-- [ ] Cutoff time set correctly
+- [x] Regions updated with 2026 regions
+- [x] All 64 teams entered correctly
+- [x] Teams match their region assignments
+- [x] Round points configured
+- [x] Cutoff time set correctly
 - [x] Test user can register
-- [ ] Test user can fill out complete bracket
-- [ ] Test user can save bracket
-- [ ] Bracket validation works
-- [ ] Auto-fill works correctly
-- [ ] Cutoff time prevents edits
-- [ ] Admin can set winners
-- [ ] Winners advance correctly
-- [ ] Standings update correctly
-- [ ] Message board works
-- [ ] Admin tools all accessible
+- [x] Test user can fill out complete bracket
+- [x] Test user can save bracket
+- [x] Bracket validation works
+- [x] Auto-fill works correctly
+- [x] Cutoff time prevents edits
+- [x] Admin can set winners
+- [x] Winners advance correctly
+- [x] Standings update correctly
+- [x] Message board works
+- [x] Admin tools all accessible
 - [ ] Mobile view acceptable
 - [ ] Analytics working (if enabled)
 
