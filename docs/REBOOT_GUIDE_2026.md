@@ -597,9 +597,19 @@ heroku pg:psql
 ### **B. Logic & Bug Fixes**
 
 1. **Cascade Winner Clearing** [COMPLETED ✅]
-   - **Issue**: Clearing or changing a game winner only updates the immediate next round. Future rounds (e.g., if a team was already set as the winner of the Sweet 16 and you clear their Round 1 win) remain unchanged, leading to "ghost winners" and incorrect scores.
-   - **Fix**: Implemented `clear_team_from_future_games` (recursive) and `advance_team_to_next_game` (slot-aware) helpers.
+   - **Issue**: Clearing or changing a game winner only updates the immediate next round.
+   - **Fix**: Implemented recursive path clearing and slot-aware advancement.
    - **Status**: [x] Fixed
+
+2. **Race Conditions & Transactions** [COMPLETED ✅]
+   - **Issue**: Multiple commits in functions like `set_is_bracket_valid` risked inconsistent data.
+   - **Fix**: Consolidated all logic into single-commit transactions.
+   - **Status**: [x] Fixed
+
+3. **Message Board N+1** [COMPLETED ✅]
+   - **Issue**: Loading the message board ran 2n+1 queries.
+   - **Fix**: Implemented SQL subqueries for bulk stats fetching.
+   - **Status**: [x] Optimized
 
 ---
 
