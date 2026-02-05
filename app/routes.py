@@ -424,6 +424,39 @@ def reset_game_table():
                 game.winning_team_id = int(row[5]) if row[5] else None
                 db.session.commit()
 
+def get_potential_picks(game_id, return_current_pick, games_dict, user_picks, cache=None):
+    if cache is None:
+        cache = {}
+    
+    cache_key = (game_id, return_current_pick)
+    if cache_key in cache:
+        return cache[cache_key]
+
+    game = games_dict.get(game_id)
+    if not game:
+        return []
+
+    if return_current_pick:
+        pick_team_id = user_picks.get(game_id)
+        if pick_team_id:
+            return [pick_team_id]
+
+    if game.round_id == 1:
+        res = [team_id for team_id in [game.team1_id, game.team2_id] if team_id]
+        cache[cache_key] = res
+        return res
+
+    # Otherwise, find the two games that lead to this game
+    # We can pre-calculate this mapping or find it from games_dict
+    previous_games = [g for g in games_dict.values() if g.winner_goes_to_game_id == game_id]
+    potential_picks = []
+
+    for prev_game in previous_games:
+        potential_picks.extend(get_potential_picks(prev_game.id, True, games_dict, user_picks, cache))
+
+    cache[cache_key] = potential_picks
+    return potential_picks
+
 @app.route('/make_picks', methods=['GET', 'POST'])
 @pool_required
 @login_required
@@ -431,14 +464,27 @@ def make_picks():
     if is_after_cutoff():
         return redirect(url_for('standings'))
 
-    games = Game.query.order_by(Game.id).all()
+    # Optimized fetching with joinedload
+    games = Game.query.options(
+        joinedload(Game.round),
+        joinedload(Game.team1),
+        joinedload(Game.team2)
+    ).order_by(Game.id).all()
+    
     teams = Team.query.all()
     rounds = rounds_dict()
     regions = regions_dict()
+    
+    # Pre-fetch user picks into a dictionary
     user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
-
-    teams_dict = {team.id: team for team in teams}
-    potential_picks_map = {game.id: get_potential_picks(game.id, return_current_pick=False) for game in games}
+    games_dict = {game.id: game for game in games}
+    
+    # Internal cache for potential picks during this request
+    picks_cache = {}
+    potential_picks_map = {
+        game.id: get_potential_picks(game.id, False, games_dict, user_picks, picks_cache) 
+        for game in games
+    }
 
     is_bracket_valid = current_user.is_bracket_valid
     user_tz = pytz.timezone(current_user.time_zone)
@@ -446,10 +492,6 @@ def make_picks():
     if current_user.last_bracket_save:
         last_save_localized = current_user.last_bracket_save.replace(tzinfo=pytz.utc).astimezone(user_tz)
         last_save_formatted = last_save_localized.strftime('%Y-%m-%d, %I:%M:%S %p ') + last_save_localized.tzname()
-
-    log_entry = LogEntry(category='Load Make Picks Page', current_user_id=current_user.id, description=f"{current_user.email} loaded make picks page")
-    db.session.add(log_entry)
-    db.session.commit()
 
     if request.method == 'POST':
         if request.form['action'] == 'save_picks':
@@ -469,7 +511,7 @@ def make_picks():
 
             db.session.commit()
             flash('Your picks have been saved.')
-            set_is_bracket_valid()
+            set_is_bracket_valid(games_dict)
             recalculate_standings(current_user)
             return redirect(url_for('make_picks'))
         elif request.form['action'] == 'clear_picks':
@@ -480,16 +522,16 @@ def make_picks():
             db.session.add(log_entry)
             db.session.commit()
 
-            set_is_bracket_valid()
+            set_is_bracket_valid(games_dict)
             recalculate_standings(current_user)
             return redirect(url_for('make_picks'))
         elif request.form['action'] == 'fill_in_better_seeds':
-            auto_fill_bracket()
-            set_is_bracket_valid()
+            auto_fill_bracket(games_dict, user_picks)
+            set_is_bracket_valid(games_dict)
             recalculate_standings(current_user)
             return redirect(url_for('make_picks'))
 
-    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted)
+    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict={t.id: t for t in teams}, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted)
 
 def add_or_update_pick(pick, team_id, game_id):
     if pick:
@@ -548,7 +590,7 @@ def memoize_get_potential_picks(func):
 
 # When return_current_pick is False (the initial call for each game), we ignore the current pick, so that we populate the dropdowns based on previous rounds. This also means an invalid pick (team lost in earlier round) will not appear in the dropdown as an option at all, though it will still be in the DB until picks are saved again.
 # @memoize_get_potential_picks
-def get_potential_picks(game_id, return_current_pick):
+def old_get_potential_picks(game_id, return_current_pick):
     game = Game.query.get(game_id)
 
     if return_current_pick:
@@ -565,7 +607,7 @@ def get_potential_picks(game_id, return_current_pick):
 
     # Recursively call this function on the previous games, with return_current_pick=True
     for prev_game in previous_games:
-        potential_picks.extend(get_potential_picks(prev_game.id, return_current_pick=True))
+        potential_picks.extend(old_get_potential_picks(prev_game.id, return_current_pick=True))
 
     return potential_picks
 
@@ -580,22 +622,30 @@ def get_later_round_pick(game, form):
 
     return None
 
-def set_is_bracket_valid():
+def set_is_bracket_valid(games_dict=None):
+    if games_dict is None:
+        games = Game.query.all()
+        games_dict = {g.id: g for g in games}
+    else:
+        games = list(games_dict.values())
+        
+    # Pre-fetch user picks
+    user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
+    
     is_bracket_valid = True
-    games = Game.query.all()
     for game in games:
         if game.round_id == 1:
             continue
 
-        user_pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
-        if not user_pick:
+        user_pick_team_id = user_picks.get(game.id)
+        if not user_pick_team_id:
             is_bracket_valid = False
             break
 
-        previous_games = Game.query.filter_by(winner_goes_to_game_id=game.id).all()
-
-        previous_picks = [Pick.query.filter_by(user_id=current_user.id, game_id=prev_game.id).first() for prev_game in previous_games]
-        if not all(previous_picks) or user_pick.team_id not in [pick.team_id for pick in previous_picks]:
+        previous_games = [g for g in games_dict.values() if g.winner_goes_to_game_id == game.id]
+        previous_picks_team_ids = [user_picks.get(prev_game.id) for prev_game in previous_games]
+        
+        if not all(previous_picks_team_ids) or user_pick_team_id not in previous_picks_team_ids:
             is_bracket_valid = False
 
     current_user.is_bracket_valid = is_bracket_valid
@@ -611,33 +661,67 @@ def set_is_bracket_valid():
         db.session.add(log_entry)
         db.session.commit()
 
-def auto_fill_bracket():
-    games = Game.query.all()
+def auto_fill_bracket(games_dict=None, user_picks=None):
+    if games_dict is None:
+        games = Game.query.all()
+        games_dict = {g.id: g for g in games}
+    else:
+        games = list(games_dict.values())
+        
+    if user_picks is None:
+        user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
+        
     teams = Team.query.all()
     teams_dict = {team.id: team for team in teams}
+    picks_cache = {}
 
     for game in games:
-        current_pick = Pick.query.filter_by(user_id=current_user.id, game_id=game.id).first()
-        if current_pick is None:
-            potential_picks = get_potential_picks(game.id, return_current_pick=False)
+        if game.id not in user_picks:
+            potential_picks = get_potential_picks(game.id, False, games_dict, user_picks, picks_cache)
             
             best_team = None
             best_seed = float('inf')
             for team_id in potential_picks:
-                team = teams_dict[team_id]
-                if team.seed < best_seed:
+                team = teams_dict.get(team_id)
+                if team and team.seed < best_seed:
                     best_seed = team.seed
                     best_team = team
 
             if best_team:
                 new_pick = Pick(user_id=current_user.id, game_id=game.id, team_id=best_team.id)
                 db.session.add(new_pick)
+                user_picks[game.id] = best_team.id # Update local dict to inform future round fills
 
     db.session.commit()
 
     log_entry = LogEntry(category='Fill Better Seeds', current_user_id=current_user.id, description=f"{current_user.email} filled in the better seeds")
     db.session.add(log_entry)
     db.session.commit()
+
+def clear_team_from_future_games(game, team_id):
+    """
+    Recursively removes a team from future games in the bracket if they were advanced there.
+    """
+    if not game or not game.winner_goes_to_game_id:
+        return
+
+    next_game = Game.query.get(game.winner_goes_to_game_id)
+    if not next_game:
+        return
+
+    # If the team was in this next game, remove them
+    if next_game.team1_id == team_id:
+        next_game.team1_id = None
+    elif next_game.team2_id == team_id:
+        next_game.team2_id = None
+    else:
+        # If the team isn't even in this game, they can't be in any further ones
+        return
+
+    # If the team was also marked as the winner of THIS game, clear it and recurse
+    if next_game.winning_team_id == team_id:
+        next_game.winning_team_id = None
+        clear_team_from_future_games(next_game, team_id)
 
 @app.route('/admin/set_winners', methods=['GET', 'POST'])
 @admin_required
@@ -662,48 +746,73 @@ def admin_set_winners():
                 selected_team_id = None
 
             previous_winning_team_id = game.winning_team_id
-            if previous_winning_team_id is None and selected_team_id is None:
-                pass
-            elif previous_winning_team_id == selected_team_id:
-                pass
-            elif selected_team_id is None:   # clearing a previously set winner
+            
+            # Case 1: No change
+            if previous_winning_team_id == selected_team_id:
+                continue
+                
+            # Case 2: Clearing a previously set winner
+            if selected_team_id is None:
                 game.winning_team_id = None
-                next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
-                if next_game:
-                    if next_game.team1_id == previous_winning_team_id:
-                        next_game.team1_id = None
-                    elif next_game.team2_id == previous_winning_team_id:
-                        next_game.team2_id = None
-                log_entry = LogEntry(category='Remove Winner', current_user_id=current_user.id, description=f"{current_user.email} cleared winner of {game.team1.name} vs {game.team2.name}")
+                clear_team_from_future_games(game, previous_winning_team_id)
+                log_entry = LogEntry(category='Remove Winner', current_user_id=current_user.id, 
+                                     description=f"{current_user.email} cleared winner of {game.team1.name} vs {game.team2.name}")
                 db.session.add(log_entry)
-            elif previous_winning_team_id is None:   # setting a winner
+            
+            # Case 3: Setting a winner for the first time
+            elif previous_winning_team_id is None:
                 game.winning_team_id = selected_team_id
-                next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
-                if next_game:
-                    if next_game.team1_id is None:
-                        next_game.team1_id = selected_team_id
-                    elif next_game.team2_id is None:
-                        next_game.team2_id = selected_team_id
-                log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, description=f"{current_user.email} set winner of {game.team1.name} vs {game.team2.name}")
+                advance_team_to_next_game(game, selected_team_id)
+                log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, 
+                                     description=f"{current_user.email} set winner of {game.team1.name} vs {game.team2.name}")
                 db.session.add(log_entry)
-            else:   # switching winner
+                
+            # Case 4: Switching winner
+            else:
                 game.winning_team_id = selected_team_id
-                next_game = Game.query.filter_by(id=game.winner_goes_to_game_id).first()
-                if next_game:
-                    if next_game.team1_id == previous_winning_team_id:
-                        next_game.team1_id = selected_team_id
-                    elif next_game.team2_id == previous_winning_team_id:
-                        next_game.team2_id = selected_team_id
-
-                log_entry = LogEntry(category='Change Winner', current_user_id=current_user.id, description=f"{current_user.email} changed winner of {game.team1.name} vs {game.team2.name}")
+                # First clear the old winner's entire path
+                clear_team_from_future_games(game, previous_winning_team_id)
+                # Then advance the new winner
+                advance_team_to_next_game(game, selected_team_id)
+                log_entry = LogEntry(category='Change Winner', current_user_id=current_user.id, 
+                                     description=f"{current_user.email} changed winner of {game.team1.name} vs {game.team2.name}")
                 db.session.add(log_entry)
 
         db.session.commit()
         flash('Game winners updated.', 'success')
         do_admin_update_potential_winners()
-
         recalculate_standings()
         return redirect(url_for('admin_set_winners'))
+
+    return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region)
+
+def advance_team_to_next_game(game, team_id):
+    """
+    Advances a team to the next round, ensuring they land in the correct slot (team1 or team2).
+    """
+    if not game.winner_goes_to_game_id:
+        return
+        
+    next_game = Game.query.get(game.winner_goes_to_game_id)
+    if not next_game:
+        return
+        
+    # To keep the bracket visualization consistent, we determine if this game 
+    # feeds the 'top' (team1) or 'bottom' (team2) slot of the next game.
+    # We do this by checking the order of games feeding into the next game.
+    feeder_games = Game.query.filter_by(winner_goes_to_game_id=next_game.id).order_by(Game.id).all()
+    
+    if len(feeder_games) >= 2:
+        if game.id == feeder_games[0].id:
+            next_game.team1_id = team_id
+        else:
+            next_game.team2_id = team_id
+    else:
+        # Fallback for championship or single feeders
+        if next_game.team1_id is None:
+            next_game.team1_id = team_id
+        else:
+            next_game.team2_id = team_id
 
     return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region)
 
@@ -1166,58 +1275,60 @@ def super_admin_delete_user():
 
 
 @app.route('/admin/analytics', methods=['GET', 'POST'])
+@login_required
+@admin_required
+@pool_required
 def admin_analytics():
     form = AnalyticsForm()
     results = None
-    timestamps=None
-    unique_users=None
-    event_counts=None
+    timestamps = None
+    unique_users = None
+    event_counts = None
 
     form.category.choices = sorted(
-        [(c.category, c.category) for c in LogEntry.query.with_entities(LogEntry.category).distinct()],
+        [(c.category, c.category) for c in db.session.query(LogEntry.category).distinct()],
         key=lambda x: x[0]
     )
 
     if form.validate_on_submit():
         granularity = int(form.granularity.data)
         category = form.category.data
-
         cutoff_datetime = datetime(2026, 3, 15, 23, 0, 0)
-        logs = LogEntry.query.filter(LogEntry.category == category, LogEntry.timestamp > cutoff_datetime).all()
+        user_tz_name = current_user.time_zone
 
-        df = pd.DataFrame([(log.current_user_id, log.timestamp) for log in logs], columns=['user_id', 'timestamp'])        
+        # Determine the SQL expression for the time bucket (period)
+        # We first convert the UTC timestamp to the user's local time zone
+        local_ts = func.timezone(user_tz_name, func.timezone('UTC', LogEntry.timestamp))
 
-        user_tz = pytz.timezone(current_user.time_zone)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
-        df['localized_timestamp'] = df['timestamp'].dt.tz_localize('UTC').dt.tz_convert(user_tz)
-        df['rounded_timestamp'] = round_timestamp(df['localized_timestamp'], granularity)
+        if granularity == 1440:
+            # Day level
+            period_sql = func.date_trunc('day', local_ts)
+        elif granularity == 60:
+            # Hour level
+            period_sql = func.date_trunc('hour', local_ts)
+        else:
+            # Minute buckets (1, 5, 10, 15, 30)
+            # Truncate to hour, then add back the rounded minutes
+            minutes = func.date_part('minute', local_ts).cast(db.Integer)
+            rounded_minutes = (minutes / granularity) * granularity
+            # We use text() for the interval since it's most reliable across SQLAlchemy versions
+            period_sql = func.date_trunc('hour', local_ts) + (rounded_minutes * text("interval '1 minute'"))
 
-        agg_data = df.groupby('rounded_timestamp').agg(
-            unique_users=('user_id', 'nunique'),
-            event_count=('user_id', 'count')
-        ).reset_index()
+        # Perform the aggregation entirely in SQL
+        query_results = db.session.query(
+            period_sql.label('period'),
+            func.count(LogEntry.id).label('event_count'),
+            func.count(LogEntry.current_user_id.distinct()).label('unique_users')
+        ).filter(
+            LogEntry.category == category,
+            LogEntry.timestamp > cutoff_datetime
+        ).group_by('period').order_by('period').all()
 
-        agg_data.rename(columns={'rounded_timestamp': 'period'}, inplace=True)
-        results = agg_data.to_dict('records')
-
-        timestamps = [result['period'].isoformat() for result in results]
-        unique_users = [result['unique_users'] for result in results]
-        event_counts = [result['event_count'] for result in results]
+        timestamps = [r.period.isoformat() for r in query_results]
+        unique_users = [r.unique_users for r in query_results]
+        event_counts = [r.event_count for r in query_results]
 
     return render_template('admin/analytics.html', form=form, results=results, timestamps=timestamps, unique_users=unique_users, event_counts=event_counts)
-
-
-def round_timestamp(ts, granularity):
-    """
-    Round a timestamp to the start of its granularity period.
-    """
-    if granularity <= 60:
-        return ts.dt.floor(f'{granularity}min')
-    elif granularity == 1440:
-        return ts.dt.floor('D')
-    else:
-        raise ValueError("Unsupported granularity")
-    
 
 @app.route('/admin/update_potential_winners')
 @login_required

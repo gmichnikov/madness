@@ -579,20 +579,27 @@ heroku pg:psql
    - **Fix**: Implemented `joinedload` for eager fetching and moved `db.session.commit()` outside the loop.
    - **Status**: [x] Optimized
 
-2. **`get_potential_picks()`** [PENDING ⏳]
-   - **Issue**: Uses recursive database queries for every game (63 times) every time the bracket page loads. Caching is currently commented out.
-   - **Risk**: Slow page loads on the "Make Picks" screen, especially as server load increases.
-   - **Status**: [ ] Pending
+2. **`get_potential_picks()`** [COMPLETED ✅]
+   - **Issue**: Used recursive database queries for every game (63 times) every time the bracket page loaded.
+   - **Fix**: Replaced recursion with an in-memory lookup using pre-fetched `games_dict` and `user_picks`. Added internal request caching to prevent redundant calculations.
+   - **Status**: [x] Optimized
 
-3. **`set_is_bracket_valid()`** [PENDING ⏳]
-   - **Issue**: Performs multiple database queries per game (up to 180+ queries) during the save process to verify bracket logic.
-   - **Risk**: Slow save times and potential database locks during high-traffic periods (e.g., right before the tournament starts).
-   - **Status**: [ ] Pending
+3. **`set_is_bracket_valid()`** [COMPLETED ✅]
+   - **Issue**: Performed multiple database queries per game (up to 180+ queries) during the save process to verify bracket logic.
+   - **Fix**: Refactored to use in-memory dictionaries for games and picks, reducing DB access to a single initial fetch.
+   - **Status**: [x] Optimized
 
-4. **`admin_analytics()`** [PENDING ⏳]
-   - **Issue**: Loads the entire `LogEntry` table into a Pandas DataFrame for processing rather than using SQL aggregation.
-   - **Risk**: Memory exhaustion and slow performance once the audit log grows to thousands of entries.
-   - **Status**: [ ] Pending
+4. **`admin_analytics()`** [COMPLETED ✅]
+   - **Issue**: Loaded the entire `LogEntry` table into a Pandas DataFrame for processing rather than using SQL aggregation.
+   - **Fix**: Implemented a single SQL query using `func.date_trunc`, `func.timezone`, and `GROUP BY` to perform all calculations in the database.
+   - **Status**: [x] Optimized
+
+### **B. Logic & Bug Fixes**
+
+1. **Cascade Winner Clearing** [COMPLETED ✅]
+   - **Issue**: Clearing or changing a game winner only updates the immediate next round. Future rounds (e.g., if a team was already set as the winner of the Sweet 16 and you clear their Round 1 win) remain unchanged, leading to "ghost winners" and incorrect scores.
+   - **Fix**: Implemented `clear_team_from_future_games` (recursive) and `advance_team_to_next_game` (slot-aware) helpers.
+   - **Status**: [x] Fixed
 
 ---
 
