@@ -570,19 +570,33 @@ heroku pg:psql
 
 ---
 
-## 9. Contact & Support
+## 10. Performance & Algorithm Optimizations
 
-- Repository: [Your GitHub URL]
-- Database: Heroku PostgreSQL
-- Hosting: Heroku
-- Framework: Flask 2.3.3
-- Python: 3.11
+### **A. Core Logic Improvements**
 
-**Remember**: Test everything thoroughly with a small group before opening to all users!
+1. **`recalculate_standings()`** [COMPLETED ✅]
+   - **Issue**: Performed ~60 database queries per user and committed to the database inside the loop. For 200 users, this was ~12,600 queries and 200 disk writes.
+   - **Fix**: Implemented `joinedload` for eager fetching and moved `db.session.commit()` outside the loop.
+   - **Status**: [x] Optimized
+
+2. **`get_potential_picks()`** [PENDING ⏳]
+   - **Issue**: Uses recursive database queries for every game (63 times) every time the bracket page loads. Caching is currently commented out.
+   - **Risk**: Slow page loads on the "Make Picks" screen, especially as server load increases.
+   - **Status**: [ ] Pending
+
+3. **`set_is_bracket_valid()`** [PENDING ⏳]
+   - **Issue**: Performs multiple database queries per game (up to 180+ queries) during the save process to verify bracket logic.
+   - **Risk**: Slow save times and potential database locks during high-traffic periods (e.g., right before the tournament starts).
+   - **Status**: [ ] Pending
+
+4. **`admin_analytics()`** [PENDING ⏳]
+   - **Issue**: Loads the entire `LogEntry` table into a Pandas DataFrame for processing rather than using SQL aggregation.
+   - **Risk**: Memory exhaustion and slow performance once the audit log grows to thousands of entries.
+   - **Status**: [ ] Pending
 
 ---
 
-## Appendix A: Database Schema Overview
+## 11. Appendix A: Database Schema Overview
 
 ### User Table
 - Stores authentication, scores, tiebreakers, verification status

@@ -709,10 +709,19 @@ def admin_set_winners():
 
 # this is now going to assume that the potential winners db table has been updated before this is called
 def recalculate_standings(user=None):
-    if user is None:
-        users = User.query.all()
+    # Setup eager loading options
+    eager_options = [
+        joinedload(User.picks)
+        .joinedload(Pick.game)
+        .joinedload(Game.round)
+    ]
+
+    if user:
+        # Re-fetch the single user with eager loading to avoid N+1 queries for their picks
+        users = User.query.filter_by(id=user.id).options(*eager_options).all()
     else:
-        users = [user]
+        # Fetch all users in the pool with eager loading
+        users = User.query.filter_by(pool_id=POOL_ID).options(*eager_options).all()
 
     potential_winners_dict = {}
     potential_winner_entries = PotentialWinner.query.all()
@@ -720,34 +729,32 @@ def recalculate_standings(user=None):
         potential_winner_ids = [int(team_id) for team_id in entry.potential_winner_ids.split(',') if team_id.isdigit()]
         potential_winners_dict[entry.game_id] = potential_winner_ids
 
-    for user in users:
-        user.r1score = user.r2score = user.r3score = user.r4score = user.r5score = user.r6score = 0
+    for u in users:
+        # Reset scores
+        for i in range(1, 7):
+            setattr(u, f'r{i}score', 0)
         potential_additional_points = 0
 
-        for pick in user.picks:
-            round_points = pick.game.round.points
-            if pick.game.winning_team_id is not None and pick.game.winning_team_id == pick.team_id:
-                if pick.game.round_id == 1:
-                    user.r1score += round_points
-                elif pick.game.round_id == 2:
-                    user.r2score += round_points
-                elif pick.game.round_id == 3:
-                    user.r3score += round_points
-                elif pick.game.round_id == 4:
-                    user.r4score += round_points
-                elif pick.game.round_id == 5:
-                    user.r5score += round_points
-                elif pick.game.round_id == 6:
-                    user.r6score += round_points
-            if pick.game.winning_team_id is None:
-                potential_winner_ids = potential_winners_dict.get(pick.game.id, [])
-                if pick.team_id in potential_winner_ids:
+        for pick in u.picks:
+            game = pick.game
+            round_points = game.round.points
+            
+            # 1. Calculate points for correct picks
+            if game.winning_team_id is not None and game.winning_team_id == pick.team_id:
+                attr_name = f'r{game.round_id}score'
+                current_val = getattr(u, attr_name)
+                setattr(u, attr_name, current_val + round_points)
+            
+            # 2. Calculate potential points for remaining games
+            if game.winning_team_id is None:
+                if pick.team_id in potential_winners_dict.get(game.id, []):
                     potential_additional_points += round_points
 
-        total_score = user.r1score + user.r2score + user.r3score + user.r4score + user.r5score + user.r6score
-        user.currentscore = total_score
-        user.maxpossiblescore = total_score + potential_additional_points
-        db.session.commit()
+        # Update totals
+        u.currentscore = sum(getattr(u, f'r{i}score') for i in range(1, 7))
+        u.maxpossiblescore = u.currentscore + potential_additional_points
+    
+    db.session.commit()
 
 @app.route('/standings', methods=['GET', 'POST'])
 @login_required
