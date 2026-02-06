@@ -1,10 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Standings{% endblock %}
 {% block content %}
-    <h1>Standings (Your rank: {{ user_rank }}, Your score: {{ user_score }})</h1>
+    <div class="standings-header-container">
+        <h1>Standings</h1>
+        <div class="standings-user-stats">
+            <div class="stat-item">
+                <span class="stat-label">Your Rank</span>
+                <span class="stat-value">#{{ user_rank }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Your Score</span>
+                <span class="stat-value">{{ user_score }}</span>
+            </div>
+        </div>
+    </div>
 
     {% if not show_champion %}
-        <p>Other users' brackets will be visible once the tournament starts.</p>
+        <p class="cutoff-note">Other users' brackets will be visible once the tournament starts.</p>
     {% else %}
         <form method="POST" class="standings-sort-form" id="standings-sort-form">
             {{ sort_form.hidden_tag() }}
@@ -15,44 +27,46 @@
         </form>
     {% endif %}   
 
-    <table class="standings-table">
-        <thead>
-            <tr>
-                <th></th>
-                <th>Name</th>
-                <th>Total Score</th>
-                <th>Max Possible Score</th>
-                {% if show_champion %}
-                    <th>Champion</th>
-                {% endif %}
-                <th>{{ rounds[1] }}</th>
-                <th>{{ rounds[2] }}</th>
-                <th>{{ rounds[3] }}</th>
-                <th>{{ rounds[4] }}</th>
-                <th>{{ rounds[5] }}</th>
-                <th>{{ rounds[6] }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-                <tr {% if user.id == current_user_id %}id="current-user-row"{% endif %}>
-                    <td>{{ user.rank }}</td>
-                    <td><a href="{{ url_for('view_picks', user_id=user.id) }}">{{ user.full_name }}</a></td>
-                    <td>{{ user.currentscore }}</td>
-                    <td>{{ user.maxpossiblescore }}</td>
+    <div class="standings-container">
+        <table class="standings-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Total Score</th>
+                    <th>Max Possible Score</th>
                     {% if show_champion %}
-                        <td>{{ user.champion_team_name }}</td>
+                        <th class="hide-mobile">Champion</th>
                     {% endif %}
-                    <td>{{ user.r1score }}</td>
-                    <td>{{ user.r2score }}</td>
-                    <td>{{ user.r3score }}</td>
-                    <td>{{ user.r4score }}</td>
-                    <td>{{ user.r5score }}</td>
-                    <td>{{ user.r6score }}</td>
+                    <th class="hide-mobile">{{ rounds[1] }}</th>
+                    <th class="hide-mobile">{{ rounds[2] }}</th>
+                    <th class="hide-mobile">{{ rounds[3] }}</th>
+                    <th class="hide-mobile">{{ rounds[4] }}</th>
+                    <th class="hide-mobile">{{ rounds[5] }}</th>
+                    <th class="hide-mobile">{{ rounds[6] }}</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr {% if user.id == current_user_id %}id="current-user-row"{% endif %}>
+                        <td>{{ user.rank }}</td>
+                        <td><a href="{{ url_for('view_picks', user_id=user.id) }}">{{ user.full_name }}</a></td>
+                        <td>{{ user.currentscore }}</td>
+                        <td>{{ user.maxpossiblescore }}</td>
+                        {% if show_champion %}
+                            <td class="hide-mobile">{{ user.champion_team_name }}</td>
+                        {% endif %}
+                        <td class="hide-mobile">{{ user.r1score }}</td>
+                        <td class="hide-mobile">{{ user.r2score }}</td>
+                        <td class="hide-mobile">{{ user.r3score }}</td>
+                        <td class="hide-mobile">{{ user.r4score }}</td>
+                        <td class="hide-mobile">{{ user.r5score }}</td>
+                        <td class="hide-mobile">{{ user.r6score }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
 
 {% block morejs %}

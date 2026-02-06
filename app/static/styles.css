@@ -797,6 +797,133 @@ header {
     background-color: yellow;
 }
 
+/* Responsive Standings Table */
+.standings-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: separate; /* Required for sticky headers */
+    border-spacing: 0;
+}
+
+.standings-table th {
+    position: sticky;
+    top: 0;
+    background-color: #f2f2f2;
+    z-index: 10;
+    border-bottom: 2px solid #ddd;
+}
+
+/* Sticky Rank and Name Columns */
+.standings-table th:first-child,
+.standings-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 11;
+    background: #f8f9fa;
+    width: 40px;
+    border-right: 1px solid #eee;
+}
+
+.standings-table th:nth-child(2),
+.standings-table td:nth-child(2) {
+    position: sticky;
+    left: 40px;
+    z-index: 11;
+    background: white;
+    min-width: 140px;
+    border-right: 2px solid #ddd;
+}
+
+/* Handle background for sticky columns on alternating rows */
+.standings-table tr:nth-child(even) td:nth-child(1),
+.standings-table tr:nth-child(even) td:nth-child(2) {
+    background-color: #f9f9f9;
+}
+
+#current-user-row td:nth-child(1),
+#current-user-row td:nth-child(2) {
+    background-color: LightSkyBlue !important;
+}
+
+/* Hide per-round scores on very small screens */
+@media screen and (max-width: 600px) {
+    .hide-mobile {
+        display: none;
+    }
+}
+
+/* Improved Sort Form for Mobile */
+@media screen and (max-width: 768px) {
+    .standings-sort-form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .standings-sort-form div {
+        width: 100%;
+    }
+    .standings-sort-form select, .standings-sort-form input {
+        width: 100%;
+    }
+}
+
+/* Standings Header & Stats Bar */
+.standings-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.standings-user-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.stat-item {
+    background: #eef2f7;
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: 1px solid #d1d9e6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 100px;
+}
+
+.stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #5c6b80;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    color: #007bff;
+}
+
+.cutoff-note {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px 15px;
+    border-radius: 4px;
+    border: 1px solid #ffeeba;
+    margin-bottom: 20px;
+}
+
 .comparison-correct {
     background-color: #d4edda;
 }
