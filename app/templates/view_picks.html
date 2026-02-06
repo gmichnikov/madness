@@ -13,39 +13,41 @@
     </form>
     <br>
 
-    <div class="bracket-grid">
-        {% for game in games %}
-
-            {% set pick_class = 'pick-unmade' %}
-            {% set tooltip_text = '' %}
-            {% if game.id in user_picks %}
-                {% if game.winning_team_id or user_picks[game.id].id in lost_teams %}
-                    {% if user_picks[game.id].id == game.winning_team_id %}
-                        {% set pick_class = 'pick-correct' %}
-                    {% else %}
-                        {% set pick_class = 'pick-incorrect' %}
-                        {% if game.winning_team_id %}
-                            {% set tooltip_text = game.winning_team.name %}
+    <div class="bracket-grid-container">
+        <div class="bracket-grid">
+            {% for game in games %}
+    
+                {% set pick_class = 'pick-unmade' %}
+                {% set tooltip_text = '' %}
+                {% if game.id in user_picks %}
+                    {% if game.winning_team_id or user_picks[game.id].id in lost_teams %}
+                        {% if user_picks[game.id].id == game.winning_team_id %}
+                            {% set pick_class = 'pick-correct' %}
+                        {% else %}
+                            {% set pick_class = 'pick-incorrect' %}
+                            {% if game.winning_team_id %}
+                                {% set tooltip_text = game.winning_team.name %}
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
-                {% else %}
-                    {% set pick_class = 'pick-undecided' %}
-                {% endif %}
-            {% endif %}
-            <div class="game-view-pick {{ pick_class }}" id="game{{ game.id }}" data-tooltip="{{ tooltip_text }}" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)">
-                <span id="game{{ game.id }}" class="bracket-grid-span" data-tooltip="{{ tooltip_text }}" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)">
-                    {% if game.id in user_picks %}
-                        {{ user_picks[game.id].name }}
                     {% else %}
-                        No Pick
+                        {% set pick_class = 'pick-undecided' %}
                     {% endif %}
-                </span>
-            </div>
-        {% endfor %}
-
-        <div id="tooltip" class="tooltip"></div>
-
-        {% include '_shared_grid.html' %}
+                {% endif %}
+                <div class="game-view-pick {{ pick_class }}" id="game{{ game.id }}" data-tooltip="{{ tooltip_text }}" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)">
+                    <span id="game{{ game.id }}" class="bracket-grid-span" data-tooltip="{{ tooltip_text }}" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)">
+                        {% if game.id in user_picks %}
+                            {{ user_picks[game.id].name }}
+                        {% else %}
+                            No Pick
+                        {% endif %}
+                    </span>
+                </div>
+            {% endfor %}
+    
+            <div id="tooltip" class="tooltip"></div>
+    
+            {% include '_shared_grid.html' %}
+        </div>
     </div>
 
     <script>

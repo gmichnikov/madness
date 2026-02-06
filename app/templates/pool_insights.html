@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Pool Insights{% endblock %}
+{% block content %}
+<div class="container">
+    <h1>Pool Insights</h1>
+    <p class="lead">Insights based on the <strong>{{ total_users }}</strong> valid brackets in the pool.</p>
+
+    <div class="insights-grid">
+        <!-- Champion Picks -->
+        <div class="insight-card">
+            <h2>Who the Pool Thinks Will Win</h2>
+            <p class="subtitle">Teams picked to win the championship</p>
+            <div class="picks-list">
+                {% for team_name, seed, count in champion_picks %}
+                <div class="pick-item">
+                    <div class="pick-info">
+                        <span class="team-name">({{ seed }}) {{ team_name }}</span>
+                        <span class="pick-count">{{ count }} picks ({{ (count / total_users * 100)|round(1) }}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (count / total_users * 100) }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Popular Upsets -->
+        <div class="insight-card">
+            <h2>Popular Upset Picks</h2>
+            <p class="subtitle">Most picked lower seeds in Round 1</p>
+            <table class="standings-table">
+                <thead>
+                    <tr>
+                        <th>Team</th>
+                        <th>Seed</th>
+                        <th>Opponent Seed</th>
+                        <th>Picks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for upset in popular_upsets %}
+                    <tr>
+                        <td>{{ upset.team }}</td>
+                        <td>{{ upset.seed }}</td>
+                        <td>{{ upset.opponent_seed }}</td>
+                        <td>{{ upset.count }} ({{ (upset.count / total_users * 100)|round(1) }}%)</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Consensus Bracket Link -->
+    <div class="insight-card full-width" style="margin-top: 20px;">
+        <h2>The Consensus Bracket</h2>
+        <p>This is what the pool's "Collective Hive Mind" looks like if we take the most popular pick for every single game.</p>
+        <div class="bracket-grid-container">
+            <div class="bracket-grid">
+                {% for game in games %}
+                    {% set consensus = consensus_bracket.get(game.id) %}
+                    <div class="game-view-pick pick-undecided" id="game{{ game.id }}">
+                        <span class="bracket-grid-span">
+                            {% if consensus %}
+                                {{ consensus.team.name }}
+                                <div style="font-size: 8px; color: #666;">{{ (consensus.count / total_users * 100)|round(0) }}%</div>
+                            {% else %}
+                                No Picks
+                            {% endif %}
+                        </span>
+                    </div>
+                {% endfor %}
+
+                {% include '_shared_grid.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .insights-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    @media (max-width: 768px) {
+        .insights-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .insight-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid #ddd;
+    }
+    .full-width {
+        grid-column: 1 / -1;
+    }
+    .subtitle {
+        color: #666;
+        margin-top: -10px;
+        margin-bottom: 20px;
+        font-style: italic;
+    }
+    .pick-item {
+        margin-bottom: 15px;
+    }
+    .pick-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+    }
+    .team-name {
+        font-weight: bold;
+    }
+    .progress-bar {
+        height: 10px;
+        background: #eee;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: #007bff;
+    }
+</style>
+{% endblock %}

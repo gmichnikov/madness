@@ -21,6 +21,9 @@
 <body>
     <header>
         <nav id="navbar">
+            <div class="nav-brand">
+                <a href="{{ url_for('index') }}">Madness</a>
+            </div>
             <div class="nav-menu" id="nav-menu"> <!-- Hamburger icon for mobile -->
                 <div></div>
                 <div></div>
@@ -31,20 +34,32 @@
                     <li><a href="{{ url_for('login') }}" class="non-dropdown">Login</a></li>
                     <li><a href="{{ url_for('register') }}" class="non-dropdown">Register</a></li>
                 {% else %}
-                {% if not is_after_cutoff %}
-                    <li><a href="{{ url_for('make_picks') }}" class="non-dropdown">Your Bracket <i class="fa-solid fa-dice"></i></a></li>
-                    <li><a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="non-dropdown">Profile <i class="fa-solid fa-pencil"></i></a></li>
-                {% endif %}
-                {% if is_after_cutoff %}
-                    <li><a href="{{ url_for('view_picks', user_id=current_user.id) }}" class="non-dropdown">Brackets <i class="fa-regular fa-eye"></i></a></li>
-                {% endif %}
+                    <li class="mobile-user-info">
+                        <span class="user-email">{{ current_user.email }}</span>
+                        {% if current_user.is_verified %}
+                            <span class="verified-cursor" title="Your account is verified"><i class="fa-regular fa-circle-check"></i></span>
+                        {% else %}
+                            <span class="unverified-cursor" title="Your account is NOT verified"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
+                        {% endif %}
+                    </li>
+                    
+                    {% if not is_after_cutoff %}
+                        <li><a href="{{ url_for('make_picks') }}" class="non-dropdown">Your Bracket <i class="fa-solid fa-dice"></i></a></li>
+                        <li><a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="non-dropdown">Profile <i class="fa-solid fa-pencil"></i></a></li>
+                    {% endif %}
+                    {% if is_after_cutoff %}
+                        <li><a href="{{ url_for('view_picks', user_id=current_user.id) }}" class="non-dropdown">Brackets <i class="fa-regular fa-eye"></i></a></li>
+                        <li><a href="{{ url_for('pool_insights') }}" class="non-dropdown">Insights <i class="fa-solid fa-chart-pie"></i></a></li>
+                    {% endif %}
     
                     <li><a href="{{ url_for('standings') }}" class="non-dropdown">Standings <i class="fa-solid fa-list-ol"></i></a></li>
                     <li><a href="{{ url_for('simulate_standings') }}" class="non-dropdown">Simulate <i class="fa-solid fa-wand-magic-sparkles"></i></a></li>
                     <li><a href="{{ url_for('message_board') }}" class="non-dropdown">Forum <i class="fa-regular fa-comments"></i></a></li>
                     <li><a href="{{ url_for('winners') }}" class="non-dropdown">Winners <i class="fa-solid fa-trophy"></i></a></li>
+                    
                     {% if current_user.is_admin %}
-                        <li class="dropdown">Admin
+                        <li class="dropdown">
+                            <span class="dropdown-trigger">Admin <i class="fa-solid fa-chevron-down"></i></span>
                             <ul class="dropdown-content">
                                 <li><a href="{{ url_for('admin_users') }}">Users Status</a></li>
                                 <li><a href="{{ url_for('admin_view_logs') }}">View Logs</a></li>
@@ -60,19 +75,21 @@
                         </li>
                     {% endif %}
                     {% if current_user.is_super_admin %}
-                        <li class="dropdown">Super Admin
+                        <li class="dropdown">
+                            <span class="dropdown-trigger">Super Admin <i class="fa-solid fa-chevron-down"></i></span>
                             <ul class="dropdown-content">
                                 <li><a href="{{ url_for('super_admin_manage_admins') }}">Manage Admins</a></li>
                                 <li><a href="{{ url_for('super_admin_reset_games') }}">Reset Games</a></li>
                                 <li><a href="{{ url_for('super_admin_delete_user') }}">Delete User</a></li>
-                                <li><a href="{{ url_for('admin_update_potential_winners_and_standings') }}">Update Potential Winners/Standings</a></li>
+                                <li><a href="{{ url_for('admin_update_potential_winners_and_standings') }}">Update Standings</a></li>
                             </ul>
                         </li>
                     {% endif %}
+                    <li><a href="{{ url_for('logout') }}" class="non-dropdown logout-link">Logout <i class="fa-solid fa-arrow-right-from-bracket"></i></a></li>
                 {% endif %}
             </ul>
             {% if current_user.is_authenticated %}
-                <div class="user-info">
+                <div class="user-info desktop-only">
                     {% if current_user.is_verified %}
                         <span class="verified-cursor" title="Your account is verified"><i class="fa-regular fa-circle-check"></i></span>
                     {% else %}
@@ -94,6 +111,17 @@
     <script>
         document.getElementById('nav-menu').addEventListener('click', function() {
             document.getElementById('nav-links').classList.toggle('active');
+            this.classList.toggle('open');
+        });
+
+        // Handle dropdowns on mobile
+        document.querySelectorAll('.dropdown-trigger').forEach(trigger => {
+            trigger.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    this.parentElement.classList.toggle('active');
+                }
+            });
         });
     </script>
     {% block morejs %}{% endblock %}

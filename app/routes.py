@@ -1525,6 +1525,109 @@ def show_potential_winners():
     
     return render_template('show_potential_winners.html', potential_winners=potential_winners_data)
 
+@app.route('/pool_insights')
+@login_required
+@pool_required
+def pool_insights():
+    if not is_after_cutoff() and not current_user.is_admin:
+        flash("Pool insights will be available once the pool starts!")
+        return redirect(url_for('index'))
+
+    # 1. Champion Picks Distribution
+    champion_picks = db.session.query(
+        Team.name, Team.seed, func.count(Pick.id).label('count')
+    ).join(Pick, Team.id == Pick.team_id).join(User, Pick.user_id == User.id).filter(
+        User.pool_id == POOL_ID,
+        User.is_bracket_valid.is_(True),
+        Pick.game_id == CHAMPIONSHIP_GAME_ID
+    ).group_by(Team.id).order_by(text('count DESC')).all()
+
+    # 2. Consensus Bracket (Most picked team for each game)
+    # This query finds the most picked team for each game in the pool
+    subquery = db.session.query(
+        Pick.game_id,
+        Pick.team_id,
+        func.count(Pick.id).label('pick_count')
+    ).join(User, Pick.user_id == User.id).filter(
+        User.pool_id == POOL_ID,
+        User.is_bracket_valid.is_(True)
+    ).group_by(Pick.game_id, Pick.team_id).subquery()
+
+    max_picks = db.session.query(
+        subquery.c.game_id,
+        func.max(subquery.c.pick_count).label('max_count')
+    ).group_by(subquery.c.game_id).subquery()
+
+    consensus_picks_raw = db.session.query(
+        subquery.c.game_id,
+        subquery.c.team_id,
+        subquery.c.pick_count
+    ).join(
+        max_picks,
+        (subquery.c.game_id == max_picks.c.game_id) & (subquery.c.pick_count == max_picks.c.max_count)
+    ).all()
+
+    # Convert to a more usable format
+    teams_dict = get_teams_dict()
+    consensus_bracket = {}
+    for game_id, team_id, count in consensus_picks_raw:
+        consensus_bracket[game_id] = {
+            'team': teams_dict.get(team_id),
+            'count': count
+        }
+
+    # 3. Most Popular Upset Picks (First Round)
+    # First round games are 1-32. Upset = lower seed (higher number) wins.
+    upset_picks = db.session.query(
+        Team.name, Team.seed, Game.id, func.count(Pick.id).label('count')
+    ).join(Pick, Team.id == Pick.team_id).join(Game, Pick.game_id == Game.id).join(User, Pick.user_id == User.id).filter(
+        User.pool_id == POOL_ID,
+        User.is_bracket_valid.is_(True),
+        Game.round_id == 1
+    ).group_by(Game.id, Team.id).all()
+
+    # Filter for actual upsets (where picked team seed > opponent seed)
+    # We need to fetch the games to know the opponent seeds
+    games_round_1 = Game.query.filter_by(round_id=1).all()
+    game_opponents = {}
+    for g in games_round_1:
+        if g.team1 and g.team2:
+            game_opponents[g.id] = (g.team1.seed, g.team2.seed)
+
+    popular_upsets = []
+    for team_name, team_seed, game_id, count in upset_picks:
+        seeds = game_opponents.get(game_id)
+        if seeds:
+            opponent_seed = seeds[1] if team_seed == seeds[0] else seeds[0]
+            if team_seed > opponent_seed:
+                popular_upsets.append({
+                    'team': team_name,
+                    'seed': team_seed,
+                    'opponent_seed': opponent_seed,
+                    'count': count
+                })
+    
+    popular_upsets.sort(key=lambda x: x['count'], reverse=True)
+    popular_upsets = popular_upsets[:10] # Top 10 upsets
+
+    total_valid_users = User.query.filter_by(pool_id=POOL_ID, is_bracket_valid=True).count()
+
+    # Get data for bracket rendering
+    games = Game.query.order_by(Game.id).all()
+    all_teams = get_all_teams()
+    rounds = rounds_dict()
+    regions = regions_dict()
+
+    return render_template('pool_insights.html', 
+                           champion_picks=champion_picks, 
+                           consensus_bracket=consensus_bracket,
+                           popular_upsets=popular_upsets,
+                           total_users=total_valid_users,
+                           games=games,
+                           teams=all_teams,
+                           rounds=rounds,
+                           regions=regions)
+
 @app.route('/simulate_standings', methods=['GET', 'POST'])
 @login_required
 @pool_required

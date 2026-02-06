@@ -30,25 +30,27 @@
         <button style="display: none;" type="button" onclick="submitForm('save_picks')" class="btn btn-primary" id="save-picks-button">Save Picks</button>
         <button type="button" onclick="submitForm('clear_picks')" class="btn btn-secondary">Clear All Picks</button>
         <button type="button" onclick="submitForm('fill_in_better_seeds')" class="btn btn-secondary">Fill In Better Seeds</button>
-
-        <div class="bracket-grid">
-            {% for game in games %}
-                <div class="game-dropdown" id="game{{ game.id }}">
-                    <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select" onchange="handleSelectChange();">
-
-                        <option value=""></option>
-                        {% for team_id in potential_picks_map.get(game.id, []) %}
-                            {% set team = teams_dict[team_id] %}
-                            <option value="{{ team.id }}" {% if user_picks.get(game.id) == team.id %} selected {% endif %}>
-                                {{ team.seed }} - {{ team.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            {% endfor %}
-
-            {% include '_shared_grid.html' %}
-
+    
+        <div class="bracket-grid-container">
+            <div class="bracket-grid">
+                {% for game in games %}
+                    <div class="game-dropdown" id="game{{ game.id }}">
+                        <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select" onchange="handleSelectChange();">
+    
+                            <option value=""></option>
+                            {% for team_id in potential_picks_map.get(game.id, []) %}
+                                {% set team = teams_dict[team_id] %}
+                                <option value="{{ team.id }}" {% if user_picks.get(game.id) == team.id %} selected {% endif %}>
+                                    {{ team.seed }} - {{ team.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endfor %}
+    
+                {% include '_shared_grid.html' %}
+    
+            </div>
         </div>
     </form>
 
