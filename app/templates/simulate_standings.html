@@ -1,51 +1,68 @@
 {% extends "base.html" %}
 {% block title %}Simulate Standings{% endblock %}
 {% block content %}
-<h1>Simulate Standings</h1>
+<div class="page-container" style="max-width: 1200px;">
+    <h1>Simulate Standings</h1>
 
-<span>Select as many or as few winners of future games as you would like. Then hit Simulate to see what the standings would look like with those results.</span>
-{% if show_results %}
-    <br><span class="simulated-standings-note">Scroll down for simulated standings!</span>
-{% endif %}
+    <div class="card" style="background-color: #f8f9fa; border-left: 5px solid #007bff;">
+        <p style="margin: 0;">Select as many or as few winners of future games as you would like. Then hit <strong>Simulate</strong> to see what the standings would look like with those results.</p>
+    </div>
 
-<form method="POST">
-    <input type="submit" value="Simulate" class="btn btn-primary">
-    {% for round_name, games in games_data.items() %}
-        <h2>{{ round_name }}</h2>
-        {% for game in games %}
-            <div>
-                <label for="game_{{ game.id }}">Game {{ game.id }}: </label>
-                <select name="game_{{ game.id }}">
-                    <option value="">--- Select Winner ---</option>
+    <form method="POST">
+        <div style="position: sticky; top: 70px; z-index: 100; background: white; padding: 15px 0; border-bottom: 2px solid #eee; margin-bottom: 20px;">
+            <input type="submit" value="Run Simulation" class="btn btn-primary btn-lg">
+            {% if show_results %}
+                <a href="#results" class="btn btn-secondary" style="margin-left: 10px; text-decoration: none;">View Results ↓</a>
+            {% endif %}
+        </div>
 
-                    {% for team in potential_winners_data[game.id] %}
-                    <option value="{{ team.id }}" {% if selected_teams.get('game_' ~ game.id|string) == (team.id|string) %}selected{% endif %}>
-                        {{ team.seed }} - {{ team.name }}
-                    </option>
-                    {% endfor %}
-                </select>
+        {% for round_name, games in games_data.items() %}
+            <div class="round-header">{{ round_name }}</div>
+            <div class="simulation-grid">
+                {% for game in games %}
+                    <div class="sim-game-item">
+                        <label for="game_{{ game.id }}">Game #{{ game.id }}</label>
+                        <select name="game_{{ game.id }}" class="form-control">
+                            <option value="">-- Pending --</option>
+                            {% for team in potential_winners_data[game.id] %}
+                            <option value="{{ team.id }}" {% if selected_teams.get('game_' ~ game.id|string) == (team.id|string) %}selected{% endif %}>
+                                ({{ team.seed }}) {{ team.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endfor %}
             </div>
         {% endfor %}
-    {% endfor %}
-</form>
+    </form>
 
-{% if show_results %}
-    <h2>Simulated Standings</h2>
-    <table class="standings-table">
-
-        <tr>
-            <th>Rank</th>
-            <th>User</th>
-            <th>Score</th>
-        </tr>
-        {% for rank, user_id, score, user_name in simulated_standings_with_rank %}
-            <tr>
-                <td>{{ rank }}</td>
-                <td><a href="{{ url_for('view_picks', user_id=user_id) }}">{{ user_name }}</a></td>
-                <td>{{ score }}</td>
-            </tr>
-        {% endfor %}
-
-    </table>
-{% endif %}
+    {% if show_results %}
+        <div id="results" style="padding-top: 50px; margin-top: 50px; border-top: 3px solid #007bff;">
+            <h2>Simulated Results</h2>
+            <div class="card">
+                <table class="standings-table" style="width: 100%;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="width: 80px;">Rank</th>
+                            <th>User</th>
+                            <th style="width: 120px; text-align: center;">Simulated Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rank, user_id, score, user_name in simulated_standings_with_rank %}
+                            <tr {% if user_id == current_user.id %}id="current-user-row"{% endif %}>
+                                <td>{{ rank }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_picks', user_id=user_id) }}" style="font-weight: bold; text-decoration: none;">{{ user_name }}</a>
+                                    {% if user_id == current_user.id %} (You){% endif %}
+                                </td>
+                                <td style="text-align: center; font-weight: bold; color: #007bff;">{{ score }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

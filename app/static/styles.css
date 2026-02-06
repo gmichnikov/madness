@@ -804,3 +804,124 @@ header {
 .comparison-incorrect {
     background-color: #f8d7da;
 }
+
+/* Page Containers and Cards */
+.page-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Better Form Layouts */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group select, .form-group input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.profile-status {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.status-box {
+    flex: 1;
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+.status-box .label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 5px;
+}
+
+.status-box .value {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Simulation Grid */
+.simulation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.sim-game-item {
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    background: #fdfdfd;
+}
+
+.sim-game-item label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #666;
+}
+
+.sim-game-item select {
+    width: 100%;
+    font-size: 13px;
+}
+
+.main-content {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: calc(100vh - 150px);
+}
+
+@media screen and (max-width: 768px) {
+    .main-content {
+        padding: 10px;
+    }
+}
+
+.round-header {
+    background: #f0f4f8;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-weight: bold;
+}
