@@ -341,12 +341,16 @@ header {
     transition: all 0.3s;
 }
 
+.mobile-only {
+    display: none;
+}
+
 .mobile-user-info {
     display: none;
 }
 
 .logout-link {
-    display: none;
+    color: #ffd700 !important;
 }
 
 /* User Info Style */
@@ -371,6 +375,10 @@ header {
 
     .desktop-only {
         display: none !important;
+    }
+
+    .mobile-only {
+        display: block;
     }
 
     .nav-menu {
@@ -420,6 +428,11 @@ header {
         font-weight: bold;
         display: block;
         margin-bottom: 5px;
+    }
+
+    .verification-status {
+        font-size: 14px;
+        margin-top: 5px;
     }
 
     .logout-link {

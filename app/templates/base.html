@@ -36,11 +36,13 @@
                 {% else %}
                     <li class="mobile-user-info">
                         <span class="user-email">{{ current_user.email }}</span>
-                        {% if current_user.is_verified %}
-                            <span class="verified-cursor" title="Your account is verified"><i class="fa-regular fa-circle-check"></i></span>
-                        {% else %}
-                            <span class="unverified-cursor" title="Your account is NOT verified"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
-                        {% endif %}
+                        <div class="verification-status">
+                            {% if current_user.is_verified %}
+                                <span class="verified-cursor" title="Verified"><i class="fa-regular fa-circle-check"></i> Verified</span>
+                            {% else %}
+                                <span class="unverified-cursor" title="Not Verified"><i class="fa-solid fa-triangle-exclamation fa-flip"></i> Not Verified</span>
+                            {% endif %}
+                        </div>
                     </li>
                     
                     {% if not is_after_cutoff %}
@@ -85,15 +87,15 @@
                             </ul>
                         </li>
                     {% endif %}
-                    <li><a href="{{ url_for('logout') }}" class="non-dropdown logout-link">Logout <i class="fa-solid fa-arrow-right-from-bracket"></i></a></li>
+                    <li class="mobile-only"><a href="{{ url_for('logout') }}" class="non-dropdown logout-link">Logout <i class="fa-solid fa-arrow-right-from-bracket"></i></a></li>
                 {% endif %}
             </ul>
             {% if current_user.is_authenticated %}
                 <div class="user-info desktop-only">
                     {% if current_user.is_verified %}
-                        <span class="verified-cursor" title="Your account is verified"><i class="fa-regular fa-circle-check"></i></span>
+                        <span class="verified-cursor" title="Verified" data-tooltip="Verified" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)"><i class="fa-regular fa-circle-check"></i></span>
                     {% else %}
-                        <span class="unverified-cursor" title="Your account is NOT verified"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
+                        <span class="unverified-cursor" title="Not Verified" data-tooltip="Not Verified" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
                     {% endif %}
                     {{ current_user.email }}
                     <a href="{{ url_for('logout') }}" class="non-dropdown logout-cursor" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
@@ -105,10 +107,28 @@
         {% block content %}{% endblock %}
     </main>
 
+    <div id="tooltip" class="tooltip"></div>
+
     <footer>
     </footer>
 
     <script>
+        function showTooltip(event) {
+            var tooltipSpan = document.getElementById('tooltip');
+            var tooltipText = event.target.getAttribute('data-tooltip') || event.target.parentElement.getAttribute('data-tooltip');
+            if (tooltipText) {
+                tooltipSpan.innerHTML = tooltipText;
+                tooltipSpan.style.display = 'block';
+                tooltipSpan.style.left = (event.pageX + 10) + 'px';
+                tooltipSpan.style.top = (event.pageY + 10) + 'px';
+            }
+        }
+
+        function hideTooltip() {
+            var tooltipSpan = document.getElementById('tooltip');
+            tooltipSpan.style.display = 'none';
+        }
+
         document.getElementById('nav-menu').addEventListener('click', function() {
             document.getElementById('nav-links').classList.toggle('active');
             this.classList.toggle('open');
