@@ -334,13 +334,19 @@ def admin_view_logs():
         selected_user = request.form.get('user_full_name', 'Any')
         selected_category = request.form.get('category', 'Any')
 
-        log_entries = LogEntry.query.join(User, LogEntry.current_user_id == User.id).filter(User.pool_id == POOL_ID)
-        if selected_user != 'Any':
+        log_entries = LogEntry.query.outerjoin(User, LogEntry.current_user_id == User.id).filter(
+            (LogEntry.current_user_id.is_(None)) | (User.pool_id == POOL_ID)
+        )
+        if selected_user == 'System':
+            log_entries = log_entries.filter(LogEntry.current_user_id.is_(None))
+        elif selected_user != 'Any':
             log_entries = log_entries.filter(User.full_name == selected_user)
         if selected_category != 'Any':
             log_entries = log_entries.filter(LogEntry.category == selected_category)
     else:
-        log_entries = LogEntry.query.join(User, LogEntry.current_user_id == User.id).filter(User.pool_id == POOL_ID)
+        log_entries = LogEntry.query.outerjoin(User, LogEntry.current_user_id == User.id).filter(
+            (LogEntry.current_user_id.is_(None)) | (User.pool_id == POOL_ID)
+        )
 
     log_entries = log_entries.order_by(LogEntry.timestamp.desc()).all()
 
@@ -348,7 +354,7 @@ def admin_view_logs():
         localized_timestamp = log.timestamp.replace(tzinfo=pytz.utc).astimezone(user_tz)
         tz_abbr = localized_timestamp.tzname()  # Gets the time zone abbreviation
         log.formatted_timestamp = localized_timestamp.strftime('%Y-%m-%d, %I:%M:%S %p ') + tz_abbr
-        log.user_full_name = log.current_user.full_name if log.current_user else "Unknown User"
+        log.user_full_name = log.current_user.full_name if log.current_user else "System"
     return render_template('admin/view_logs.html', log_entries=log_entries, users=users, categories=categories, selected_user=selected_user, selected_category=selected_category)
 
 @app.route('/user/<int:user_id>', methods=['GET', 'POST'])
@@ -1105,6 +1111,11 @@ def sync_espn_results_to_games(force=False):
                 if espn_winner:
                     slot.name = espn_winner.display_name
                 play_in_filled = True
+                db.session.add(LogEntry(
+                    category='ESPN Sync',
+                    current_user_id=None,
+                    description=f"Filled play-in slot {slot.region.name} Seed {slot.seed} → {espn_winner.short_display_name if espn_winner else winner_id}"
+                ))
                 break
         else:
             # Normal game match
@@ -1132,6 +1143,11 @@ def sync_espn_results_to_games(force=False):
                 game.winning_team_id = winner_team.id
                 advance_team_to_next_game(game, winner_team.id)
                 games_updated += 1
+                db.session.add(LogEntry(
+                    category='ESPN Sync',
+                    current_user_id=None,
+                    description=f"Set winner of Game {game.id} ({t1.get_display_name()} vs {t2.get_display_name()}) → {winner_team.get_display_name()}"
+                ))
                 break
 
     db.session.commit()
@@ -1140,10 +1156,8 @@ def sync_espn_results_to_games(force=False):
         clear_potential_winners_cache()
         do_admin_update_potential_winners()
         recalculate_standings()
-        db.session.add(LogEntry(category='ESPN Sync', current_user_id=None, description=f"Auto-synced {games_updated} games from ESPN"))
     if play_in_filled:
         clear_teams_cache()
-        db.session.add(LogEntry(category='ESPN Sync', current_user_id=None, description="Filled play-in slot from ESPN"))
 
     log_row = EspnSyncLog.query.first()
     if log_row:

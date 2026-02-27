@@ -9,6 +9,7 @@
         User: 
         <select name="user_full_name" onchange="document.getElementById('logs-filter-form').submit();">
             <option value="Any" {{ 'selected' if selected_user == 'Any' else '' }}>Any</option>
+            <option value="System" {{ 'selected' if selected_user == 'System' else '' }}>System</option>
             {% for user in users %}
                 <option value="{{ user.full_name }}" {{ 'selected' if user.full_name == selected_user else '' }}>{{ user.full_name }}</option>
             {% endfor %}
