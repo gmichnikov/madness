@@ -1102,3 +1102,8 @@ header {
 .mm-manage-teams-submit {
     margin-top: 15px;
 }
+
+.mm-espn-sync-status {
+    color: #666;
+    margin-bottom: 15px;
+}

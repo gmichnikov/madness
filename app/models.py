@@ -173,3 +173,10 @@ class PotentialWinner(db.Model):
     last_updated = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     game = db.relationship('Game', backref='potential_winners')
+
+
+class EspnSyncLog(db.Model):
+    """Single row tracking last ESPN score sync. Used for 3-min cache."""
+    id = db.Column(db.Integer, primary_key=True)
+    last_sync_at = db.Column(db.DateTime, nullable=False)
+    games_updated = db.Column(db.Integer, default=0, nullable=False)

@@ -174,22 +174,13 @@ The actual Round 1 game will be played later. When it completes, we'll match tha
 1. **API filter:** Use `group=100` to restrict to NCAA tournament. Verify during implementation that this returns only NCAA tournament games.
 2. **Date validation:** Maintain a config of expected date ranges per round. Only process ESPN events whose date falls within the round's window. If we find a match but the event date is outside the expected window, skip it (or log a warning).
 
-**Round date config** (example—update each season):
+**Round date config** (in `app/utils.py`, update each season):
 
-```python
-# config or app/utils.py
-TOURNAMENT_ROUND_DATES = {
-    0: (datetime(2026, 3, 17), datetime(2026, 3, 18)),   # First Four (Tue-Wed)
-    1: (datetime(2026, 3, 20), datetime(2026, 3, 21)),  # 1st Round (Thu-Fri)
-    2: (datetime(2026, 3, 22), datetime(2026, 3, 23)),  # 2nd Round (Sat-Sun)
-    3: (datetime(2026, 3, 27), datetime(2026, 3, 28)),  # Sweet 16
-    4: (datetime(2026, 3, 29), datetime(2026, 3, 30)),  # Elite 8
-    5: (datetime(2026, 4, 4), datetime(2026, 4, 5)),    # Final 4
-    6: (datetime(2026, 4, 6), datetime(2026, 4, 6)),    # Championship
-}
-```
+- ESPN returns event dates in **UTC**. We convert to **Eastern** before comparing.
+- End date includes a **+1 day buffer** so games that run past midnight (e.g. 9pm start, ends 12:30am) still match.
+- 2026 dates: First Four Mar 17–18, 1st Round Mar 19–20, 2nd Round Mar 21–22, Sweet 16 Mar 26–27, Elite 8 Mar 28–29, Final Four Apr 4, Championship Apr 6.
 
-Round 0 = First Four (play-in games). **When to check:** After finding a matching Game, verify the ESPN event's date falls within the expected range. For play-in matches, use round 0; for normal matches, use `game.round_id`. If the date is outside the range, skip (or log a warning). Parse the event date from the API response (e.g. `event.date` or `competitions[0].date`).
+**When to check:** After finding a matching Game, verify the ESPN event's date (in Eastern) falls within the expected range. For play-in matches, use round 0; for normal matches, use `game.round_id`. If the date is outside the range, skip (or log a warning).
 
 **Note:** Regular-season games use `seasontype=2` and won't appear in our fetch—we're safe from those. The risk is only other postseason games (conference tournaments, NIT) if filters fail.
 
@@ -293,26 +284,26 @@ A step-by-step guide for building the feature and operating it each season.
 
 ---
 
-### Phase 2: Score Sync
+### Phase 2: Score Sync ✅ DONE
 
-**2.1 Add EspnSyncLog model**
+**2.1 Add EspnSyncLog model** ✅
 
 - In `app/models.py`, add `EspnSyncLog` with `id`, `last_sync_at`, `games_updated`
 - Run `flask db migrate -m "Add EspnSyncLog table"` (you run this)
 - Run `flask db upgrade` (you run this)
 
-**2.2 Add TOURNAMENT_ROUND_DATES config**
+**2.2 Add TOURNAMENT_ROUND_DATES config** ✅
 
-- In `app/utils.py` (or `config.py`), add `TOURNAMENT_ROUND_DATES` dict with round 0–6 and date ranges. Use 2026 dates as placeholder; update each season.
+- In `app/utils.py`, add `TOURNAMENT_ROUND_DATES` dict with round 0–6 and date ranges. 2026 dates; update each season.
 
-**2.3 Add ESPN scoreboard fetch and parsing**
+**2.3 Add ESPN scoreboard fetch and parsing** ✅
 
 - In `app/espn.py`, add `fetch_espn_scoreboard()` — GET scoreboard with `seasontype=3`, `group=100`, `limit=100`. Return raw JSON or parsed events. Verify during implementation that `group=100` returns only NCAA tournament games (see Avoiding Wrong Games).
-- Add `parse_completed_events(data)` — for each event in `events[]`, filter to `status.type.completed == true`. Extract from `competitions[0].competitors[]`: two team IDs (from `competitor.id` or `competitor.team.id`), winner (higher `score` or `winner: true`), event date (from `event.date` or `competitions[0].date`). Convert IDs to int.
+- Add `parse_completed_events(data)` — filter to `status.type.completed == true`, extract team IDs, winner (from `winner` or higher `score`), event date.
 
-**2.4 Add sync logic**
+**2.4 Add sync logic** ✅
 
-- In `app/espn.py` (or `app/routes.py`), add `sync_espn_results_to_games(force=False)`:
+- In `app/routes.py`, add `sync_espn_results_to_games(force=False)`:
   1. Unless `force=True`: Query `EspnSyncLog` for `last_sync_at`. If exists and `(now - last_sync_at).total_seconds() < 180`, return early (cache hit).
   2. Fetch scoreboard, parse completed events.
   3. Sort events by date (First Four first, then Round 1, etc.).
@@ -320,9 +311,9 @@ A step-by-step guide for building the feature and operating it each season.
   5. If any normal games were updated: run `clear_potential_winners_cache()`, `do_admin_update_potential_winners()`, `recalculate_standings()`.
   6. Upsert `EspnSyncLog`: UPDATE if row exists, INSERT if not. Set `last_sync_at = now()`, `games_updated = N`. (Do this even for play-in-only syncs, with `games_updated=0`.)
 
-**2.5 Wire sync into standings and set_winners**
+**2.5 Wire sync into standings and set_winners** ✅
 
-- In `app/routes.py`, at the start of `standings` and `admin_set_winners`, call `sync_espn_results_to_games()` (or a wrapper that handles the cache check and runs sync if needed). Ensure it runs before rendering so the page shows fresh data when sync occurs.
+- At the start of `standings` and `admin_set_winners`, call `sync_espn_results_to_games()`.
 
 **2.6 Test Phase 2**
 
@@ -331,19 +322,19 @@ A step-by-step guide for building the feature and operating it each season.
 
 ---
 
-### Phase 3: Admin Sync UI
+### Phase 3: Admin Sync UI ✅ DONE
 
-**3.1 Add sync status to Set Game Winners page**
+**3.1 Add sync status to Set Game Winners page** ✅
 
-- In `admin_set_winners` (or its template), display "Last synced: X min ago" using `EspnSyncLog.last_sync_at`. Show "Refresh now" link/button that triggers sync with cache bypass.
+- Display "Last synced: X min ago" using `EspnSyncLog.last_sync_at`. "Refresh now" button triggers sync with cache bypass.
 
-**3.2 Add refresh endpoint**
+**3.2 Add refresh endpoint** ✅
 
-- Add route (e.g. POST `/admin/refresh_espn_scores`) that calls `sync_espn_results_to_games(force=True)` to bypass the 3-min cache. Redirect back to set_winners. Admin-only.
+- POST `/admin/refresh_espn_scores` calls `sync_espn_results_to_games(force=True)`. Redirects to set_winners. Admin-only.
 
-**3.3 Add logging**
+**3.3 Add logging** ✅
 
-- When sync updates games, add `LogEntry` (e.g. category "ESPN Sync", description "Auto-synced N games from ESPN"). When play-in slot is filled, log that too.
+- When sync updates games: `LogEntry` category "ESPN Sync", description "Auto-synced N games from ESPN". When play-in slot filled: "Filled play-in slot from ESPN".
 
 ---
 

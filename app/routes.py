@@ -22,7 +22,7 @@ Cache Management:
 
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from app import app, db, login_manager
-from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam, EspnSyncLog
 from flask_login import login_user, logout_user, login_required, current_user
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm, AnalyticsForm
 from functools import wraps
@@ -32,9 +32,10 @@ from sqlalchemy import text, func
 from sqlalchemy.orm import joinedload
 import pytz
 from collections import defaultdict
-from app.utils import is_after_cutoff, get_current_time, get_cutoff_time
+from app.utils import is_after_cutoff, get_current_time, get_cutoff_time, TOURNAMENT_ROUND_DATES
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from app.espn import fetch_espn_scoreboard, parse_completed_events
 load_dotenv()
 
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '').strip()
@@ -738,11 +739,21 @@ def clear_team_from_future_games(game, team_id):
         next_game.winning_team_id = None
         clear_team_from_future_games(next_game, team_id)
 
+@app.route('/admin/refresh_espn_scores', methods=['POST'])
+@login_required
+@pool_required
+@admin_required
+def admin_refresh_espn_scores():
+    sync_espn_results_to_games(force=True)
+    flash('ESPN scores refreshed.', 'success')
+    return redirect(url_for('admin_set_winners'))
+
 @app.route('/admin/set_winners', methods=['GET', 'POST'])
 @login_required
 @pool_required
 @admin_required
 def admin_set_winners():
+    sync_espn_results_to_games()
     games = Game.query.filter(
         Game.team1_id.isnot(None), 
         Game.team2_id.isnot(None)
@@ -806,7 +817,18 @@ def admin_set_winners():
         recalculate_standings()
         return redirect(url_for('admin_set_winners'))
 
-    return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region)
+    espn_sync = EspnSyncLog.query.order_by(EspnSyncLog.id.desc()).first()
+    espn_sync_ago = None
+    if espn_sync:
+        delta = datetime.utcnow() - espn_sync.last_sync_at
+        secs = int(delta.total_seconds())
+        if secs < 60:
+            espn_sync_ago = f"{secs} sec"
+        elif secs < 3600:
+            espn_sync_ago = f"{secs // 60} min"
+        else:
+            espn_sync_ago = f"{secs // 3600} hr"
+    return render_template('admin/set_winners.html', games_by_round_and_region=games_by_round_and_region, espn_sync=espn_sync, espn_sync_ago=espn_sync_ago)
 
 def advance_team_to_next_game(game, team_id):
     """
@@ -896,6 +918,7 @@ def recalculate_standings(user=None, commit=True):
 @login_required
 @pool_required
 def standings():
+    sync_espn_results_to_games()
     show_champion = is_after_cutoff() or current_user.is_admin
     sort_form = SortStandingsForm(sort_field='currentscore', sort_order='desc', champion_filter = 'Any')
 
@@ -1030,6 +1053,106 @@ def clear_teams_cache():
     global _teams_cache, _teams_dict_cache
     _teams_cache = None
     _teams_dict_cache = None
+
+
+def sync_espn_results_to_games(force=False):
+    """
+    Fetch ESPN scoreboard, match completed games to our bracket, set winners.
+    Uses 3-min cache unless force=True.
+    """
+    EASTERN = pytz.timezone('US/Eastern')
+    CACHE_TTL = 180
+
+    if not force:
+        log_row = EspnSyncLog.query.order_by(EspnSyncLog.id.desc()).first()
+        if log_row and (datetime.utcnow() - log_row.last_sync_at).total_seconds() < CACHE_TTL:
+            return
+
+    try:
+        data = fetch_espn_scoreboard()
+    except Exception:
+        return
+    events = parse_completed_events(data)
+    events.sort(key=lambda e: e["event_date"] or datetime.min)
+
+    games_updated = 0
+    play_in_filled = False
+
+    for ev in events:
+        team_ids = set(ev["team_ids"])
+        winner_id = ev["winner_espn_id"]
+        event_date = ev["event_date"]  # ESPN returns UTC
+        if event_date:
+            event_date_eastern = event_date.astimezone(EASTERN).date()  # Compare in Eastern
+        else:
+            event_date_eastern = None
+
+        # Check for play-in match: a Team (slot) with both espn_team_id and espn_play_in_team_2_id
+        play_in_teams = Team.query.filter(
+            Team.espn_team_id.isnot(None),
+            Team.espn_play_in_team_2_id.isnot(None),
+        ).all()
+        for slot in play_in_teams:
+            slot_pair = {slot.espn_team_id, slot.espn_play_in_team_2_id}
+            if slot_pair == team_ids:
+                if event_date_eastern:
+                    start, end = TOURNAMENT_ROUND_DATES.get(0, (datetime.min, datetime.max))
+                    if not (start.date() <= event_date_eastern <= end.date()):
+                        continue
+                slot.espn_team_id = winner_id
+                slot.espn_play_in_team_2_id = None
+                espn_winner = EspnTeam.query.filter_by(espn_id=winner_id).first()
+                if espn_winner:
+                    slot.name = espn_winner.display_name
+                play_in_filled = True
+                break
+        else:
+            # Normal game match
+            games = Game.query.filter(Game.winning_team_id.is_(None)).options(
+                joinedload(Game.team1),
+                joinedload(Game.team2),
+            ).all()
+            for game in games:
+                t1, t2 = game.team1, game.team2
+                if not t1 or not t2 or not t1.espn_team_id or not t2.espn_team_id:
+                    continue
+                if t1.espn_play_in_team_2_id or t2.espn_play_in_team_2_id:
+                    continue
+                game_pair = {t1.espn_team_id, t2.espn_team_id}
+                if game_pair != team_ids:
+                    continue
+                if event_date_eastern:
+                    r = game.round_id
+                    start, end = TOURNAMENT_ROUND_DATES.get(r, (datetime.min, datetime.max))
+                    if not (start.date() <= event_date_eastern <= end.date()):
+                        continue
+                winner_team = Team.query.filter_by(espn_team_id=winner_id).first()
+                if not winner_team:
+                    continue
+                game.winning_team_id = winner_team.id
+                advance_team_to_next_game(game, winner_team.id)
+                games_updated += 1
+                break
+
+    db.session.commit()
+
+    if games_updated > 0:
+        clear_potential_winners_cache()
+        do_admin_update_potential_winners()
+        recalculate_standings()
+        db.session.add(LogEntry(category='ESPN Sync', current_user_id=None, description=f"Auto-synced {games_updated} games from ESPN"))
+    if play_in_filled:
+        clear_teams_cache()
+        db.session.add(LogEntry(category='ESPN Sync', current_user_id=None, description="Filled play-in slot from ESPN"))
+
+    log_row = EspnSyncLog.query.first()
+    if log_row:
+        log_row.last_sync_at = datetime.utcnow()
+        log_row.games_updated = games_updated
+    else:
+        db.session.add(EspnSyncLog(last_sync_at=datetime.utcnow(), games_updated=games_updated))
+    db.session.commit()
+
 
 @app.route('/view_picks/<int:user_id>', methods=['GET', 'POST'])
 @login_required

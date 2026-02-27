@@ -2,6 +2,21 @@
 {% block content %}
 {% block title %}Set Game Winners{% endblock %}
 <h1>Set Game Winners</h1>
+{% if espn_sync %}
+<p class="mm-espn-sync-status">
+    Last synced: {{ espn_sync_ago }} ago
+    {% if espn_sync.games_updated > 0 %}({{ espn_sync.games_updated }} games updated){% endif %}
+    <form method="POST" action="{{ url_for('admin_refresh_espn_scores') }}" style="display:inline; margin-left: 10px;">
+        <input type="submit" value="Refresh now" class="btn btn-secondary btn-top-margin" style="margin-top: 0;">
+    </form>
+</p>
+{% else %}
+<p class="mm-espn-sync-status">
+    <form method="POST" action="{{ url_for('admin_refresh_espn_scores') }}" style="display:inline;">
+        <input type="submit" value="Sync ESPN scores" class="btn btn-secondary btn-top-margin" style="margin-top: 0;">
+    </form>
+</p>
+{% endif %}
 <form method="POST">
     <input type="submit" value="Update Winners" class="btn btn-primary btn-top-margin">
     {% for round_name, regions in games_by_round_and_region.items() %}
