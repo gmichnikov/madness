@@ -26,7 +26,7 @@
                         {% else %}
                             {% set pick_class = 'pick-incorrect' %}
                             {% if game.winning_team_id %}
-                                {% set tooltip_text = game.winning_team.name %}
+                                {% set tooltip_text = game.winning_team.get_display_name() %}
                             {% endif %}
                         {% endif %}
                     {% else %}
@@ -36,7 +36,7 @@
                 <div class="game-view-pick {{ pick_class }}" id="game{{ game.id }}" data-tooltip="{{ tooltip_text }}" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)">
                     <span id="game{{ game.id }}" class="bracket-grid-span" data-tooltip="{{ tooltip_text }}" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)">
                         {% if game.id in user_picks %}
-                            {{ user_picks[game.id].name }}
+                            {{ user_picks[game.id].get_display_name() }}
                         {% else %}
                             No Pick
                         {% endif %}

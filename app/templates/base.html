@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='fa/css/fontawesome.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='fa/css/regular.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='fa/css/solid.css') }}">
+    {% block head %}{% endblock %}
     {% block chartjs %}{% endblock %}
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ measurement_id }}"></script>
     <script>

@@ -1052,3 +1052,53 @@ header {
     color: #2c3e50;
     font-weight: bold;
 }
+
+/* Manage Teams (mm- prefix to avoid collisions) */
+.mm-manage-teams-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+.mm-manage-teams-table th,
+.mm-manage-teams-table td {
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #e0e0e0;
+}
+.mm-manage-teams-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+}
+.mm-manage-teams-table tbody tr:hover {
+    background: #fafafa;
+}
+.mm-manage-teams-col-slot {
+    width: 140px;
+    font-weight: 500;
+}
+.mm-manage-teams-col-team {
+    min-width: 220px;
+}
+.mm-manage-teams-col-playin {
+    width: 90px;
+    text-align: center;
+}
+.mm-manage-teams-col-team2 {
+    min-width: 220px;
+}
+.mm-manage-teams-select,
+.mm-manage-teams-input {
+    width: 100%;
+    max-width: 280px;
+}
+.mm-manage-teams-playin {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    margin: 0;
+}
+.mm-manage-teams-submit {
+    margin-top: 15px;
+}

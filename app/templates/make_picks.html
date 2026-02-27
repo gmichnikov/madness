@@ -41,7 +41,7 @@
                             {% for team_id in potential_picks_map.get(game.id, []) %}
                                 {% set team = teams_dict[team_id] %}
                                 <option value="{{ team.id }}" {% if user_picks.get(game.id) == team.id %} selected {% endif %}>
-                                    {{ team.seed }} - {{ team.name }}
+                                    {{ team.seed }} - {{ team.get_display_name() }}
                                 </option>
                             {% endfor %}
                         </select>

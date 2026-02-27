@@ -125,4 +125,15 @@ def update_team_names_command():
 
 app.cli.add_command(update_team_names_command)
 
+
+@click.command('refresh-espn-teams')
+@with_appcontext
+def refresh_espn_teams_command():
+    """Fetch NCAA teams from ESPN API and upsert into EspnTeam table."""
+    from app.espn import refresh_espn_teams
+    count = refresh_espn_teams()
+    click.echo(f'Refreshed {count} teams from ESPN.')
+
+app.cli.add_command(refresh_espn_teams_command)
+
 from app import routes

@@ -63,7 +63,7 @@
                     <div class="game-view-pick pick-undecided" id="game{{ game.id }}">
                         <span class="bracket-grid-span">
                             {% if consensus %}
-                                {{ consensus.team.name }}
+                                {{ consensus.team.get_display_name() }}
                                 <div style="font-size: 8px; color: #666;">{{ (consensus.count / total_users * 100)|round(0) }}%</div>
                             {% else %}
                                 No Picks

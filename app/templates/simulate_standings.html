@@ -26,7 +26,7 @@
                             <option value="">-- Pending --</option>
                             {% for team in potential_winners_data[game.id] %}
                             <option value="{{ team.id }}" {% if selected_teams.get('game_' ~ game.id|string) == (team.id|string) %}selected{% endif %}>
-                                ({{ team.seed }}) {{ team.name }}
+                                ({{ team.seed }}) {{ team.get_display_name() }}
                             </option>
                             {% endfor %}
                         </select>

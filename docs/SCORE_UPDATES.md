@@ -14,9 +14,9 @@ We will store ESPN teams in our DB and constrain the manage-teams UI so admins s
 
 ## Workflow Summary
 
-**1. What we build now (Phases 1–3):** EspnTeam table, refresh-espn-teams CLI, Team model changes, manage-teams UI with dropdowns, score sync logic, EspnSyncLog for caching, admin sync status UI.
+**1. What we build now (Phases 1–3):** EspnTeam table, refresh-espn-teams CLI, Team model changes, manage-teams UI with type-to-search inputs (HTML5 datalist), score sync logic, EspnSyncLog for caching, admin sync status UI.
 
-**2. When the tournament starts (Selection Sunday):** Admin runs `flask refresh-espn-teams` to ensure the team list is current. Admin goes to Manage Teams and, for each of the 64 bracket slots, selects the team from the dropdown (or for the 4 play-in slots, checks the box and selects both teams). Admin updates `TOURNAMENT_ROUND_DATES` in config for the new season's dates. Cutoff time in `utils.py` is already set per REBOOT_GUIDE.
+**2. When the tournament starts (Selection Sunday):** Admin runs `flask refresh-espn-teams` to ensure the team list is current. Admin goes to Manage Teams and, for each of the 64 bracket slots, selects the team from the type-to-search input (or for the 4 play-in slots, checks the box and selects both teams). Admin updates `TOURNAMENT_ROUND_DATES` in config for the new season's dates. Cutoff time in `utils.py` is already set per REBOOT_GUIDE.
 
 **3. During the tournament:** When anyone loads Standings or Admin → Set Game Winners, we check `EspnSyncLog`. If we synced within the last 3 minutes, skip. Otherwise, fetch ESPN scoreboard, match completed games to our bracket, set winners, advance teams, recalculate standings, and update `EspnSyncLog`. Scores stay up to date automatically. Admin can still manually set winners on the Set Game Winners page if needed (we never overwrite an already-set winner).
 
@@ -61,14 +61,14 @@ Stores the list of teams we fetch from ESPN. Source of truth for display names.
 | name | String | Kept for display fallback; synced from EspnTeam when selection is saved |
 | espn_team_id | Integer, nullable | ESPN ID for primary team. Null until admin selects one. |
 | espn_play_in_team_2_id | Integer, nullable | Second team for play-in slots only. Null for normal teams. |
-| is_play_in_slot | Boolean, default False | Checkbox on manage-teams. When true, show two dropdowns. |
+| is_play_in_slot | Boolean, default False | Checkbox on manage-teams. When true, show second team input. |
 
-**Display logic:**
-- If `espn_team_id` is set and `espn_play_in_team_2_id` is set: show `"{EspnTeam1.display_name} / {EspnTeam2.display_name}"`
-- If `espn_team_id` is set: show `EspnTeam.display_name` (and sync to `Team.name` for backwards compatibility)
+**Display logic:** Implemented via `Team.get_display_name(short=True)`:
+- If `espn_team_id` is set and `espn_play_in_team_2_id` is set: show `"{EspnTeam1.short_display_name} / {EspnTeam2.short_display_name}"` (e.g. "Grambling / Montana State")
+- If `espn_team_id` is set: show `EspnTeam.short_display_name` (e.g. "UConn" not "UConn Huskies")
 - If `espn_team_id` is null: show `Team.name` (placeholder like "Region 1: Seed 1")
 
-We keep `Team.name` so existing code that references it still works. When the admin selects from the dropdown, we save `espn_team_id` and update `name` from the selected EspnTeam. For play-in slots with both IDs, we compute the display string at render time.
+Use `get_display_name(short=False)` for full names. We keep `Team.name` so existing code that references it still works. When the admin selects from the input, we save `espn_team_id` and update `name` from the selected EspnTeam's `display_name`. For play-in slots with both IDs, we compute the display string at render time.
 
 ### EspnSyncLog (new table)
 
@@ -92,24 +92,21 @@ Single row, updated in place. Created on first sync.
 2. Parses the response (teams live at `sports[0].leagues[0].teams[]`)
 3. Upserts into `EspnTeam` (insert new, update existing by `espn_id`)
 
-Run before Selection Sunday (or whenever you want to refresh). The manage-teams UI reads from this table—the dropdown will be empty until you run it.
+Run before Selection Sunday (or whenever you want to refresh). The manage-teams UI reads from this table—the team list will be empty until you run it.
 
 ---
 
 ## Manage Teams UI
 
-**Current:** Text inputs for team names.
+**Implemented:** Table layout with type-to-search inputs (HTML5 datalist).
 
-**New:**
-- Each team row: Region, Seed, and team selection
-- **Team dropdown:** Populated from `EspnTeam`, ordered by `display_name`. Required for normal teams. Selecting one sets `espn_team_id` and syncs `Team.name`.
+- **Table:** Columns: Slot (Region, Seed), Team, Play-in, Second Team
+- **Team input:** `<input list="...">` with `<datalist>` populated from `EspnTeam` (ordered by `display_name`). User types to filter; selecting from suggestions sets `espn_team_id` via hidden input. Syncs `Team.name` from EspnTeam on save.
 - **"Play-in slot" checkbox:** Default false. When checked:
-  - Show a second dropdown for the second team
-  - Both dropdowns required when checked
+  - Show a second input for the second team (same datalist pattern)
   - Sets `espn_play_in_team_2_id` when second team selected
-- **Unset state:** Dropdown can have an empty option ("— Select team —"). When nothing selected, `espn_team_id` stays null and we show the placeholder `Team.name`.
-
-Autocomplete is an option if 350+ options is unwieldy; a searchable dropdown or typeahead would work.
+- **Unset state:** User can clear the input; `espn_team_id` stays null and we show placeholder `Team.name`.
+- **CSS:** All classes use `mm-manage-teams-*` prefix to avoid collisions.
 
 ---
 
@@ -117,7 +114,7 @@ Autocomplete is an option if 350+ options is unwieldy; a searchable dropdown or 
 
 From Selection Sunday until the First Four concludes (Tue/Wed), 4 bracket slots show both possible teams (e.g. "Grambling / Montana State").
 
-**When the bracket is announced (Selection Sunday):** For each of the 4 play-in slots (e.g. Region 1 Seed 16), admin checks "Play-in slot" and selects both teams from the dropdowns—e.g. Grambling and Montana State. We store `espn_team_id` = first team, `espn_play_in_team_2_id` = second team. Display: `"Grambling / Montana State"`.
+**When the bracket is announced (Selection Sunday):** For each of the 4 play-in slots (e.g. Region 1 Seed 16), admin checks "Play-in slot" and selects both teams from the type-to-search inputs—e.g. Grambling and Montana State. We store `espn_team_id` = first team, `espn_play_in_team_2_id` = second team. Display: `"Grambling / Montana State"`.
 
 **When the First Four game completes (Tue/Wed):** The play-in game (Grambling vs Montana State) is not one of our 63 games. It only determines who fills the 16-seed slot. Our score sync matches the ESPN First Four event to the Round 1 Game that has that play-in slot. We update the slot: set `espn_team_id` = winner (e.g. Grambling), clear `espn_play_in_team_2_id`. Display becomes `"Grambling"`. We do **not** set `game.winning_team_id`—the Round 1 game (1 seed vs 16 seed) hasn't been played yet. We're just filling the slot.
 
@@ -245,49 +242,54 @@ A step-by-step guide for building the feature and operating it each season.
 
 ---
 
-### Phase 1: Data Model and Manage Teams
+### Phase 1: Data Model and Manage Teams ✅ DONE
 
-**1.1 Add EspnTeam model**
+**1.1 Add EspnTeam model** ✅
 
 - In `app/models.py`, add `EspnTeam` with columns: `id`, `espn_id` (Integer, unique), `display_name`, `short_display_name`, `abbreviation`
 - Run `flask db migrate -m "Add EspnTeam table"` (you run this)
 - Run `flask db upgrade` (you run this)
 
-**1.2 Add Team columns**
+**1.2 Add Team columns** ✅
 
-- In `app/models.py`, add to `Team`: `espn_team_id` (Integer, nullable), `espn_play_in_team_2_id` (Integer, nullable), `is_play_in_slot` (Boolean, default False)
-- Run `flask db migrate -m "Add espn_team_id, espn_play_in_team_2_id, is_play_in_slot to Team"` (you run this)
-- Run `flask db upgrade` (you run this)
+- In `app/models.py`, add to `Team`: `espn_team_id` (Integer, nullable), `espn_play_in_team_2_id` (Integer, nullable), `is_play_in_slot` (Boolean, default False, `server_default=sa.false()` in migration for existing rows)
+- Run `flask db migrate` and `flask db upgrade` (you run this)
 
-**1.3 Create `app/espn.py`**
+**1.3 Create `app/espn.py`** ✅
 
-- Add `fetch_espn_teams()` — GET the teams endpoint, parse `sports[0].leagues[0].teams[]` (each item has a `team` wrapper with `id`, `displayName`, `shortDisplayName`, `abbreviation`), return list of dicts with `espn_id`, `display_name`, `short_display_name`, `abbreviation`
+- Add `fetch_espn_teams()` — GET the teams endpoint, parse `sports[0].leagues[0].teams[]`, return list of dicts with `espn_id`, `display_name`, `short_display_name`, `abbreviation`
 - Add `refresh_espn_teams()` — call fetch, upsert into `EspnTeam` by `espn_id`
 
-**1.4 Add `flask refresh-espn-teams` CLI**
+**1.4 Add `flask refresh-espn-teams` CLI** ✅
 
 - In `app/__init__.py`, add a click command that calls `refresh_espn_teams()`
-- Test: run `flask refresh-espn-teams`, verify `EspnTeam` has rows
 
-**1.5 Update Manage Teams form and template**
+**1.5 Update Manage Teams form and template** ✅
 
-- Replace the 64 text inputs with dropdowns. Options: (a) `ManageTeamsForm` with 64 `SelectField`s whose choices are set in the route from `EspnTeam`; (b) template loop with raw `<select>` elements using `name="team_{id}_espn"`, `name="team_{id}_play_in"`, `name="team_{id}_espn_2"`, and process `request.form` in the route.
-- Each team row: show Region and Seed label (e.g. "Region 1, Seed 1"), team dropdown (options: empty "— Select team —" + EspnTeam ordered by display_name), "Play-in slot" checkbox, second dropdown (visible when checked, same options). Use CSS class prefixes (e.g. `mm-manage-teams-*`) per project rules.
-- Form submits: per team, `espn_team_id` (or None), `is_play_in_slot` (bool), `espn_play_in_team_2_id` (or None when not play-in).
-- Optional: If 350+ options is unwieldy, add searchable dropdown or typeahead (see Manage Teams UI section).
+- Table layout with columns: Slot, Team, Play-in, Second Team
+- HTML5 datalist: `<input list="...">` + `<datalist>` per team, populated from `EspnTeam` (ordered by `display_name`). User types to filter; hidden input stores `espn_id` for form submission.
+- "Play-in slot" checkbox; when checked, show second input with same datalist pattern
+- CSS class prefixes `mm-manage-teams-*`
 
-**1.6 Update Manage Teams route**
+**1.6 Update Manage Teams route** ✅
 
-- In `app/routes.py`, `admin_manage_teams()`: load `EspnTeam` for dropdown choices. On POST, for each team: save `espn_team_id`, `espn_play_in_team_2_id`, `is_play_in_slot`. When `espn_team_id` is set, sync `Team.name` from the selected EspnTeam's `display_name`. When `is_play_in_slot` is unchecked, clear `espn_play_in_team_2_id`. Call `clear_teams_cache()`.
+- Load `EspnTeam`, pass `selected_names` and `selected_names_2` for pre-populating inputs
+- On POST: save `espn_team_id`, `espn_play_in_team_2_id`, `is_play_in_slot` from `request.form`
+- When `espn_team_id` is set, sync `Team.name` from EspnTeam's `display_name`
+- When `is_play_in_slot` unchecked, clear `espn_play_in_team_2_id`
+- Call `clear_teams_cache()`
 
-**1.7 Update display logic for Team names**
+**1.7 Update display logic for Team names** ✅
 
-- Wherever `Team.name` is used for display (bracket grid `_shared_grid.html`, set_winners, view_picks, make_picks, simulate_standings, pool_insights, routes): if `espn_team_id` and `espn_play_in_team_2_id` are both set, show `"{EspnTeam1.display_name} / {EspnTeam2.display_name}"`. Else if `espn_team_id` is set, show `EspnTeam.display_name` (or `Team.name` if synced). Else show `Team.name` (placeholder). Add a helper (e.g. `team_display_name(team)` or template filter) and use it everywhere for consistency.
+- Added `Team.get_display_name(short=True)` — uses `short_display_name` by default (school name only, no mascot)
+- Updated templates: `_shared_grid.html`, set_winners, view_picks, make_picks, simulate_standings, pool_insights
+- Updated routes: standings (champion_picks), set_winners (log entries), show_potential_winners, pool_insights
+- Updated forms: SortStandingsForm champion_teams
 
 **1.8 Test Phase 1**
 
 - Run `flask refresh-espn-teams`
-- Go to Admin → Edit Teams. Verify dropdowns populated. Select a few teams, check a play-in slot, select both teams, save. Verify DB and display.
+- Go to Admin → Edit Teams. Verify type-to-search works. Select teams, check play-in slot, select both teams, save. Verify DB and display.
 
 ---
 
@@ -349,7 +351,7 @@ A step-by-step guide for building the feature and operating it each season.
 
 | When | What |
 |------|------|
-| **Before season** | Phase 1–3 implemented and deployed. Run `flask refresh-espn-teams` so dropdown has data. |
+| **Before season** | Phase 1–3 implemented and deployed. Run `flask refresh-espn-teams` so team list has data. |
 | **Selection Sunday** | 1. Run `flask refresh-espn-teams` (optional, to refresh names). 2. Update `TOURNAMENT_ROUND_DATES` in config for new dates. 3. Update cutoff in `app/utils.py` per REBOOT_GUIDE. 4. Admin → Edit Teams: assign all 64 slots. For 4 play-in slots, check the box and select both teams. Save. |
 | **Tue/Wed (First Four)** | Score sync runs when users load Standings or Set Winners. Play-in events fill the 4 slots. No manual action needed unless sync fails. |
 | **Thu–Sun (Rounds 1–2)** | Sync continues automatically. Admin can manually set winners on Set Game Winners if needed. |

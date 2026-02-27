@@ -1,6 +1,6 @@
 {% for team in teams %}
 <div class="bracket-grid-1st-round-cell" id="team{{ team.id }}">
-    <div class="bracket-grid-1st-round-team {% if team.seed in [2, 4, 3, 8] %}bracket-first-round-alternating-first-top{% endif %}{% if team.seed in [9, 14, 13, 15] %}bracket-first-round-alternating-first-bottom{% endif %}{% if team.seed in [10, 11, 12, 16] %}bracket-first-round-alternating-second-bottom{% endif %}">{{ team.seed }} - {{ team.name }}</div>
+    <div class="bracket-grid-1st-round-team {% if team.seed in [2, 4, 3, 8] %}bracket-first-round-alternating-first-top{% endif %}{% if team.seed in [9, 14, 13, 15] %}bracket-first-round-alternating-first-bottom{% endif %}{% if team.seed in [10, 11, 12, 16] %}bracket-first-round-alternating-second-bottom{% endif %}">{{ team.seed }} - {{ team.get_display_name() }}</div>
 </div>
 {% endfor %}
 

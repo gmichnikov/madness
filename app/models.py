@@ -52,13 +52,44 @@ class Region(db.Model):
     def __repr__(self):
         return f'<Region {self.name}>'
 
+
+class EspnTeam(db.Model):
+    """Stores teams fetched from ESPN API. Source of truth for display names."""
+    id = db.Column(db.Integer, primary_key=True)
+    espn_id = db.Column(db.Integer, unique=True, nullable=False)
+    display_name = db.Column(db.String(150), nullable=False)
+    short_display_name = db.Column(db.String(100), nullable=False)
+    abbreviation = db.Column(db.String(20), nullable=False)
+
+    def __repr__(self):
+        return f'<EspnTeam {self.display_name}>'
+
+
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     seed = db.Column(db.Integer, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     region_id = db.Column(db.Integer, db.ForeignKey('region.id'), nullable=False)
+    espn_team_id = db.Column(db.Integer, nullable=True)
+    espn_play_in_team_2_id = db.Column(db.Integer, nullable=True)
+    is_play_in_slot = db.Column(db.Boolean, default=False, nullable=False)
 
     region = db.relationship('Region', backref=db.backref('teams', lazy=True))
+
+    def get_display_name(self, short=True):
+        """Display name for UI. short=True uses school name only (no mascot)."""
+        if self.espn_team_id and self.espn_play_in_team_2_id:
+            et1 = EspnTeam.query.filter_by(espn_id=self.espn_team_id).first()
+            et2 = EspnTeam.query.filter_by(espn_id=self.espn_play_in_team_2_id).first()
+            if et1 and et2:
+                n1 = et1.short_display_name if short else et1.display_name
+                n2 = et2.short_display_name if short else et2.display_name
+                return f"{n1} / {n2}"
+        if self.espn_team_id:
+            et = EspnTeam.query.filter_by(espn_id=self.espn_team_id).first()
+            if et:
+                return et.short_display_name if short else et.display_name
+        return self.name
 
     def __repr__(self):
         return f'<Team {self.name}>'

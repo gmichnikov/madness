@@ -22,7 +22,7 @@ Cache Management:
 
 from flask import render_template, redirect, url_for, flash, request, jsonify
 from app import app, db, login_manager
-from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam
 from flask_login import login_user, logout_user, login_required, current_user
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm, AnalyticsForm
 from functools import wraps
@@ -229,26 +229,39 @@ def admin_manage_regions():
 @admin_required
 def admin_manage_teams():
     form = ManageTeamsForm()
-    teams = Team.query.order_by(Team.id).all()
+    teams = Team.query.options(joinedload(Team.region)).order_by(Team.id).all()
+    espn_teams = EspnTeam.query.order_by(EspnTeam.display_name).all()
+
     if form.validate_on_submit():
-        for i, team in enumerate(teams, 1):
-            team_field = getattr(form, f'team_{i}')
-            team.name = team_field.data
-        
+        for team in teams:
+            espn_val = request.form.get(f'team_{team.id}_espn')
+            play_in_val = request.form.get(f'team_{team.id}_play_in') == '1'
+            espn_2_val = request.form.get(f'team_{team.id}_espn_2')
+
+            team.espn_team_id = int(espn_val) if espn_val else None
+            team.is_play_in_slot = play_in_val
+            if not play_in_val:
+                team.espn_play_in_team_2_id = None
+            else:
+                team.espn_play_in_team_2_id = int(espn_2_val) if espn_2_val else None
+
+            if team.espn_team_id:
+                espn_team = EspnTeam.query.filter_by(espn_id=team.espn_team_id).first()
+                if espn_team:
+                    team.name = espn_team.display_name
+
         log_entry = LogEntry(category='Manage Teams', current_user_id=current_user.id, description=f"{current_user.full_name} edited teams")
         db.session.add(log_entry)
         db.session.commit()
-        
-        clear_teams_cache()  # Clear cache after updating teams
+
+        clear_teams_cache()
         flash('Teams updated successfully.')
         return redirect(url_for('admin_manage_teams'))
 
-    # Pre-populate form fields with current team names
-    for i, team in enumerate(teams, 1):
-        team_field = getattr(form, f'team_{i}')
-        team_field.data = team.name
-
-    return render_template('admin/manage_teams.html', form=form)
+    espn_by_id = {e.espn_id: e for e in espn_teams}
+    selected_names = {t.id: espn_by_id[t.espn_team_id].short_display_name if t.espn_team_id and t.espn_team_id in espn_by_id else '' for t in teams}
+    selected_names_2 = {t.id: espn_by_id[t.espn_play_in_team_2_id].short_display_name if t.espn_play_in_team_2_id and t.espn_play_in_team_2_id in espn_by_id else '' for t in teams}
+    return render_template('admin/manage_teams.html', form=form, teams=teams, espn_teams=espn_teams, selected_names=selected_names, selected_names_2=selected_names_2)
 
 @app.route('/admin/manage_rounds', methods=['GET', 'POST'])
 @login_required
@@ -764,7 +777,7 @@ def admin_set_winners():
                 game.winning_team_id = None
                 clear_team_from_future_games(game, previous_winning_team_id)
                 log_entry = LogEntry(category='Remove Winner', current_user_id=current_user.id, 
-                                     description=f"{current_user.email} cleared winner of {game.team1.name} vs {game.team2.name}")
+                                     description=f"{current_user.email} cleared winner of {game.team1.get_display_name()} vs {game.team2.get_display_name()}")
                 db.session.add(log_entry)
             
             # Case 3: Setting a winner for the first time
@@ -772,7 +785,7 @@ def admin_set_winners():
                 game.winning_team_id = selected_team_id
                 advance_team_to_next_game(game, selected_team_id)
                 log_entry = LogEntry(category='Set Winner', current_user_id=current_user.id, 
-                                     description=f"{current_user.email} set winner of {game.team1.name} vs {game.team2.name}")
+                                     description=f"{current_user.email} set winner of {game.team1.get_display_name()} vs {game.team2.get_display_name()}")
                 db.session.add(log_entry)
                 
             # Case 4: Switching winner
@@ -783,7 +796,7 @@ def admin_set_winners():
                 # Then advance the new winner
                 advance_team_to_next_game(game, selected_team_id)
                 log_entry = LogEntry(category='Change Winner', current_user_id=current_user.id, 
-                                     description=f"{current_user.email} changed winner of {game.team1.name} vs {game.team2.name}")
+                                     description=f"{current_user.email} changed winner of {game.team1.get_display_name()} vs {game.team2.get_display_name()}")
                 db.session.add(log_entry)
 
         db.session.commit()
@@ -902,7 +915,7 @@ def standings():
         user_query = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid.is_(True))
         # Get championship picks for valid brackets only
         champion_picks = {
-            pick.user_id: pick.team.name 
+            pick.user_id: pick.team.get_display_name() 
             for pick in Pick.query.join(User).filter(
                 User.pool_id == POOL_ID, 
                 User.is_bracket_valid.is_(True), 
@@ -913,7 +926,7 @@ def standings():
         user_query = User.query.filter(User.pool_id == POOL_ID)
         # Get championship picks for all users
         champion_picks = {
-            pick.user_id: pick.team.name 
+            pick.user_id: pick.team.get_display_name() 
             for pick in Pick.query.join(User).filter(
                 User.pool_id == POOL_ID, 
                 Pick.game_id == CHAMPIONSHIP_GAME_ID
@@ -1515,7 +1528,7 @@ def show_potential_winners():
         game = games_dict.get(pw.game_id)
         team_ids = [int(id) for id in pw.potential_winner_ids.split(',') if id.isdigit()]
         teams = Team.query.filter(Team.id.in_(team_ids)).all() if team_ids else []
-        team_names = ', '.join(team.name for team in teams)
+        team_names = ', '.join(team.get_display_name() for team in teams)
         
         potential_winners_data.append({
             'game_id': pw.game_id,
@@ -1534,13 +1547,14 @@ def pool_insights():
         return redirect(url_for('index'))
 
     # 1. Champion Picks Distribution
-    champion_picks = db.session.query(
-        Team.name, Team.seed, func.count(Pick.id).label('count')
+    champion_picks_raw = db.session.query(
+        Team, func.count(Pick.id).label('count')
     ).join(Pick, Team.id == Pick.team_id).join(User, Pick.user_id == User.id).filter(
         User.pool_id == POOL_ID,
         User.is_bracket_valid.is_(True),
         Pick.game_id == CHAMPIONSHIP_GAME_ID
     ).group_by(Team.id).order_by(text('count DESC')).all()
+    champion_picks = [(t.get_display_name(), t.seed, c) for t, c in champion_picks_raw]
 
     # 2. Consensus Bracket (Most picked team for each game)
     # This query finds the most picked team for each game in the pool
@@ -1579,7 +1593,7 @@ def pool_insights():
     # 3. Most Popular Upset Picks (First Round)
     # First round games are 1-32. Upset = lower seed (higher number) wins.
     upset_picks = db.session.query(
-        Team.name, Team.seed, Game.id, func.count(Pick.id).label('count')
+        Team, Game.id, func.count(Pick.id).label('count')
     ).join(Pick, Team.id == Pick.team_id).join(Game, Pick.game_id == Game.id).join(User, Pick.user_id == User.id).filter(
         User.pool_id == POOL_ID,
         User.is_bracket_valid.is_(True),
@@ -1595,14 +1609,14 @@ def pool_insights():
             game_opponents[g.id] = (g.team1.seed, g.team2.seed)
 
     popular_upsets = []
-    for team_name, team_seed, game_id, count in upset_picks:
+    for team, game_id, count in upset_picks:
         seeds = game_opponents.get(game_id)
         if seeds:
-            opponent_seed = seeds[1] if team_seed == seeds[0] else seeds[0]
-            if team_seed > opponent_seed:
+            opponent_seed = seeds[1] if team.seed == seeds[0] else seeds[0]
+            if team.seed > opponent_seed:
                 popular_upsets.append({
-                    'team': team_name,
-                    'seed': team_seed,
+                    'team': team.get_display_name(),
+                    'seed': team.seed,
                     'opponent_seed': opponent_seed,
                     'count': count
                 })
