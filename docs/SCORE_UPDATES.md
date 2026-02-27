@@ -239,8 +239,119 @@ Works across all workers and instances. Survives deploys. With a 3-minute TTL, a
 
 ---
 
-## Phased Implementation
+## Implementation Guide
 
-1. **Phase 1:** Add `EspnTeam` table, `flask refresh-espn-teams` CLI, Team columns (`espn_team_id`, `espn_play_in_team_2_id`, `is_play_in_slot`), update manage-teams UI to use dropdown(s) from EspnTeam
-2. **Phase 2:** Add `EspnSyncLog` table, ESPN scoreboard fetch + parsing, `sync_espn_results_to_games()` with round date validation (`TOURNAMENT_ROUND_DATES` config), DB-based cache (read/write `last_sync_at`), wire into standings/set_winners
-3. **Phase 3:** Admin UI for sync status ("Last synced: X min ago", "Refresh now") and logging
+A step-by-step guide for building the feature and operating it each season.
+
+---
+
+### Phase 1: Data Model and Manage Teams
+
+**1.1 Add EspnTeam model**
+
+- In `app/models.py`, add `EspnTeam` with columns: `id`, `espn_id` (Integer, unique), `display_name`, `short_display_name`, `abbreviation`
+- Run `flask db migrate -m "Add EspnTeam table"` (you run this)
+- Run `flask db upgrade` (you run this)
+
+**1.2 Add Team columns**
+
+- In `app/models.py`, add to `Team`: `espn_team_id` (Integer, nullable), `espn_play_in_team_2_id` (Integer, nullable), `is_play_in_slot` (Boolean, default False)
+- Run `flask db migrate -m "Add espn_team_id, espn_play_in_team_2_id, is_play_in_slot to Team"` (you run this)
+- Run `flask db upgrade` (you run this)
+
+**1.3 Create `app/espn.py`**
+
+- Add `fetch_espn_teams()` — GET the teams endpoint, parse `sports[0].leagues[0].teams[]` (each item has a `team` wrapper with `id`, `displayName`, `shortDisplayName`, `abbreviation`), return list of dicts with `espn_id`, `display_name`, `short_display_name`, `abbreviation`
+- Add `refresh_espn_teams()` — call fetch, upsert into `EspnTeam` by `espn_id`
+
+**1.4 Add `flask refresh-espn-teams` CLI**
+
+- In `app/__init__.py`, add a click command that calls `refresh_espn_teams()`
+- Test: run `flask refresh-espn-teams`, verify `EspnTeam` has rows
+
+**1.5 Update Manage Teams form and template**
+
+- Replace the 64 text inputs with dropdowns. Options: (a) `ManageTeamsForm` with 64 `SelectField`s whose choices are set in the route from `EspnTeam`; (b) template loop with raw `<select>` elements using `name="team_{id}_espn"`, `name="team_{id}_play_in"`, `name="team_{id}_espn_2"`, and process `request.form` in the route.
+- Each team row: show Region and Seed label (e.g. "Region 1, Seed 1"), team dropdown (options: empty "— Select team —" + EspnTeam ordered by display_name), "Play-in slot" checkbox, second dropdown (visible when checked, same options). Use CSS class prefixes (e.g. `mm-manage-teams-*`) per project rules.
+- Form submits: per team, `espn_team_id` (or None), `is_play_in_slot` (bool), `espn_play_in_team_2_id` (or None when not play-in).
+- Optional: If 350+ options is unwieldy, add searchable dropdown or typeahead (see Manage Teams UI section).
+
+**1.6 Update Manage Teams route**
+
+- In `app/routes.py`, `admin_manage_teams()`: load `EspnTeam` for dropdown choices. On POST, for each team: save `espn_team_id`, `espn_play_in_team_2_id`, `is_play_in_slot`. When `espn_team_id` is set, sync `Team.name` from the selected EspnTeam's `display_name`. When `is_play_in_slot` is unchecked, clear `espn_play_in_team_2_id`. Call `clear_teams_cache()`.
+
+**1.7 Update display logic for Team names**
+
+- Wherever `Team.name` is used for display (bracket grid `_shared_grid.html`, set_winners, view_picks, make_picks, simulate_standings, pool_insights, routes): if `espn_team_id` and `espn_play_in_team_2_id` are both set, show `"{EspnTeam1.display_name} / {EspnTeam2.display_name}"`. Else if `espn_team_id` is set, show `EspnTeam.display_name` (or `Team.name` if synced). Else show `Team.name` (placeholder). Add a helper (e.g. `team_display_name(team)` or template filter) and use it everywhere for consistency.
+
+**1.8 Test Phase 1**
+
+- Run `flask refresh-espn-teams`
+- Go to Admin → Edit Teams. Verify dropdowns populated. Select a few teams, check a play-in slot, select both teams, save. Verify DB and display.
+
+---
+
+### Phase 2: Score Sync
+
+**2.1 Add EspnSyncLog model**
+
+- In `app/models.py`, add `EspnSyncLog` with `id`, `last_sync_at`, `games_updated`
+- Run `flask db migrate -m "Add EspnSyncLog table"` (you run this)
+- Run `flask db upgrade` (you run this)
+
+**2.2 Add TOURNAMENT_ROUND_DATES config**
+
+- In `app/utils.py` (or `config.py`), add `TOURNAMENT_ROUND_DATES` dict with round 0–6 and date ranges. Use 2026 dates as placeholder; update each season.
+
+**2.3 Add ESPN scoreboard fetch and parsing**
+
+- In `app/espn.py`, add `fetch_espn_scoreboard()` — GET scoreboard with `seasontype=3`, `group=100`, `limit=100`. Return raw JSON or parsed events. Verify during implementation that `group=100` returns only NCAA tournament games (see Avoiding Wrong Games).
+- Add `parse_completed_events(data)` — for each event in `events[]`, filter to `status.type.completed == true`. Extract from `competitions[0].competitors[]`: two team IDs (from `competitor.id` or `competitor.team.id`), winner (higher `score` or `winner: true`), event date (from `event.date` or `competitions[0].date`). Convert IDs to int.
+
+**2.4 Add sync logic**
+
+- In `app/espn.py` (or `app/routes.py`), add `sync_espn_results_to_games(force=False)`:
+  1. Unless `force=True`: Query `EspnSyncLog` for `last_sync_at`. If exists and `(now - last_sync_at).total_seconds() < 180`, return early (cache hit).
+  2. Fetch scoreboard, parse completed events.
+  3. Sort events by date (First Four first, then Round 1, etc.).
+  4. For each event: find matching Game among games with `winning_team_id` NULL. Normal: both slots have single `espn_team_id`; play-in: one slot has both `espn_team_id` and `espn_play_in_team_2_id` matching the event's two teams. Skip if either slot has `espn_team_id` NULL (unconfigured). Check event date: for play-in match use round 0 range; for normal match use `game.round_id` range. If date outside range, skip (or log warning). If play-in match: update that slot only (`espn_team_id` = winner, clear `espn_play_in_team_2_id`). If normal match: resolve winner's ESPN ID to our `Team` (look up where `espn_team_id` = winner), set `game.winning_team_id`, call `advance_team_to_next_game`, increment games_updated count, log the update.
+  5. If any normal games were updated: run `clear_potential_winners_cache()`, `do_admin_update_potential_winners()`, `recalculate_standings()`.
+  6. Upsert `EspnSyncLog`: UPDATE if row exists, INSERT if not. Set `last_sync_at = now()`, `games_updated = N`. (Do this even for play-in-only syncs, with `games_updated=0`.)
+
+**2.5 Wire sync into standings and set_winners**
+
+- In `app/routes.py`, at the start of `standings` and `admin_set_winners`, call `sync_espn_results_to_games()` (or a wrapper that handles the cache check and runs sync if needed). Ensure it runs before rendering so the page shows fresh data when sync occurs.
+
+**2.6 Test Phase 2**
+
+- Before tournament: sync will run but find no completed NCAA games. Verify no errors, `EspnSyncLog` gets a row.
+- During tournament (or with mocked ESPN response): verify matching and winner updates work.
+
+---
+
+### Phase 3: Admin Sync UI
+
+**3.1 Add sync status to Set Game Winners page**
+
+- In `admin_set_winners` (or its template), display "Last synced: X min ago" using `EspnSyncLog.last_sync_at`. Show "Refresh now" link/button that triggers sync with cache bypass.
+
+**3.2 Add refresh endpoint**
+
+- Add route (e.g. POST `/admin/refresh_espn_scores`) that calls `sync_espn_results_to_games(force=True)` to bypass the 3-min cache. Redirect back to set_winners. Admin-only.
+
+**3.3 Add logging**
+
+- When sync updates games, add `LogEntry` (e.g. category "ESPN Sync", description "Auto-synced N games from ESPN"). When play-in slot is filled, log that too.
+
+---
+
+### Seasonal Workflow (When to Do What)
+
+| When | What |
+|------|------|
+| **Before season** | Phase 1–3 implemented and deployed. Run `flask refresh-espn-teams` so dropdown has data. |
+| **Selection Sunday** | 1. Run `flask refresh-espn-teams` (optional, to refresh names). 2. Update `TOURNAMENT_ROUND_DATES` in config for new dates. 3. Update cutoff in `app/utils.py` per REBOOT_GUIDE. 4. Admin → Edit Teams: assign all 64 slots. For 4 play-in slots, check the box and select both teams. Save. |
+| **Tue/Wed (First Four)** | Score sync runs when users load Standings or Set Winners. Play-in events fill the 4 slots. No manual action needed unless sync fails. |
+| **Thu–Sun (Rounds 1–2)** | Sync continues automatically. Admin can manually set winners on Set Game Winners if needed. |
+| **Subsequent weekends** | Same. Sync runs on page load (3-min cache). |
+| **After tournament** | No action. Sync finds no new games. Next season: reset bracket per REBOOT_GUIDE, then repeat Selection Sunday steps. |
