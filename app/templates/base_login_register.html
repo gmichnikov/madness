@@ -124,6 +124,13 @@
 <body>
 
 <div class="login-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p class="login-flash-message" style="margin: 0 0 12px 0; padding: 8px 12px; background: {% if category == 'error' %}#f8d7da{% else %}#d4edda{% endif %}; color: {% if category == 'error' %}#721c24{% else %}#155724{% endif %}; border-radius: 4px; font-size: 0.9em;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     {% block content %}{% endblock %}
     <div class="back-to-home">
         <a href="{{ url_for('index') }}" class="link-spacing">← Back to Home</a>
