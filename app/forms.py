@@ -41,15 +41,45 @@ class AdminPasswordResetCodeForm(FlaskForm):
     email = SelectField('Select User', choices=[])
     submit = SubmitField('Generate Code')
 
+class RequestPasswordResetForm(FlaskForm):
+    """Email-only form for requesting password reset link via email."""
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Send Reset Link')
+
 class ResetPasswordRequestForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     reset_code = StringField('Reset Code', validators=[DataRequired()])
     submit = SubmitField('Verify Code')
 
+class ResetPasswordWithTokenForm(FlaskForm):
+    """Form for setting new password when arriving via email reset link (token in URL)."""
+    password = PasswordField('New Password', validators=[DataRequired(), Length(min=4)])
+    password_confirm = PasswordField(
+        'Confirm New Password',
+        validators=[DataRequired(), EqualTo('password', message='Passwords must match')],
+    )
+    submit = SubmitField('Reset Password')
+
 class ResetPasswordForm(FlaskForm):
     reset_code = StringField('Reset Code', validators=[DataRequired()])
     password = PasswordField('New Password', validators=[DataRequired(), Length(min=4)])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Reset Password')
+
+
+class RequestPasswordResetForm(FlaskForm):
+    """Email-only form for requesting a password reset link via email."""
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Send Reset Link')
+
+
+class ResetPasswordWithTokenForm(FlaskForm):
+    """Form for setting new password when arriving via reset link (token in URL)."""
+    password = PasswordField('New Password', validators=[DataRequired(), Length(min=4)])
+    password_confirm = PasswordField(
+        'Confirm New Password',
+        validators=[DataRequired(), EqualTo('password', message='Passwords must match')]
+    )
     submit = SubmitField('Reset Password')
 
 class SuperAdminDeleteUserForm(FlaskForm):

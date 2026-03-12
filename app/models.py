@@ -1,7 +1,8 @@
+import secrets
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app import db
 
@@ -44,6 +45,31 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def generate_password_reset_token(self):
+        """Generate a new password reset token, expiry 1 hour. Overwrites any existing token."""
+        token = secrets.token_urlsafe(32)
+        expiry = datetime.utcnow() + timedelta(hours=1)
+        self.reset_code = token
+        self.reset_code_expiration = expiry
+        db.session.commit()
+        return token
+
+    def is_password_reset_token_valid(self, token):
+        """Check if token matches and hasn't expired."""
+        if not self.reset_code or not self.reset_code_expiration:
+            return False
+        if self.reset_code != token:
+            return False
+        if datetime.utcnow() > self.reset_code_expiration:
+            return False
+        return True
+
+    def clear_password_reset_token(self):
+        """Clear token after successful reset (single-use)."""
+        self.reset_code = None
+        self.reset_code_expiration = None
+        db.session.commit()
 
 class Region(db.Model):
     id = db.Column(db.Integer, primary_key=True)

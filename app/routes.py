@@ -24,7 +24,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify
 from app import app, db, login_manager
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam, EspnSyncLog
 from flask_login import login_user, logout_user, login_required, current_user
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, SuperAdminDeleteUserForm, AnalyticsForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, RequestPasswordResetForm, ResetPasswordWithTokenForm, SuperAdminDeleteUserForm, AnalyticsForm
 from functools import wraps
 import os
 import csv
@@ -36,6 +36,7 @@ from app.utils import is_after_cutoff, get_current_time, get_cutoff_time, TOURNA
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from app.espn import fetch_espn_scoreboard, parse_completed_events
+from app.utils.email_service import send_password_reset_email, send_password_reset_confirmation_email
 load_dotenv()
 
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '').strip()
@@ -1468,8 +1469,124 @@ def admin_reset_password_code():
 
     return render_template('admin/reset_password_code.html', form=form)
 
+# --- Rate limiting for email-based password reset ---
+_password_reset_rate_limit = defaultdict(list)
+_password_reset_rate_limit_cleanup_time = datetime.utcnow()
+
+def _check_password_reset_rate_limit(email, _user_ip):
+    """
+    Returns (allowed, reason).
+    Limits: 3 per email per hour, 5 per email per 30 days.
+    """
+    global _password_reset_rate_limit, _password_reset_rate_limit_cleanup_time
+
+    if datetime.utcnow() - _password_reset_rate_limit_cleanup_time > timedelta(minutes=5):
+        cutoff_30_days = datetime.utcnow() - timedelta(days=30)
+        for key in list(_password_reset_rate_limit.keys()):
+            _password_reset_rate_limit[key] = [
+                ts for ts in _password_reset_rate_limit[key] if ts > cutoff_30_days
+            ]
+            if not _password_reset_rate_limit[key]:
+                del _password_reset_rate_limit[key]
+        _password_reset_rate_limit_cleanup_time = datetime.utcnow()
+
+    email_key = f"email:{email}"
+    cutoff_30_days = datetime.utcnow() - timedelta(days=30)
+    requests_30_days = [ts for ts in _password_reset_rate_limit.get(email_key, []) if ts > cutoff_30_days]
+    if len(requests_30_days) >= 5:
+        return (False, "30-day limit")
+    cutoff_1_hour = datetime.utcnow() - timedelta(hours=1)
+    requests_1_hour = [ts for ts in _password_reset_rate_limit.get(email_key, []) if ts > cutoff_1_hour]
+    if len(requests_1_hour) >= 3:
+        return (False, "1-hour limit")
+    if email_key not in _password_reset_rate_limit:
+        _password_reset_rate_limit[email_key] = []
+    _password_reset_rate_limit[email_key].append(datetime.utcnow())
+    return (True, None)
+
+@app.route('/request-password-reset', methods=['GET', 'POST'])
+def request_password_reset():
+    """Email-based password reset: user enters email, receives link via email."""
+    pool_name = get_pool_name()
+    form = RequestPasswordResetForm()
+
+    if form.validate_on_submit():
+        email = form.email.data.strip().lower()
+        user_ip = request.remote_addr or "unknown"
+        allowed, _reason = _check_password_reset_rate_limit(email, user_ip)
+
+        if not allowed:
+            flash("If that email address is registered, a password reset link has been sent.")
+            return render_template('request_password_reset.html', form=form, pool_name=pool_name, is_login=True)
+
+        user = User.query.filter(
+            func.lower(User.email) == email,
+            User.pool_id == POOL_ID
+        ).first()
+
+        if user:
+            try:
+                token = user.generate_password_reset_token()
+                send_password_reset_email(user, token, app_name=pool_name)
+                log_entry = LogEntry(category='Password Reset Request', current_user_id=user.id, description=f"{user.full_name} requested password reset link via email")
+                db.session.add(log_entry)
+                db.session.commit()
+            except Exception:
+                pass
+
+        flash("If that email address is registered, a password reset link has been sent.")
+        return render_template('request_password_reset.html', form=form, pool_name=pool_name, is_login=False)
+
+    return render_template('request_password_reset.html', form=form, pool_name=pool_name, is_login=False)
+
+@app.route('/reset-password', methods=['GET', 'POST'], endpoint='reset_password')
+def reset_password_via_token():
+    """Reset password via token from email link."""
+    pool_name = get_pool_name()
+    token = request.args.get("token") or request.form.get("token")
+
+    if not token:
+        flash("Invalid password reset link. Please request a new one.")
+        return redirect(url_for("request_password_reset"))
+
+    user = User.query.filter_by(reset_code=token).first()
+
+    if not user:
+        flash("Invalid or expired password reset link. Please request a new one.")
+        return redirect(url_for("request_password_reset"))
+
+    if not user.is_password_reset_token_valid(token):
+        flash("This password reset link has expired. Please request a new one.")
+        return redirect(url_for("request_password_reset"))
+
+    form = ResetPasswordWithTokenForm()
+
+    if form.validate_on_submit():
+        if not user.is_password_reset_token_valid(token):
+            flash("This password reset link has expired. Please request a new one.")
+            return redirect(url_for("request_password_reset"))
+
+        user.set_password(form.password.data)
+        user.clear_password_reset_token()
+        db.session.commit()
+
+        log_entry = LogEntry(category='Password Reset', current_user_id=user.id, description=f"{user.full_name} reset their password via email link")
+        db.session.add(log_entry)
+        db.session.commit()
+
+        try:
+            send_password_reset_confirmation_email(user, app_name=pool_name)
+        except Exception:
+            pass
+
+        flash("Your password has been reset successfully. Please log in with your new password.")
+        return redirect(url_for("login"))
+
+    return render_template('reset_password_via_token.html', form=form, token=token, pool_name=pool_name, is_login=False)
+
 @app.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
+    """Admin-generated code flow: user enters email + code received from admin."""
     form = ResetPasswordRequestForm()
     if form.validate_on_submit():
         user = get_user_from_form_email(form)
@@ -1478,7 +1595,7 @@ def reset_password_request():
                 log_entry = LogEntry(category='Enter Password Code', current_user_id=user.id, description=f"{user.full_name} entered a valid password reset code")
                 db.session.add(log_entry)
                 db.session.commit()
-                return redirect(url_for('reset_password', user_id=user.id))
+                return redirect(url_for('reset_password_with_user_id', user_id=user.id))
             else:
                 flash('Reset code has expired.', 'error')
         else:
@@ -1486,8 +1603,9 @@ def reset_password_request():
 
     return render_template('reset_password_request.html', form=form)
 
-@app.route('/reset_password/<int:user_id>', methods=['GET', 'POST'])
-def reset_password(user_id):
+@app.route('/reset_password/<int:user_id>', methods=['GET', 'POST'], endpoint='reset_password_with_user_id')
+def reset_password_with_user_id(user_id):
+    """Admin-generated code flow: set new password after verifying code."""
     user = User.query.filter_by(id=user_id, pool_id=POOL_ID).first_or_404()
     
     if not user.reset_code or not user.reset_code_expiration:
