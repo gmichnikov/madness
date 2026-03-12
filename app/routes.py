@@ -1067,7 +1067,7 @@ def sync_espn_results_to_games(force=False):
     Uses 3-min cache unless force=True.
     """
     EASTERN = pytz.timezone('US/Eastern')
-    CACHE_TTL = 180
+    CACHE_TTL = 120  # 2 minutes
 
     if not force:
         log_row = EspnSyncLog.query.order_by(EspnSyncLog.id.desc()).first()
