@@ -41,6 +41,37 @@
     margin-top: 8px;
 }
 
+/* Flash messages (base.html) - prefixed to avoid collisions across projects */
+.madness-flash-messages {
+    list-style: none;
+    margin: 0 0 16px 0;
+    padding: 0;
+}
+.madness-flash-message {
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+}
+.madness-flash-message:last-child {
+    margin-bottom: 0;
+}
+.madness-flash-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+.madness-flash-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+.madness-flash-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
 /* CSS for navigation links */
 nav a {
     font-size: 18px; /* Adjust the font size as needed */
