@@ -10,6 +10,9 @@ from app.models import EspnTeam
 ESPN_TEAMS_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams?limit=400"
 ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?seasontype=3&group=100&limit=100"
 
+# Placeholder espn_id range for manual teams (not in ESPN teams API). Scores won't sync until set-espn-id.
+MANUAL_ESPN_ID_BASE = 900000
+
 
 def fetch_espn_teams():
     """
@@ -63,6 +66,99 @@ def fetch_espn_scoreboard():
     """Fetch NCAA tournament scoreboard. Returns raw JSON."""
     with urllib.request.urlopen(ESPN_SCOREBOARD_URL) as response:
         return json.loads(response.read().decode())
+
+
+def _next_manual_espn_id():
+    """Return next available placeholder espn_id for manual teams."""
+    max_id = db.session.query(db.func.max(EspnTeam.espn_id)).filter(
+        EspnTeam.espn_id >= MANUAL_ESPN_ID_BASE
+    ).scalar()
+    return (max_id or MANUAL_ESPN_ID_BASE) + 1
+
+
+def add_manual_espn_team(short_name, display_name=None, abbreviation=None):
+    """
+    Add a manually-created EspnTeam for teams not in ESPN's API (e.g. first-year D1).
+    Uses a placeholder espn_id so bracket works. Run set-espn-id with the real ID
+    once discovered (from list-scoreboard-teams when games are listed).
+    """
+    display_name = display_name or short_name
+    abbrev = (abbreviation or (short_name[:4] if len(short_name) >= 4 else short_name)).upper()
+    espn_id = _next_manual_espn_id()
+    et = EspnTeam(
+        espn_id=espn_id,
+        display_name=display_name,
+        short_display_name=short_name,
+        abbreviation=abbrev,
+    )
+    db.session.add(et)
+    db.session.commit()
+    return et
+
+
+def set_espn_id(short_name_or_placeholder_id, real_espn_id):
+    """
+    Update a manual team's placeholder espn_id to the real ESPN ID.
+    Also updates any Team (bracket slot) that references the placeholder.
+    """
+    from app.models import Team
+    try:
+        placeholder_int = int(short_name_or_placeholder_id)
+    except (ValueError, TypeError):
+        placeholder_int = None
+    if placeholder_int is not None:
+        et = EspnTeam.query.filter_by(espn_id=placeholder_int).first()
+    else:
+        et = EspnTeam.query.filter(
+            EspnTeam.espn_id >= MANUAL_ESPN_ID_BASE,
+            EspnTeam.short_display_name.ilike(short_name_or_placeholder_id)
+        ).first()
+    if not et:
+        return None
+    old_id = et.espn_id
+    if old_id == real_espn_id:
+        return et
+    for slot in Team.query.filter(Team.espn_team_id == old_id).all():
+        slot.espn_team_id = real_espn_id
+    for slot in Team.query.filter(Team.espn_play_in_team_2_id == old_id).all():
+        slot.espn_play_in_team_2_id = real_espn_id
+    et.espn_id = real_espn_id
+    db.session.commit()
+    return et
+
+
+def fetch_scoreboard_team_ids():
+    """
+    Fetch team IDs and names from tournament scoreboard (all events, not just completed).
+    Use to discover real ESPN IDs for manual teams when bracket/games are listed.
+    Returns list of {espn_id, display_name, short_display_name}.
+    """
+    data = fetch_espn_scoreboard()
+    seen = set()
+    result = []
+    for ev in data.get("events", []):
+        try:
+            comps = ev.get("competitions", [{}])[0]
+            for c in comps.get("competitors", []):
+                team = c.get("team", c)
+                tid = team.get("id") or c.get("id")
+                if not tid:
+                    continue
+                tid_int = int(tid)
+                if tid_int in seen:
+                    continue
+                seen.add(tid_int)
+                result.append({
+                    "espn_id": tid_int,
+                    "display_name": team.get("displayName", c.get("displayName", "")),
+                    "short_display_name": team.get("shortDisplayName", c.get("shortDisplayName", "")),
+                })
+        except (KeyError, TypeError, ValueError):
+            continue
+    return sorted(result, key=lambda t: (t["short_display_name"] or "").lower())
+
+
+fetch_scoreboard_teams = fetch_scoreboard_team_ids  # alias for CLI
 
 
 def parse_completed_events(data):

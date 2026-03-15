@@ -136,4 +136,49 @@ def refresh_espn_teams_command():
 
 app.cli.add_command(refresh_espn_teams_command)
 
+
+@click.command('add-manual-team')
+@click.argument('short_name')
+@click.option('--display-name', help='Full name e.g. "Tarleton State Texans"')
+@click.option('--abbrev', help='Abbreviation e.g. TARL')
+@with_appcontext
+def add_manual_team_command(short_name, display_name, abbrev):
+    """Add a team manually (e.g. first-year D1 not in ESPN API). Use for bracket display; run set-espn-id when you find real ID for scores."""
+    from app.espn import add_manual_espn_team
+    et = add_manual_espn_team(short_name, display_name=display_name, abbreviation=abbrev)
+    click.echo(f'Added: {et.short_display_name} (espn_id={et.espn_id} placeholder). Run "flask set-espn-id {et.short_display_name} <real_id>" after you find the real ID from "flask list-scoreboard-teams".')
+
+app.cli.add_command(add_manual_team_command)
+
+
+@click.command('set-espn-id')
+@click.argument('short_name_or_placeholder_id')
+@click.argument('real_espn_id', type=int)
+@with_appcontext
+def set_espn_id_command(short_name_or_placeholder_id, real_espn_id):
+    """Update a manual team's placeholder espn_id to the real ESPN ID (from list-scoreboard-teams) so score sync works."""
+    from app.espn import set_espn_id
+    et = set_espn_id(short_name_or_placeholder_id, real_espn_id)
+    if et:
+        click.echo(f'Updated {et.short_display_name} espn_id -> {real_espn_id}')
+    else:
+        click.echo('Team not found. Use short_display_name or placeholder espn_id (e.g. 900001).', err=True)
+
+app.cli.add_command(set_espn_id_command)
+
+
+@click.command('list-scoreboard-teams')
+@with_appcontext
+def list_scoreboard_teams_command():
+    """List teams from the NCAA tournament scoreboard so you can find ESPN IDs for manual teams."""
+    from app.espn import fetch_scoreboard_teams
+    teams = fetch_scoreboard_teams()
+    if not teams:
+        click.echo('No teams in scoreboard (bracket may not be published yet).')
+        return
+    for t in teams:
+        click.echo(f"  {t['espn_id']:>6}  {t['short_display_name']}")
+
+app.cli.add_command(list_scoreboard_teams_command)
+
 from app import routes
