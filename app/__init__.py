@@ -80,29 +80,32 @@ def init_db():
             db.session.commit()
 
         if Game.query.count() == 0:
-            print("init teams")
+            print("init games")
             current_dir = os.path.dirname(__file__)
             file_path = os.path.join(current_dir, 'static', 'games.csv')
 
-            # First Phase: Insert games without winner_goes_to_game_id
+            # First Phase: Insert games with explicit IDs
             with open(file_path, 'r') as file:
                 reader = csv.reader(file)
                 for row in reader:
                     game = Game(
+                        id=int(row[0]),
                         round_id=int(row[1]),
                         team1_id=int(row[3]) if row[3] else None,
                         team2_id=int(row[4]) if row[4] else None,
                         winning_team_id=int(row[5]) if row[5] else None
                     )
                     db.session.add(game)
-                    db.session.commit()
+                db.session.commit()
 
             # Second Phase: Update games with winner_goes_to_game_id
             with open(file_path, 'r') as file:
                 reader = csv.reader(file)
-                for row, game in zip(reader, Game.query.order_by(Game.id)):
+                for row in reader:
                     if row[2]:
-                        game.winner_goes_to_game_id = int(row[2])
+                        game = Game.query.get(int(row[0]))
+                        if game:
+                            game.winner_goes_to_game_id = int(row[2])
                 db.session.commit()
 
 @click.command('init-db')

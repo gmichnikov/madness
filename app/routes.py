@@ -588,6 +588,9 @@ def make_picks():
                         if pick:
                             db.session.delete(pick)
 
+            # Flush changes to the session so they are visible to set_is_bracket_valid's query
+            db.session.flush()
+
             # Don't commit yet - update validity and standings first
             set_is_bracket_valid(games_dict, commit=False)
             recalculate_standings(current_user, commit=False)
@@ -596,6 +599,7 @@ def make_picks():
             return redirect(url_for('make_picks'))
         elif action == 'clear_picks':
             Pick.query.filter_by(user_id=current_user.id).delete()
+            db.session.flush() # Flush deletion before validation
             
             log_entry = LogEntry(category='Clear Picks', current_user_id=current_user.id, description=f"{current_user.email} cleared their picks")
             db.session.add(log_entry)
@@ -606,6 +610,8 @@ def make_picks():
             return redirect(url_for('make_picks'))
         elif action == 'fill_in_better_seeds':
             auto_fill_bracket(games_dict, user_picks, commit=False)
+            db.session.flush() # Flush additions before validation
+            
             set_is_bracket_valid(games_dict, commit=False)
             recalculate_standings(current_user, commit=False)
             db.session.commit()  # Single commit for all operations
@@ -613,12 +619,15 @@ def make_picks():
 
     return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted)
 
-def add_or_update_pick(pick, team_id, game_id):
+def add_or_update_pick(pick, team_id, game_id, user=None):
     """Add or update a user's pick for a game"""
+    if user is None:
+        user = current_user
+        
     if pick:
         pick.team_id = team_id
     else:
-        pick = Pick(user_id=current_user.id, game_id=game_id, team_id=team_id)
+        pick = Pick(user_id=user.id, game_id=game_id, team_id=team_id)
         db.session.add(pick)
 
 # Cache for get_potential_winners that gets cleared when winners are updated
@@ -667,22 +676,27 @@ def get_later_round_pick(game, form, games_dict):
 
     return None
 
-def set_is_bracket_valid(games_dict=None, commit=True):
+def set_is_bracket_valid(games_dict=None, commit=True, user=None):
     """
-    Validate current user's bracket and update is_bracket_valid flag.
+    Validate a user's bracket and update is_bracket_valid flag.
+    If no user is provided, validates the current user.
     A bracket is valid if all games after round 1 have picks that come from valid previous round picks.
     Set commit=False to defer committing (for atomic operations).
     """
+    if user is None:
+        user = current_user
+        
     if games_dict is None:
         games = Game.query.all()
         games_dict = {g.id: g for g in games}
     else:
         games = list(games_dict.values())
         
-    # Pre-fetch user picks
-    user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
+    # Pre-fetch user picks from the database/session to avoid stale relationship issues
+    user_picks = {pick.game_id: pick.team_id for pick in Pick.query.filter_by(user_id=user.id).all()}
     
     is_bracket_valid = True
+    first_invalid_game_id = None
     for game in games:
         if game.round_id == 1:
             continue
@@ -690,6 +704,7 @@ def set_is_bracket_valid(games_dict=None, commit=True):
         user_pick_team_id = user_picks.get(game.id)
         if not user_pick_team_id:
             is_bracket_valid = False
+            first_invalid_game_id = game.id
             break
 
         previous_games = [g for g in games_dict.values() if g.winner_goes_to_game_id == game.id]
@@ -697,26 +712,31 @@ def set_is_bracket_valid(games_dict=None, commit=True):
         
         if not all(previous_picks_team_ids) or user_pick_team_id not in previous_picks_team_ids:
             is_bracket_valid = False
-            break  # Added for consistency - no need to keep checking
+            first_invalid_game_id = game.id
+            break
 
-    current_user.is_bracket_valid = is_bracket_valid
-    current_user.last_bracket_save = datetime.utcnow()
+    user.is_bracket_valid = is_bracket_valid
+    user.last_bracket_save = datetime.utcnow()
 
     if is_bracket_valid:
-        log_entry = LogEntry(category='Valid Bracket', current_user_id=current_user.id, description=f"{current_user.email} saved a valid bracket")
+        log_entry = LogEntry(category='Valid Bracket', current_user_id=user.id, description=f"{user.email} saved a valid bracket")
     else:
-        log_entry = LogEntry(category='Invalid Bracket', current_user_id=current_user.id, description=f"{current_user.email} saved an invalid bracket")
+        description = f"{user.email} saved an invalid bracket (failed at Game {first_invalid_game_id if first_invalid_game_id else 'unknown'})"
+        log_entry = LogEntry(category='Invalid Bracket', current_user_id=user.id, description=description)
     
     db.session.add(log_entry)
     if commit:
         db.session.commit()
 
-def auto_fill_bracket(games_dict=None, user_picks=None, commit=True):
+def auto_fill_bracket(games_dict=None, user_picks=None, commit=True, user=None):
     """
     Auto-fill empty picks in user's bracket with better seeds.
     For each unpicked game, chooses the team with the best (lowest) seed number.
     Set commit=False to defer committing (for atomic operations).
     """
+    if user is None:
+        user = current_user
+        
     if games_dict is None:
         games = Game.query.all()
         games_dict = {g.id: g for g in games}
@@ -724,7 +744,7 @@ def auto_fill_bracket(games_dict=None, user_picks=None, commit=True):
         games = list(games_dict.values())
         
     if user_picks is None:
-        user_picks = {pick.game_id: pick.team_id for pick in current_user.picks}
+        user_picks = {pick.game_id: pick.team_id for pick in Pick.query.filter_by(user_id=user.id).all()}
     
     teams_dict = get_teams_dict()
     picks_cache = {}
@@ -742,11 +762,11 @@ def auto_fill_bracket(games_dict=None, user_picks=None, commit=True):
                     best_team = team
 
             if best_team:
-                new_pick = Pick(user_id=current_user.id, game_id=game.id, team_id=best_team.id)
+                new_pick = Pick(user_id=user.id, game_id=game.id, team_id=best_team.id)
                 db.session.add(new_pick)
                 user_picks[game.id] = best_team.id # Update local dict to inform future round fills
 
-    log_entry = LogEntry(category='Fill Better Seeds', current_user_id=current_user.id, description=f"{current_user.email} filled in the better seeds")
+    log_entry = LogEntry(category='Fill Better Seeds', current_user_id=user.id, description=f"{user.email} filled in the better seeds")
     db.session.add(log_entry)
     if commit:
         db.session.commit()
@@ -932,7 +952,10 @@ def recalculate_standings(user=None, commit=True):
             setattr(u, f'r{i}score', 0)
         potential_additional_points = 0
 
-        for pick in u.picks:
+        # Fetch picks directly to ensure we have current data
+        user_picks_for_scoring = Pick.query.filter_by(user_id=u.id).all()
+
+        for pick in user_picks_for_scoring:
             game = pick.game
             round_points = game.round.points
             
@@ -1247,6 +1270,30 @@ def view_picks(user_id):
 @admin_required
 def admin_cutoff_status():
     return render_template('admin/cutoff_status.html', cutoff_status=is_after_cutoff(), current_time = get_current_time(), cutoff_time=get_cutoff_time())
+
+@app.route('/admin/fix_user/<int:user_id>')
+@login_required
+@admin_required
+@pool_required
+def admin_fix_user(user_id):
+    user = User.query.get_or_404(user_id)
+    
+    # Recalculate everything for this user
+    set_is_bracket_valid(user=user, commit=False)
+    recalculate_standings(user=user, commit=False)
+    db.session.commit()
+    
+    # Fetch latest log for this user
+    latest_log = LogEntry.query.filter_by(current_user_id=user.id).order_by(LogEntry.timestamp.desc()).first()
+    
+    return jsonify({
+        "status": "success",
+        "user": user.email,
+        "is_bracket_valid": user.is_bracket_valid,
+        "currentscore": user.currentscore,
+        "maxpossiblescore": user.maxpossiblescore,
+        "latest_log_description": latest_log.description if latest_log else "No logs found"
+    })
 
 @app.route('/admin/efficiency', methods=['GET', 'POST'])
 @login_required
