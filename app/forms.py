@@ -86,6 +86,10 @@ class SuperAdminDeleteUserForm(FlaskForm):
     email = SelectField('Select User', choices=[])
     submit = SubmitField('Delete User')
 
+class EditPoolForm(FlaskForm):
+    pool_name = StringField('Pool Name', validators=[DataRequired(), Length(max=100)])
+    submit = SubmitField('Update Pool Name')
+
 class ManageRegionsForm(FlaskForm):
     region_1 = StringField('Region 1', default="Region 1")
     region_2 = StringField('Region 2', default="Region 2")

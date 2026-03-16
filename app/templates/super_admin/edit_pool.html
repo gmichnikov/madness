@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Pool Name{% endblock %}
+
+{% block content %}
+    <h1>Edit Pool Name</h1>
+    <p>The pool name appears on the home page and in the login/register footer.</p>
+
+    <form method="POST" class="madness-edit-pool-form">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.pool_name.label }}<br>
+            {{ form.pool_name(class="form-control form-control-wide") }}
+        </div>
+        <div>{{ form.submit(class="btn btn-primary btn-top-margin") }}</div>
+    </form>
+{% endblock %}

@@ -24,7 +24,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify
 from app import app, db, login_manager
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam, EspnSyncLog
 from flask_login import login_user, logout_user, login_required, current_user
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, RequestPasswordResetForm, ResetPasswordWithTokenForm, SuperAdminDeleteUserForm, AnalyticsForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, RequestPasswordResetForm, ResetPasswordWithTokenForm, SuperAdminDeleteUserForm, EditPoolForm, AnalyticsForm
 from functools import wraps
 import os
 import csv
@@ -317,6 +317,27 @@ def super_admin_manage_admins():
                 return redirect(url_for('super_admin_manage_admins'))
 
     return render_template('super_admin/manage_admins.html', form=form, current_admins=current_admins)
+
+@app.route('/super_admin/edit_pool', methods=['GET', 'POST'])
+@login_required
+@pool_required
+def super_admin_edit_pool():
+    if not current_user.is_super_admin:
+        return redirect(url_for('index'))
+
+    pool = Pool.query.get_or_404(POOL_ID)
+    form = EditPoolForm()
+    if request.method == 'GET':
+        form.pool_name.data = pool.name
+
+    if request.method == 'POST' and form.validate_on_submit():
+        pool.name = form.pool_name.data.strip()
+        db.session.commit()
+        clear_pool_name_cache()
+        flash('Pool name updated successfully.', 'success')
+        return redirect(url_for('super_admin_edit_pool'))
+
+    return render_template('super_admin/edit_pool.html', form=form)
 
 @app.route('/admin/view_logs', methods=['GET', 'POST'])
 @login_required
