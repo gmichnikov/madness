@@ -63,6 +63,28 @@
                 document.getElementById('autosave-toggle').checked = autosaveEnabled;
                 updateVisibility();
             }
+
+            // Restore scroll position
+            var scrollPosition = localStorage.getItem('picksScrollPosition');
+            if (scrollPosition !== null) {
+                try {
+                    var pos = JSON.parse(scrollPosition);
+                    // Restore window scroll (usually vertical)
+                    window.scrollTo(pos.x, pos.y);
+                    
+                    // Restore container scroll (usually horizontal bracket scroll)
+                    if (pos.containerX !== undefined) {
+                        var container = document.querySelector('.bracket-grid-container');
+                        if (container) {
+                            container.scrollLeft = pos.containerX;
+                        }
+                    }
+                } catch (e) {
+                    // Fallback for old format (just y value)
+                    window.scrollTo(0, parseInt(scrollPosition));
+                }
+                localStorage.removeItem('picksScrollPosition');
+            }
         });
 
         function toggleAutosave(isChecked) {
@@ -77,14 +99,26 @@
             document.getElementById('autosave-on-note').style.display = autosaveEnabled ? 'block' : 'none';
         }
 
+        function saveScrollPosition() {
+            var container = document.querySelector('.bracket-grid-container');
+            var position = {
+                x: window.scrollX,
+                y: window.scrollY,
+                containerX: container ? container.scrollLeft : 0
+            };
+            localStorage.setItem('picksScrollPosition', JSON.stringify(position));
+        }
+
         function handleSelectChange() {
             if (autosaveEnabled) {
+                saveScrollPosition();
                 document.getElementById('action-input').value = 'save_picks';
                 document.getElementById('picks-form').submit();
             }
         }
 
         function submitForm(actionValue) {
+            saveScrollPosition();
             document.getElementById('action-input').value = actionValue;
             document.getElementById('picks-form').submit();
         }
