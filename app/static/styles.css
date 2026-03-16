@@ -321,7 +321,11 @@ header {
 }
 
 .dropdown-trigger {
-    color: #adff2f; /* yellowgreen */
+    color: #adff2f; /* yellowgreen - used for Admin/Super Admin */
+}
+
+.dropdown-trigger.mm-more-trigger {
+    color: white;
 }
 
 .dropdown-content {
@@ -410,6 +414,16 @@ header {
 
 .user-info a.logout-cursor {
     color: #ffd700;
+}
+
+.user-info a.mm-user-email-link {
+    color: #add8e6;
+    text-decoration: none;
+}
+
+.user-info a.mm-user-email-link:hover {
+    color: white;
+    text-decoration: underline;
 }
 
 /* Media Query for Mobile Devices */

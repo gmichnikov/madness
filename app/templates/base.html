@@ -59,17 +59,31 @@
                     
                     {% if not is_after_cutoff %}
                         <li><a href="{{ url_for('make_picks') }}" class="non-dropdown">Your Bracket <i class="fa-solid fa-dice"></i></a></li>
-                        <li><a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="non-dropdown">Profile <i class="fa-solid fa-pencil"></i></a></li>
+                        <li class="mobile-only"><a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="non-dropdown">Profile <i class="fa-solid fa-pencil"></i></a></li>
                     {% endif %}
                     {% if is_after_cutoff %}
                         <li><a href="{{ url_for('view_picks', user_id=current_user.id) }}" class="non-dropdown">Brackets <i class="fa-regular fa-eye"></i></a></li>
                         <li><a href="{{ url_for('pool_insights') }}" class="non-dropdown">Insights <i class="fa-solid fa-chart-pie"></i></a></li>
                     {% endif %}
-    
+
                     <li><a href="{{ url_for('standings') }}" class="non-dropdown">Standings <i class="fa-solid fa-list-ol"></i></a></li>
-                    <li><a href="{{ url_for('predictions') }}" class="non-dropdown">Predictions <i class="fa-solid fa-wand-magic-sparkles"></i></a></li>
-                    <li><a href="{{ url_for('message_board') }}" class="non-dropdown">Forum <i class="fa-regular fa-comments"></i></a></li>
-                    <li><a href="{{ url_for('winners') }}" class="non-dropdown">Winners <i class="fa-solid fa-trophy"></i></a></li>
+
+                    <!-- Desktop: More dropdown -->
+                    <li class="dropdown desktop-only">
+                        <span class="dropdown-trigger mm-more-trigger">More <i class="fa-solid fa-chevron-down"></i></span>
+                        <ul class="dropdown-content">
+                            <li><a href="{{ url_for('predictions') }}">Predictions <i class="fa-solid fa-wand-magic-sparkles"></i></a></li>
+                            <li><a href="{{ url_for('simulate_standings') }}">Simulate <i class="fa-solid fa-flask"></i></a></li>
+                            <li><a href="{{ url_for('message_board') }}">Forum <i class="fa-regular fa-comments"></i></a></li>
+                            <li><a href="{{ url_for('winners') }}">Winners <i class="fa-solid fa-trophy"></i></a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Mobile: flat links -->
+                    <li class="mobile-only"><a href="{{ url_for('predictions') }}" class="non-dropdown">Predictions <i class="fa-solid fa-wand-magic-sparkles"></i></a></li>
+                    <li class="mobile-only"><a href="{{ url_for('simulate_standings') }}" class="non-dropdown">Simulate <i class="fa-solid fa-flask"></i></a></li>
+                    <li class="mobile-only"><a href="{{ url_for('message_board') }}" class="non-dropdown">Forum <i class="fa-regular fa-comments"></i></a></li>
+                    <li class="mobile-only"><a href="{{ url_for('winners') }}" class="non-dropdown">Winners <i class="fa-solid fa-trophy"></i></a></li>
                     
                     {% if current_user.is_admin %}
                         <li class="dropdown">
@@ -113,7 +127,7 @@
                     {% else %}
                         <span class="unverified-cursor" title="Not Verified" data-tooltip="Not Verified" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
                     {% endif %}
-                    {{ current_user.email }}
+                    <a href="{{ url_for('user_profile', user_id=current_user.id) }}" class="mm-user-email-link">{{ current_user.email }}</a>
                     <a href="{{ url_for('logout') }}" class="non-dropdown logout-cursor" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
                 </div>
             {% endif %}
