@@ -9,6 +9,8 @@ from app import db
 class Pool(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    avg_o_rating = db.Column(db.Float, nullable=True)
+    expected_standings_dirty = db.Column(db.Boolean, default=True, nullable=False)
 
     def __repr__(self):
         return f'<Pool {self.name}>'
@@ -34,6 +36,7 @@ class User(db.Model, UserMixin):
     is_verified = db.Column(db.Boolean, default=False, nullable=False)
     is_bracket_valid = db.Column(db.Boolean, default=False, nullable=False)
     last_bracket_save = db.Column(db.DateTime, nullable=True)
+    expected_score = db.Column(db.Float, default=0.0, nullable=False)
     pool_id = db.Column(db.Integer, db.ForeignKey('pool.id'), nullable=True)
     reset_code = db.Column(db.String(120), nullable=True)
     reset_code_expiration = db.Column(db.DateTime, nullable=True)
@@ -99,6 +102,8 @@ class Team(db.Model):
     espn_team_id = db.Column(db.Integer, nullable=True)
     espn_play_in_team_2_id = db.Column(db.Integer, nullable=True)
     is_play_in_slot = db.Column(db.Boolean, default=False, nullable=False)
+    off_efficiency = db.Column(db.Float, nullable=True)
+    def_efficiency = db.Column(db.Float, nullable=True)
 
     region = db.relationship('Region', backref=db.backref('teams', lazy=True))
 
@@ -206,3 +211,14 @@ class EspnSyncLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     last_sync_at = db.Column(db.DateTime, nullable=False)
     games_updated = db.Column(db.Integer, default=0, nullable=False)
+
+
+class GameProbability(db.Model):
+    """Stores calculated win probabilities for each team in each game."""
+    id = db.Column(db.Integer, primary_key=True)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    probability = db.Column(db.Float, nullable=False)
+
+    game = db.relationship('Game', backref='probabilities')
+    team = db.relationship('Team', backref='probabilities')

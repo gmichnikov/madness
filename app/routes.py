@@ -60,6 +60,15 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def super_admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_super_admin:
+            flash('Super Admin access required.')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def pool_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -839,6 +848,9 @@ def admin_set_winners():
                 db.session.add(log_entry)
 
         db.session.commit()
+        pool = Pool.query.get(POOL_ID)
+        pool.expected_standings_dirty = True
+        db.session.commit()
         flash('Game winners updated.', 'success')
         clear_potential_winners_cache()  # Clear cache before updating potential winners
         do_admin_update_potential_winners()
@@ -946,6 +958,10 @@ def recalculate_standings(user=None, commit=True):
 @login_required
 @pool_required
 def standings():
+    # Update expected scores if dirty
+    if is_after_cutoff():
+        calculate_expected_points(POOL_ID)
+        
     sync_espn_results_to_games()
     show_champion = is_after_cutoff() or current_user.is_admin
     sort_form = SortStandingsForm(sort_field='currentscore', sort_order='desc', champion_filter = 'Any')
@@ -1231,6 +1247,111 @@ def view_picks(user_id):
 @admin_required
 def admin_cutoff_status():
     return render_template('admin/cutoff_status.html', cutoff_status=is_after_cutoff(), current_time = get_current_time(), cutoff_time=get_cutoff_time())
+
+@app.route('/admin/efficiency', methods=['GET', 'POST'])
+@login_required
+@pool_required
+@super_admin_required
+def admin_efficiency():
+    from app.models import Team, Pool
+    pool = Pool.query.get(POOL_ID)
+    teams = Team.query.all()
+    
+    if request.method == 'POST':
+        avg_o = request.form.get('avg_o_rating')
+        if avg_o:
+            pool.avg_o_rating = float(avg_o)
+            pool.expected_standings_dirty = True
+            
+        for team in teams:
+            off = request.form.get(f'off_{team.id}')
+            deff = request.form.get(f'def_{team.id}')
+            if off:
+                team.off_efficiency = float(off)
+                pool.expected_standings_dirty = True
+            if deff:
+                team.def_efficiency = float(deff)
+                pool.expected_standings_dirty = True
+        
+        db.session.commit()
+        flash("Efficiency ratings updated successfully.")
+        return redirect(url_for('admin_efficiency'))
+        
+    return render_template('admin_efficiency.html', teams=teams, pool=pool)
+
+@app.route('/admin/efficiency/export')
+@login_required
+@pool_required
+@super_admin_required
+def admin_export_efficiency():
+    from app.models import Team
+    import csv
+    from io import StringIO
+    from flask import make_response
+    
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['team_id', 'region', 'seed', 'team_name', 'off_efficiency', 'def_efficiency'])
+    
+    teams = Team.query.all()
+    for team in teams:
+        cw.writerow([
+            team.id,
+            team.region.name,
+            team.seed,
+            team.get_display_name(),
+            team.off_efficiency or '',
+            team.def_efficiency or ''
+        ])
+    
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=team_efficiency.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+@app.route('/admin/efficiency/import', methods=['POST'])
+@login_required
+@pool_required
+@super_admin_required
+def admin_import_efficiency():
+    if 'file' not in request.files:
+        flash('No file part')
+        return redirect(url_for('admin_efficiency'))
+    
+    file = request.files['file']
+    if file.filename == '':
+        flash('No selected file')
+        return redirect(url_for('admin_efficiency'))
+    
+    if file:
+        import csv
+        from io import TextIOWrapper
+        from app.models import Team, Pool
+        
+        csv_file = TextIOWrapper(file, encoding='utf-8')
+        reader = csv.DictReader(csv_file)
+        
+        count = 0
+        for row in reader:
+            team_id = row.get('team_id')
+            if team_id:
+                team = Team.query.get(int(team_id))
+                if team:
+                    try:
+                        off = row.get('off_efficiency')
+                        deff = row.get('def_efficiency')
+                        if off: team.off_efficiency = float(off)
+                        if deff: team.def_efficiency = float(deff)
+                        count += 1
+                    except (ValueError, TypeError):
+                        continue
+        
+        pool = Pool.query.get(POOL_ID)
+        pool.expected_standings_dirty = True
+        db.session.commit()
+        flash(f'Successfully imported efficiency for {count} teams.')
+    
+    return redirect(url_for('admin_efficiency'))
 
 @app.route('/admin/users', methods=['GET', 'POST'])
 @login_required
@@ -1917,6 +2038,42 @@ def pool_insights():
                            teams=all_teams,
                            rounds=rounds,
                            regions=regions)
+
+from app.utils.simulation import calculate_expected_points
+
+@app.route('/predictions')
+@login_required
+@pool_required
+def predictions():
+    from app.models import Team, GameProbability, Game, Round, Pool
+    
+    # Trigger simulation if cache is dirty
+    calculate_expected_points(POOL_ID)
+    
+    pool = Pool.query.get(POOL_ID)
+    if not pool or not pool.avg_o_rating:
+        flash("Predictions will be available once efficiency ratings are set by the admin.")
+        return redirect(url_for('index'))
+    
+    teams = Team.query.all()
+    # round_ids for S16 (3), F4 (5), Champ (6)
+    # Actually let's just get all round wins
+    rounds = Round.query.order_by(Round.id).all()
+    
+    # We want to show: Team | R1 Win% | R2 Win% | S16 Win% | E8 Win% | F4 Win% | Champ Win%
+    # A team's probability of "winning" Round N is their probability in the last game of that round for their path.
+    # But it's easier to just look at the GameProbability for each game.
+    
+    # Let's map teams to their probabilities in each round's games
+    team_round_probs = defaultdict(lambda: defaultdict(float))
+    probs = GameProbability.query.all()
+    for p in probs:
+        team_round_probs[p.team_id][p.game.round_id] = p.probability
+
+    # Sort teams by Championship win probability
+    sorted_teams = sorted(teams, key=lambda t: team_round_probs[t.id].get(6, 0), reverse=True)
+    
+    return render_template('predictions.html', teams=sorted_teams, rounds=rounds, team_round_probs=team_round_probs)
 
 @app.route('/simulate_standings', methods=['GET', 'POST'])
 @login_required

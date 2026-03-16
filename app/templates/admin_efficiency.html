@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Manage Efficiency Ratings{% endblock %}
+{% block content %}
+    <h1>Manage Team Efficiency Ratings</h1>
+    
+    <div class="admin-actions-container" style="margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; background: #f8f9fa; border-radius: 8px; display: flex; gap: 20px; align-items: center;">
+        <div>
+            <h3>CSV Import/Export</h3>
+            <p class="text-muted">Export the current teams to CSV, update their ratings, and import them back.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('admin_export_efficiency') }}" class="btn btn-secondary">Export CSV</a>
+            <form method="POST" action="{{ url_for('admin_import_efficiency') }}" enctype="multipart/form-data" style="display: inline-block;">
+                <input type="file" name="file" accept=".csv" style="display: none;" id="csvFileInput" onchange="this.form.submit()">
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('csvFileInput').click()">Import CSV</button>
+            </form>
+        </div>
+    </div>
+
+    <form method="POST">
+        <div class="form-group" style="margin-bottom: 20px; padding: 15px; background: #e9ecef; border-radius: 8px;">
+            <label for="avg_o_rating"><strong>Average Offensive Rating (Global Setting):</strong></label>
+            <input type="number" step="0.01" name="avg_o_rating" id="avg_o_rating" value="{{ pool.avg_o_rating or '' }}" class="form-control" style="width: 200px; display: inline-block; margin-left: 10px;">
+            <small class="form-text text-muted">This is used as the denominator in the win probability formula.</small>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Region</th>
+                        <th>Seed</th>
+                        <th>Team Name</th>
+                        <th>Offensive Efficiency</th>
+                        <th>Defensive Efficiency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team in teams %}
+                        <tr>
+                            <td>{{ team.region.name }}</td>
+                            <td>{{ team.seed }}</td>
+                            <td>{{ team.get_display_name() }}</td>
+                            <td>
+                                <input type="number" step="0.01" name="off_{{ team.id }}" value="{{ team.off_efficiency or '' }}" class="form-control">
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="def_{{ team.id }}" value="{{ team.def_efficiency or '' }}" class="form-control">
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px; position: sticky; bottom: 20px; text-align: right;">
+            <button type="submit" class="btn btn-primary btn-lg">Save All Ratings</button>
+        </div>
+    </form>
+{% endblock %}

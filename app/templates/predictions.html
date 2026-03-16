@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Tournament Predictions{% endblock %}
+{% block content %}
+    <div class="standings-header-container">
+        <h1>Tournament Predictions</h1>
+        <p class="description">Mathematical probability of each team winning each round based on efficiency ratings.</p>
+    </div>
+
+    <div class="standings-container">
+        <table class="standings-table">
+            <thead>
+                <tr>
+                    <th>Seed</th>
+                    <th>Team</th>
+                    {% for round in rounds %}
+                        <th>{{ round.name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for team in teams %}
+                    {% if team_round_probs[team.id].get(6, 0) > 0.0001 or loop.index <= 64 %}
+                    <tr>
+                        <td>{{ team.seed }}</td>
+                        <td>{{ team.get_display_name() }}</td>
+                        {% for round in rounds %}
+                            {% set prob = team_round_probs[team.id].get(round.id, 0) %}
+                            <td style="background-color: rgba(0, 123, 255, {{ prob }});">
+                                {{ (prob * 100) | round(1) }}%
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
