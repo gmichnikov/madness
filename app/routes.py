@@ -676,7 +676,7 @@ def get_later_round_pick(game, form, games_dict):
 
     return None
 
-def set_is_bracket_valid(games_dict=None, commit=True, user=None):
+def set_is_bracket_valid(games_dict=None, commit=True, user=None, reason=None):
     """
     Validate a user's bracket and update is_bracket_valid flag.
     If no user is provided, validates the current user.
@@ -719,10 +719,14 @@ def set_is_bracket_valid(games_dict=None, commit=True, user=None):
     user.last_bracket_save = datetime.utcnow()
 
     if is_bracket_valid:
-        log_entry = LogEntry(category='Valid Bracket', current_user_id=user.id, description=f"{user.email} saved a valid bracket")
+        desc = reason if reason else f"{user.email} saved a valid bracket"
+        log_entry = LogEntry(category='Valid Bracket', current_user_id=user.id, description=desc)
     else:
-        description = f"{user.email} saved an invalid bracket (failed at Game {first_invalid_game_id if first_invalid_game_id else 'unknown'})"
-        log_entry = LogEntry(category='Invalid Bracket', current_user_id=user.id, description=description)
+        if reason:
+            desc = f"{reason} (failed at Game {first_invalid_game_id if first_invalid_game_id else 'unknown'})"
+        else:
+            desc = f"{user.email} saved an invalid bracket (failed at Game {first_invalid_game_id if first_invalid_game_id else 'unknown'})"
+        log_entry = LogEntry(category='Invalid Bracket', current_user_id=user.id, description=desc)
     
     db.session.add(log_entry)
     if commit:
@@ -1279,7 +1283,8 @@ def admin_fix_user(user_id):
     user = User.query.get_or_404(user_id)
     
     # Recalculate everything for this user
-    set_is_bracket_valid(user=user, commit=False)
+    reason = f"Admin {current_user.email} ran fix_user"
+    set_is_bracket_valid(user=user, commit=False, reason=reason)
     recalculate_standings(user=user, commit=False)
     db.session.commit()
     
