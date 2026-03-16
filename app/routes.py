@@ -1256,6 +1256,11 @@ def admin_efficiency():
     from app.models import Team, Pool
     pool = Pool.query.get(POOL_ID)
     teams = Team.query.all()
+    # Sort by (O - D) descending, then by seed ascending. Blank ratings at the end.
+    teams.sort(key=lambda t: (
+        -(t.off_efficiency - t.def_efficiency) if (t.off_efficiency is not None and t.def_efficiency is not None) else float('inf'),
+        t.seed
+    ))
     
     if request.method == 'POST':
         avg_o = request.form.get('avg_o_rating')
@@ -1294,6 +1299,11 @@ def admin_export_efficiency():
     cw.writerow(['team_id', 'region', 'seed', 'team_name', 'off_efficiency', 'def_efficiency'])
     
     teams = Team.query.all()
+    # Sort by (O - D) descending, then by seed ascending. Blank ratings at the end.
+    teams.sort(key=lambda t: (
+        -(t.off_efficiency - t.def_efficiency) if (t.off_efficiency is not None and t.def_efficiency is not None) else float('inf'),
+        t.seed
+    ))
     for team in teams:
         cw.writerow([
             team.id,
