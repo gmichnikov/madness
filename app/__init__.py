@@ -28,7 +28,18 @@ def context_processor():
 
 @app.context_processor
 def inject_globals():
-    return dict(measurement_id=os.environ.get('MEASUREMENT_ID'))
+    venmo_username = os.environ.get('VENMO_USERNAME')
+    venmo_amount = os.environ.get('VENMO_AMOUNT', '10.00')
+    venmo_note = os.environ.get('VENMO_NOTE', 'March Madness 2026')
+    venmo_url = None
+    if venmo_username:
+        from urllib.parse import quote
+        params = f"txn=pay&amount={quote(str(venmo_amount))}&note={quote(venmo_note)}"
+        venmo_url = f"https://venmo.com/{venmo_username}?{params}"
+    return dict(
+        measurement_id=os.environ.get('MEASUREMENT_ID'),
+        venmo_pay_url=venmo_url,
+    )
 
 
 def init_db():

@@ -433,8 +433,13 @@ header {
         padding: 0 10px;
     }
 
-    .mm-nav-mobile-unverified .unverified-cursor {
+    .mm-nav-mobile-unverified .unverified-cursor,
+    .mm-nav-mobile-unverified .mm-venmo-link {
         font-size: 1.2rem;
+        color: yellow;
+    }
+    .mm-nav-mobile-unverified .mm-venmo-link:hover {
+        color: yellow;
     }
 
     .nav-menu {
@@ -489,6 +494,13 @@ header {
     .verification-status {
         font-size: 14px;
         margin-top: 5px;
+    }
+
+    /* Not Verified icon/text in slide-out menu stays yellow (beat .nav-links li a) */
+    .nav-links .mobile-user-info .verification-status a.mm-venmo-link,
+    .nav-links .mobile-user-info .verification-status a.mm-venmo-link:hover,
+    .nav-links .mobile-user-info .verification-status .unverified-cursor {
+        color: yellow !important;
     }
 
     .logout-link {
@@ -755,6 +767,20 @@ header {
     color: yellow;
 }
 
+/* Venmo pay link (unverified icon) - prefixed to avoid collisions, always yellow */
+.mm-venmo-link,
+.mm-nav-mobile-unverified .mm-venmo-link {
+    text-decoration: none;
+    cursor: pointer;
+    color: yellow;
+}
+.mm-venmo-link:hover,
+.mm-nav-mobile-unverified .mm-venmo-link:hover {
+    text-decoration: none;
+    color: yellow;
+    opacity: 0.9;
+}
+
 .user-info i {
     margin: 0 5px;
 }
@@ -766,6 +792,18 @@ header {
 
 .user-info a:hover {
     color: #ffffff;
+}
+
+/* Venmo link (unverified icon) stays yellow in nav bar */
+.user-info a.mm-venmo-link,
+.user-info a.mm-venmo-link:hover {
+    color: yellow;
+}
+
+/* Mobile top bar Venmo icon stays yellow */
+.mm-nav-mobile-unverified .mm-venmo-link,
+.mm-nav-mobile-unverified .mm-venmo-link:hover {
+    color: yellow;
 }
 
 .logout-cursor {

@@ -26,8 +26,12 @@
                 <a href="{{ url_for('index') }}">Madness</a>
             </div>
             {% if current_user.is_authenticated and not current_user.is_verified %}
-            <div class="mm-nav-mobile-unverified" title="Not Verified">
+            <div class="mm-nav-mobile-unverified" title="Not Verified - Pay to verify">
+                {% if venmo_pay_url %}
+                <a href="{{ venmo_pay_url }}" target="_blank" rel="noopener noreferrer" class="mm-venmo-link unverified-cursor" aria-label="Pay via Venmo to verify"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></a>
+                {% else %}
                 <span class="unverified-cursor"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
+                {% endif %}
             </div>
             {% endif %}
             <div class="nav-menu" id="nav-menu"> <!-- Hamburger icon for mobile -->
@@ -45,6 +49,8 @@
                         <div class="verification-status">
                             {% if current_user.is_verified %}
                                 <span class="verified-cursor" title="Verified"><i class="fa-regular fa-circle-check"></i> Verified</span>
+                            {% elif venmo_pay_url %}
+                                <a href="{{ venmo_pay_url }}" target="_blank" rel="noopener noreferrer" class="mm-venmo-link unverified-cursor" title="Pay via Venmo to verify"><i class="fa-solid fa-triangle-exclamation fa-flip"></i> Not Verified</a>
                             {% else %}
                                 <span class="unverified-cursor" title="Not Verified"><i class="fa-solid fa-triangle-exclamation fa-flip"></i> Not Verified</span>
                             {% endif %}
@@ -101,6 +107,8 @@
                 <div class="user-info desktop-only">
                     {% if current_user.is_verified %}
                         <span class="verified-cursor" title="Verified" data-tooltip="Verified" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)"><i class="fa-regular fa-circle-check"></i></span>
+                    {% elif venmo_pay_url %}
+                        <a href="{{ venmo_pay_url }}" target="_blank" rel="noopener noreferrer" class="mm-venmo-link unverified-cursor" title="Pay via Venmo to verify" data-tooltip="Pay via Venmo to verify" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></a>
                     {% else %}
                         <span class="unverified-cursor" title="Not Verified" data-tooltip="Not Verified" onmouseover="showTooltip(event)" onmouseout="hideTooltip(event)"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
                     {% endif %}
