@@ -961,6 +961,23 @@ header {
     background-color: LightSkyBlue !important;
 }
 
+/* Predictions table sort styles */
+.pred-sortable:hover {
+    background-color: #e2e6ea;
+}
+
+.pred-sort-icon {
+    font-size: 11px;
+    opacity: 0.4;
+    margin-left: 3px;
+}
+
+.pred-sort-asc .pred-sort-icon,
+.pred-sort-desc .pred-sort-icon {
+    opacity: 1;
+    color: #0056b3;
+}
+
 /* Hide per-round scores on very small screens */
 @media screen and (max-width: 600px) {
     .hide-mobile {

@@ -3,17 +3,17 @@
 {% block content %}
     <div class="standings-header-container">
         <h1>Tournament Predictions</h1>
-        <p class="description">Mathematical probability of each team winning each round based on efficiency ratings.</p>
+        <p class="description">Mathematical probability of each team winning each round based on efficiency ratings. Click any column header to sort.</p>
     </div>
 
     <div class="standings-container">
-        <table class="standings-table">
+        <table class="standings-table pred-sortable-table" id="predictions-table">
             <thead>
                 <tr>
-                    <th>Seed</th>
-                    <th>Team</th>
+                    <th class="pred-sortable" data-col="0" data-type="number">Seed <span class="pred-sort-icon">↕</span></th>
+                    <th class="pred-sortable" data-col="1" data-type="string">Team <span class="pred-sort-icon">↕</span></th>
                     {% for round in rounds %}
-                        <th>{{ round.name }}</th>
+                        <th class="pred-sortable" data-col="{{ loop.index + 1 }}" data-type="number">{{ round.name }} <span class="pred-sort-icon">↕</span></th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -25,7 +25,7 @@
                         <td>{{ team.get_display_name() }}</td>
                         {% for round in rounds %}
                             {% set prob = team_round_probs[team.id].get(round.id, 0) %}
-                            <td style="background-color: rgba(0, 123, 255, {{ prob }});">
+                            <td data-value="{{ prob }}" style="background-color: rgba(0, 123, 255, {{ prob }});">
                                 {{ (prob * 100) | round(1) }}%
                             </td>
                         {% endfor %}
@@ -35,4 +35,61 @@
             </tbody>
         </table>
     </div>
+{% endblock %}
+
+{% block morejs %}
+<script>
+(function() {
+    const table = document.getElementById('predictions-table');
+    const headers = table.querySelectorAll('th.pred-sortable');
+    let currentCol = null;
+    let currentDir = null;
+
+    headers.forEach(th => {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', function() {
+            const col = parseInt(this.dataset.col);
+            const type = this.dataset.type;
+
+            if (currentCol === col) {
+                currentDir = currentDir === 'desc' ? 'asc' : 'desc';
+            } else {
+                currentCol = col;
+                currentDir = type === 'number' ? 'desc' : 'asc';
+            }
+
+            headers.forEach(h => {
+                h.querySelector('.pred-sort-icon').textContent = '↕';
+                h.classList.remove('pred-sort-asc', 'pred-sort-desc');
+            });
+            this.querySelector('.pred-sort-icon').textContent = currentDir === 'asc' ? '↑' : '↓';
+            this.classList.add(currentDir === 'asc' ? 'pred-sort-asc' : 'pred-sort-desc');
+
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            rows.sort((a, b) => {
+                const aCell = a.querySelectorAll('td')[col];
+                const bCell = b.querySelectorAll('td')[col];
+                let aVal = aCell.dataset.value !== undefined ? parseFloat(aCell.dataset.value) : aCell.textContent.trim();
+                let bVal = bCell.dataset.value !== undefined ? parseFloat(bCell.dataset.value) : bCell.textContent.trim();
+
+                if (type === 'number') {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                } else {
+                    aVal = aVal.toString().toLowerCase();
+                    bVal = bVal.toString().toLowerCase();
+                }
+
+                if (aVal < bVal) return currentDir === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+})();
+</script>
 {% endblock %}
