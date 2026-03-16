@@ -376,12 +376,27 @@ header {
     display: none;
 }
 
+/* Unverified icon in top bar - visible on mobile only (desktop has user-info) */
+.mm-nav-mobile-unverified {
+    display: none;
+}
+
 .mobile-user-info {
+    display: none;
+}
+
+/* Mobile-only: unverified icon in top bar (hidden on desktop) */
+.mm-nav-mobile-unverified {
     display: none;
 }
 
 .logout-link {
     color: #ffd700 !important;
+}
+
+/* Mobile-only unverified icon in top bar (hidden on desktop) */
+.mm-nav-mobile-unverified {
+    display: none;
 }
 
 /* User Info Style */
@@ -410,6 +425,16 @@ header {
 
     .mobile-only {
         display: block;
+    }
+
+    .mm-nav-mobile-unverified {
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+    }
+
+    .mm-nav-mobile-unverified .unverified-cursor {
+        font-size: 1.2rem;
     }
 
     .nav-menu {

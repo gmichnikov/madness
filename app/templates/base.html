@@ -25,6 +25,11 @@
             <div class="nav-brand">
                 <a href="{{ url_for('index') }}">Madness</a>
             </div>
+            {% if current_user.is_authenticated and not current_user.is_verified %}
+            <div class="mm-nav-mobile-unverified" title="Not Verified">
+                <span class="unverified-cursor"><i class="fa-solid fa-triangle-exclamation fa-flip"></i></span>
+            </div>
+            {% endif %}
             <div class="nav-menu" id="nav-menu"> <!-- Hamburger icon for mobile -->
                 <div></div>
                 <div></div>
