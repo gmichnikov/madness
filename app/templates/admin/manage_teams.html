@@ -4,6 +4,19 @@
 
 {% block content %}
 <h1>Edit Teams</h1>
+
+<div class="mm-teams-csv-bar">
+    <a href="{{ url_for('admin_export_teams_csv') }}" class="btn btn-secondary mm-teams-csv-btn">
+        <i class="fa-solid fa-download"></i> Export CSV
+    </a>
+    <form method="POST" action="{{ url_for('admin_import_teams_csv') }}" enctype="multipart/form-data" class="mm-teams-csv-import-form">
+        <label class="mm-teams-csv-label">
+            <i class="fa-solid fa-upload"></i> Import CSV
+            <input type="file" name="csv_file" accept=".csv" class="mm-teams-csv-file-input" onchange="this.form.submit()">
+        </label>
+    </form>
+</div>
+
 <form method="POST">
     {{ form.hidden_tag() }}
     <table class="mm-manage-teams-table">

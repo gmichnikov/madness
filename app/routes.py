@@ -20,7 +20,7 @@ Cache Management:
 - clear_teams_cache(): Call when team names/seeds change
 """
 
-from flask import render_template, redirect, url_for, flash, request, jsonify
+from flask import render_template, redirect, url_for, flash, request, jsonify, Response
 from app import app, db, login_manager
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam, EspnSyncLog
 from flask_login import login_user, logout_user, login_required, current_user
@@ -28,6 +28,7 @@ from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, Manag
 from functools import wraps
 import os
 import csv
+import io
 from sqlalchemy import text, func
 from sqlalchemy.orm import joinedload
 import pytz
@@ -273,6 +274,83 @@ def admin_manage_teams():
     selected_names = {t.id: espn_by_id[t.espn_team_id].short_display_name if t.espn_team_id and t.espn_team_id in espn_by_id else '' for t in teams}
     selected_names_2 = {t.id: espn_by_id[t.espn_play_in_team_2_id].short_display_name if t.espn_play_in_team_2_id and t.espn_play_in_team_2_id in espn_by_id else '' for t in teams}
     return render_template('admin/manage_teams.html', form=form, teams=teams, espn_teams=espn_teams, selected_names=selected_names, selected_names_2=selected_names_2)
+
+@app.route('/admin/export_teams_csv')
+@login_required
+@pool_required
+@admin_required
+def admin_export_teams_csv():
+    teams = Team.query.options(joinedload(Team.region)).order_by(Team.region_id, Team.seed).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['region_name', 'seed', 'name', 'espn_team_id', 'is_play_in_slot', 'espn_play_in_team_2_id'])
+    for team in teams:
+        writer.writerow([
+            team.region.name,
+            team.seed,
+            team.name,
+            team.espn_team_id or '',
+            '1' if team.is_play_in_slot else '0',
+            team.espn_play_in_team_2_id or '',
+        ])
+    csv_data = output.getvalue()
+    return Response(
+        csv_data,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=teams.csv'}
+    )
+
+
+@app.route('/admin/import_teams_csv', methods=['POST'])
+@login_required
+@pool_required
+@admin_required
+def admin_import_teams_csv():
+    file = request.files.get('csv_file')
+    if not file or not file.filename.endswith('.csv'):
+        flash('Please upload a valid CSV file.', 'danger')
+        return redirect(url_for('admin_manage_teams'))
+
+    try:
+        stream = io.StringIO(file.stream.read().decode('utf-8'))
+        reader = csv.DictReader(stream)
+        required_cols = {'region_name', 'seed', 'name', 'espn_team_id', 'is_play_in_slot', 'espn_play_in_team_2_id'}
+        if not required_cols.issubset(set(reader.fieldnames or [])):
+            flash(f'CSV is missing required columns. Expected: {", ".join(sorted(required_cols))}', 'danger')
+            return redirect(url_for('admin_manage_teams'))
+
+        regions_by_name = {r.name: r for r in Region.query.all()}
+        updated = 0
+        skipped = 0
+        for row in reader:
+            region = regions_by_name.get(row['region_name'].strip())
+            if not region:
+                skipped += 1
+                continue
+            seed = int(row['seed'])
+            team = Team.query.filter_by(region_id=region.id, seed=seed).first()
+            if not team:
+                skipped += 1
+                continue
+            team.name = row['name'].strip() or team.name
+            team.espn_team_id = int(row['espn_team_id']) if row['espn_team_id'].strip() else None
+            team.is_play_in_slot = row['is_play_in_slot'].strip() == '1'
+            team.espn_play_in_team_2_id = int(row['espn_play_in_team_2_id']) if row['espn_play_in_team_2_id'].strip() else None
+            updated += 1
+
+        db.session.commit()
+        clear_teams_cache()
+        log_entry = LogEntry(category='Manage Teams', current_user_id=current_user.id,
+                             description=f"{current_user.full_name} imported teams CSV ({updated} updated, {skipped} skipped)")
+        db.session.add(log_entry)
+        db.session.commit()
+        flash(f'Import complete: {updated} teams updated, {skipped} skipped (region or seed not found).', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Import failed: {str(e)}', 'danger')
+
+    return redirect(url_for('admin_manage_teams'))
+
 
 @app.route('/admin/manage_rounds', methods=['GET', 'POST'])
 @login_required
