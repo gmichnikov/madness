@@ -193,7 +193,7 @@ def get_user_from_form_email(form):
 @admin_required
 def admin_reset_password():
     form = AdminPasswordResetForm()
-    form.email.choices = [(user.email, user.email) for user in get_pool_users_for_forms()]
+    form.email.choices = [(email, email) for email in get_pool_users_for_forms()]
 
     if form.validate_on_submit():
         user = get_user_from_form_email(form)
@@ -622,7 +622,7 @@ def make_picks():
     ).order_by(Game.id).all()
     
     teams = get_all_teams()
-    teams_dict = get_teams_dict()
+    teams_dict = {team.id: team for team in teams}
     rounds = rounds_dict()
     regions = regions_dict()
     
@@ -1170,35 +1170,29 @@ def clear_regions_cache():
     _regions_cache = None
 
 def get_pool_users_for_forms():
-    """Get pool users for form dropdowns with 5 minute cache"""
+    """Get pool user emails for form dropdowns with 5 minute cache.
+    Returns plain (email, email) tuples — callers should use directly as form choices."""
     global _pool_users_cache, _pool_users_cache_time
     now = datetime.utcnow()
-    
-    # Cache for 5 minutes
+
     if _pool_users_cache and _pool_users_cache_time and (now - _pool_users_cache_time).seconds < 300:
         return _pool_users_cache
-    
-    users = User.query.filter_by(pool_id=POOL_ID).order_by(func.lower(User.email)).all()
-    _pool_users_cache = users
+
+    emails = [r.email for r in User.query.with_entities(User.email).filter_by(pool_id=POOL_ID).order_by(func.lower(User.email)).all()]
+    _pool_users_cache = emails
     _pool_users_cache_time = now
-    return users
+    return emails
 
 def get_all_teams():
-    """Get all teams with caching"""
-    global _teams_cache
-    if _teams_cache is None:
-        _teams_cache = Team.query.all()
-    return _teams_cache
+    """Get all teams. Always queries fresh to avoid DetachedInstanceError from cross-request caching of ORM objects."""
+    return Team.query.options(joinedload(Team.region)).all()
 
 def get_teams_dict():
-    """Get teams dictionary with caching"""
-    global _teams_dict_cache
-    if _teams_dict_cache is None:
-        _teams_dict_cache = {team.id: team for team in get_all_teams()}
-    return _teams_dict_cache
+    """Get teams as a {id: team} dict."""
+    return {team.id: team for team in get_all_teams()}
 
 def clear_teams_cache():
-    """Clear teams cache if team names/seeds change"""
+    """No-op kept for compatibility — teams are no longer cached as ORM objects."""
     global _teams_cache, _teams_dict_cache
     _teams_cache = None
     _teams_dict_cache = None
@@ -1732,7 +1726,7 @@ def winners():
 @pool_required
 def admin_reset_password_code():
     form = AdminPasswordResetCodeForm()
-    form.email.choices = [(user.email, user.email) for user in get_pool_users_for_forms()]
+    form.email.choices = [(email, email) for email in get_pool_users_for_forms()]
 
     if form.validate_on_submit():
         user = get_user_from_form_email(form)
@@ -1925,7 +1919,7 @@ def super_admin_delete_user():
         return redirect(url_for('index'))
 
     form = SuperAdminDeleteUserForm()
-    form.email.choices = [(user.email, user.email) for user in get_pool_users_for_forms()]
+    form.email.choices = [(email, email) for email in get_pool_users_for_forms()]
 
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data, pool_id=POOL_ID).first()
