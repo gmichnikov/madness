@@ -216,5 +216,35 @@ def list_scoreboard_teams_command():
 
 app.cli.add_command(list_scoreboard_teams_command)
 
+
+@click.command('diagnose-expected-score')
+@with_appcontext
+def diagnose_expected_score_command():
+    """Diagnose why valid-bracket users have expected_score 0."""
+    pool_id = int(os.environ.get('POOL_ID', 0))
+    if not pool_id:
+        click.echo('POOL_ID not set.', err=True)
+        return
+    from app.utils.simulation import diagnose_zero_expected
+    results = diagnose_zero_expected(pool_id)
+    if results is None:
+        click.echo('Cannot run diagnostic: pool not found, or avg_o_rating not set, or <2 teams with efficiency.')
+        return
+    if not results:
+        click.echo('No valid-bracket users with expected_score 0.')
+        return
+    for r in results:
+        click.echo(f"\n--- {r['full_name']} (id={r['user_id']}) ---")
+        click.echo(f"  current_score={r['current_score']}, picks={r['pick_count']}, unplayed={r['unplayed_pick_count']}")
+        for sp in r['sample_picks']:
+            status = "prob=0" if sp['prob'] == 0 else f"prob={sp['prob']:.3f}"
+            if not sp['game_exists']:
+                status = "game_id NOT in current games!"
+            elif not sp['team_in_prob_map']:
+                status = "team NOT in prob map (play-in slot or bracket mismatch?)"
+            click.echo(f"    game {sp['game_id']}: {sp['team_name']} (team_id={sp['team_id']}) -> {status}, pts={sp['points']}")
+
+app.cli.add_command(diagnose_expected_score_command)
+
 from app import posthog_client  # noqa: F401 - exported for routes
 from app import routes
