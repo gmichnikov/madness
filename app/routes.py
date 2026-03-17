@@ -29,6 +29,7 @@ from functools import wraps
 import os
 import csv
 import io
+import threading
 from sqlalchemy import text, func
 from sqlalchemy.orm import joinedload
 import pytz
@@ -470,17 +471,16 @@ def admin_view_logs():
 @login_required
 @pool_required
 def user_profile(user_id):
-    if is_after_cutoff():
-        return redirect(url_for('standings'))
-
     user = User.query.filter_by(id=user_id, pool_id=POOL_ID).first_or_404()
-
-    form = EditProfileForm()
+    after_cutoff = is_after_cutoff()
 
     if user_id != current_user.id:
         return render_template('user_profile.html', user=user)
 
-    if form.validate_on_submit():
+    form = EditProfileForm()
+
+    # After cutoff, profile is read-only — don't process form submissions
+    if not after_cutoff and form.validate_on_submit():
         user.full_name = form.full_name.data
         user.time_zone = form.time_zone.data
         user.tiebreaker_winner = form.tiebreaker_winner.data
@@ -499,7 +499,8 @@ def user_profile(user_id):
         form.time_zone.data = user.time_zone
         form.tiebreaker_winner.data = user.tiebreaker_winner
         form.tiebreaker_loser.data = user.tiebreaker_loser
-    return render_template('edit_user_profile.html', form=form, user=user)
+
+    return render_template('edit_user_profile.html', form=form, user=user, read_only=after_cutoff)
 
 @app.route('/users')
 @login_required
@@ -1008,54 +1009,49 @@ def recalculate_standings(user=None, commit=True):
     Assumes the PotentialWinner table has been updated before calling this function.
     Set commit=False to defer committing (for atomic operations).
     """
-    # Setup eager loading options
-    eager_options = [
-        joinedload(User.picks)
-        .joinedload(Pick.game)
-        .joinedload(Game.round)
-    ]
-
     if user:
-        # Re-fetch the single user with eager loading to avoid N+1 queries for their picks
-        users = User.query.filter_by(id=user.id).options(*eager_options).all()
+        users = User.query.filter_by(id=user.id).all()
     else:
-        # Fetch all users in the pool with eager loading
-        users = User.query.filter_by(pool_id=POOL_ID).options(*eager_options).all()
+        users = User.query.filter_by(pool_id=POOL_ID).all()
+
+    # Pre-fetch all games and rounds in two queries, build lookup dicts
+    all_games = {g.id: g for g in Game.query.all()}
+    all_rounds = {r.id: r for r in Round.query.all()}
 
     potential_winners_dict = {}
-    potential_winner_entries = PotentialWinner.query.all()
-    for entry in potential_winner_entries:
-        potential_winner_ids = [int(team_id) for team_id in entry.potential_winner_ids.split(',') if team_id.isdigit()]
-        potential_winners_dict[entry.game_id] = potential_winner_ids
+    for entry in PotentialWinner.query.all():
+        potential_winners_dict[entry.game_id] = [
+            int(tid) for tid in entry.potential_winner_ids.split(',') if tid.isdigit()
+        ]
+
+    user_ids = [u.id for u in users]
+    all_picks = Pick.query.filter(Pick.user_id.in_(user_ids)).all()
+    picks_by_user = defaultdict(list)
+    for pick in all_picks:
+        picks_by_user[pick.user_id].append(pick)
 
     for u in users:
-        # Reset scores
         for i in range(1, 7):
             setattr(u, f'r{i}score', 0)
         potential_additional_points = 0
 
-        # Fetch picks directly to ensure we have current data
-        user_picks_for_scoring = Pick.query.filter_by(user_id=u.id).all()
+        for pick in picks_by_user[u.id]:
+            game = all_games.get(pick.game_id)
+            if not game:
+                continue
+            round_points = all_rounds[game.round_id].points
 
-        for pick in user_picks_for_scoring:
-            game = pick.game
-            round_points = game.round.points
-            
-            # 1. Calculate points for correct picks
             if game.winning_team_id is not None and game.winning_team_id == pick.team_id:
                 attr_name = f'r{game.round_id}score'
-                current_val = getattr(u, attr_name)
-                setattr(u, attr_name, current_val + round_points)
-            
-            # 2. Calculate potential points for remaining games
+                setattr(u, attr_name, getattr(u, attr_name) + round_points)
+
             if game.winning_team_id is None:
                 if pick.team_id in potential_winners_dict.get(game.id, []):
                     potential_additional_points += round_points
 
-        # Update totals
         u.currentscore = sum(getattr(u, f'r{i}score') for i in range(1, 7))
         u.maxpossiblescore = u.currentscore + potential_additional_points
-    
+
     if commit:
         db.session.commit()
 
@@ -1754,6 +1750,7 @@ def admin_reset_password_code():
 # --- Rate limiting for email-based password reset ---
 _password_reset_rate_limit = defaultdict(list)
 _password_reset_rate_limit_cleanup_time = datetime.utcnow()
+_password_reset_rate_limit_lock = threading.Lock()
 
 def _check_password_reset_rate_limit(email, _user_ip):
     """
@@ -1762,29 +1759,29 @@ def _check_password_reset_rate_limit(email, _user_ip):
     """
     global _password_reset_rate_limit, _password_reset_rate_limit_cleanup_time
 
-    if datetime.utcnow() - _password_reset_rate_limit_cleanup_time > timedelta(minutes=5):
-        cutoff_30_days = datetime.utcnow() - timedelta(days=30)
-        for key in list(_password_reset_rate_limit.keys()):
-            _password_reset_rate_limit[key] = [
-                ts for ts in _password_reset_rate_limit[key] if ts > cutoff_30_days
-            ]
-            if not _password_reset_rate_limit[key]:
-                del _password_reset_rate_limit[key]
-        _password_reset_rate_limit_cleanup_time = datetime.utcnow()
+    global _password_reset_rate_limit_cleanup_time
+    with _password_reset_rate_limit_lock:
+        if datetime.utcnow() - _password_reset_rate_limit_cleanup_time > timedelta(minutes=5):
+            cutoff_30_days = datetime.utcnow() - timedelta(days=30)
+            for key in list(_password_reset_rate_limit.keys()):
+                _password_reset_rate_limit[key] = [
+                    ts for ts in _password_reset_rate_limit[key] if ts > cutoff_30_days
+                ]
+                if not _password_reset_rate_limit[key]:
+                    del _password_reset_rate_limit[key]
+            _password_reset_rate_limit_cleanup_time = datetime.utcnow()
 
-    email_key = f"email:{email}"
-    cutoff_30_days = datetime.utcnow() - timedelta(days=30)
-    requests_30_days = [ts for ts in _password_reset_rate_limit.get(email_key, []) if ts > cutoff_30_days]
-    if len(requests_30_days) >= 5:
-        return (False, "30-day limit")
-    cutoff_1_hour = datetime.utcnow() - timedelta(hours=1)
-    requests_1_hour = [ts for ts in _password_reset_rate_limit.get(email_key, []) if ts > cutoff_1_hour]
-    if len(requests_1_hour) >= 3:
-        return (False, "1-hour limit")
-    if email_key not in _password_reset_rate_limit:
-        _password_reset_rate_limit[email_key] = []
-    _password_reset_rate_limit[email_key].append(datetime.utcnow())
-    return (True, None)
+        email_key = f"email:{email}"
+        cutoff_30_days = datetime.utcnow() - timedelta(days=30)
+        requests_30_days = [ts for ts in _password_reset_rate_limit.get(email_key, []) if ts > cutoff_30_days]
+        if len(requests_30_days) >= 5:
+            return (False, "30-day limit")
+        cutoff_1_hour = datetime.utcnow() - timedelta(hours=1)
+        requests_1_hour = [ts for ts in _password_reset_rate_limit.get(email_key, []) if ts > cutoff_1_hour]
+        if len(requests_1_hour) >= 3:
+            return (False, "1-hour limit")
+        _password_reset_rate_limit.setdefault(email_key, []).append(datetime.utcnow())
+        return (True, None)
 
 @app.route('/request-password-reset', methods=['GET', 'POST'])
 def request_password_reset():

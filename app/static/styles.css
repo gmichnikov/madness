@@ -1107,6 +1107,16 @@ header {
     margin-bottom: 20px;
 }
 
+.mm-profile-readonly-note {
+    color: #856404;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
 .status-box {
     flex: 1;
     padding: 15px;

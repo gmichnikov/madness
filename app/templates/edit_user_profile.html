@@ -34,6 +34,9 @@
 
     <div class="card">
         <h2>Personal Information</h2>
+        {% if read_only %}
+            <p class="mm-profile-readonly-note"><i class="fa-solid fa-lock"></i> The tournament has started — your profile is now read-only.</p>
+        {% endif %}
         <form method="POST">
             {{ form.hidden_tag() }}
             
@@ -45,27 +48,29 @@
 
             <div class="form-group">
                 {{ form.full_name.label }}
-                {{ form.full_name(class="form-control", placeholder="Your full name") }}
+                {{ form.full_name(class="form-control", placeholder="Your full name", **({'disabled': True} if read_only else {})) }}
             </div>
 
             <div class="form-group">
                 {{ form.time_zone.label }}
-                {{ form.time_zone(class="form-control") }}
+                {{ form.time_zone(class="form-control", **({'disabled': True} if read_only else {})) }}
             </div>
 
             <div class="form-group">
                 {{ form.tiebreaker_winner.label }}
-                {{ form.tiebreaker_winner(class="form-control", placeholder="Championship winner score") }}
+                {{ form.tiebreaker_winner(class="form-control", placeholder="Championship winner score", **({'disabled': True} if read_only else {})) }}
             </div>
 
             <div class="form-group">
                 {{ form.tiebreaker_loser.label }}
-                {{ form.tiebreaker_loser(class="form-control", placeholder="Championship loser score") }}
+                {{ form.tiebreaker_loser(class="form-control", placeholder="Championship loser score", **({'disabled': True} if read_only else {})) }}
             </div>
 
-            <div class="form-group" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-                {{ form.submit(class="btn btn-primary") }}
-            </div>
+            {% if not read_only %}
+                <div class="form-group" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            {% endif %}
         </form>
     </div>
 </div>
