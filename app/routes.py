@@ -817,6 +817,12 @@ def set_is_bracket_valid(games_dict=None, commit=True, user=None, reason=None):
     user.is_bracket_valid = is_bracket_valid
     user.last_bracket_save = datetime.utcnow()
 
+    # Invalidate expected standings cache so we recalc when any bracket validity changes
+    if user.pool_id:
+        pool = Pool.query.get(user.pool_id)
+        if pool:
+            pool.expected_standings_dirty = True
+
     if is_bracket_valid:
         desc = reason if reason else f"{user.email} saved a valid bracket"
         log_entry = LogEntry(category='Valid Bracket', current_user_id=user.id, description=desc)
@@ -2063,6 +2069,26 @@ def admin_analytics():
         event_counts = [r.event_count for r in query_results]
 
     return render_template('admin/analytics.html', form=form, results=results, timestamps=timestamps, unique_users=unique_users, event_counts=event_counts)
+
+@app.route('/admin/recalculate_expected_scores')
+@login_required
+@super_admin_required
+@pool_required
+def admin_recalculate_expected_scores():
+    """Force a full recalculation of expected scores for all valid users."""
+    from app.utils.simulation import calculate_expected_points
+    pool = Pool.query.get(POOL_ID)
+    if not pool:
+        flash('Pool not found.', 'error')
+        return redirect(url_for('index'))
+    pool.expected_standings_dirty = True
+    db.session.commit()
+    result = calculate_expected_points(POOL_ID)
+    if result is None:
+        flash('Recalculation skipped: set pool avg_o_rating and ensure 2+ teams have efficiency ratings.', 'error')
+    else:
+        flash(f'Expected scores recalculated for {len(result["standings"])} users.', 'success')
+    return redirect(url_for('standings'))
 
 @app.route('/admin/update_potential_winners')
 @login_required

@@ -41,18 +41,23 @@ def calculate_expected_points(pool_id):
     if not pool or not pool.avg_o_rating:
         return None
 
-    # Check if cache is still valid
+    # Check if cache is still valid (skip cache if valid users have 0 expected with unplayed games - self-heal)
     if not pool.expected_standings_dirty:
         users = User.query.filter_by(pool_id=pool_id).filter(User.is_bracket_valid == True).order_by(User.expected_score.desc()).all()
         if users:
-            return {
-                'standings': [{
-                    'user_id': u.id,
-                    'full_name': u.full_name,
-                    'current_score': u.currentscore,
-                    'expected_score': u.expected_score
-                } for u in users]
-            }
+            has_unplayed = Game.query.filter(Game.winning_team_id.is_(None)).limit(1).count() > 0
+            valid_with_zero = sum(1 for u in users if u.expected_score == 0)
+            if has_unplayed and valid_with_zero > 0:
+                pool.expected_standings_dirty = True  # Force recalc to fix stale zeros
+            else:
+                return {
+                    'standings': [{
+                        'user_id': u.id,
+                        'full_name': u.full_name,
+                        'current_score': u.currentscore,
+                        'expected_score': u.expected_score
+                    } for u in users]
+                }
 
     avg_o = pool.avg_o_rating
     teams = {t.id: t for t in Team.query.all()}
