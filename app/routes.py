@@ -22,7 +22,7 @@ Cache Management:
 
 from flask import render_template, redirect, url_for, flash, request, jsonify, Response
 from app import app, db, login_manager
-from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam, EspnSyncLog
+from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam, EspnSyncLog, GameProbability
 from flask_login import login_user, logout_user, login_required, current_user
 from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, RequestPasswordResetForm, ResetPasswordWithTokenForm, SuperAdminDeleteUserForm, EditPoolForm, AnalyticsForm
 from functools import wraps
@@ -2222,6 +2222,8 @@ def predictions():
 @pool_required
 def simulate_standings():
     games = Game.query.filter(Game.winning_team_id.is_(None)).order_by(Game.id).all()
+    game_ids = [g.id for g in games]
+
     potential_winners_data = {}
     for pw in PotentialWinner.query.all():
         team_ids = [int(tid) for tid in pw.potential_winner_ids.split(',') if tid.isdigit()]
@@ -2232,13 +2234,49 @@ def simulate_standings():
     for game in games:
         games_data[game.round.name].append(game)
 
+    # --- Autofill data ---
+    # Build set of still-alive team IDs (teams that appear in potential_winners_data)
+    alive_team_ids = set()
+    for teams in potential_winners_data.values():
+        for t in teams:
+            alive_team_ids.add(t.id)
+
+    # User's own picks for remaining games (only if the picked team is still alive)
+    my_picks_by_game = {}
+    my_picks_qs = Pick.query.filter(
+        Pick.user_id == current_user.id,
+        Pick.game_id.in_(game_ids)
+    ).all()
+    for pick in my_picks_qs:
+        if pick.team_id in alive_team_ids:
+            my_picks_by_game[pick.game_id] = pick.team_id
+
+    # Top seed (lowest seed number) among potential winners for each game
+    top_seed_by_game = {}
+    for game_id, teams in potential_winners_data.items():
+        if teams:
+            top_team = min(teams, key=lambda t: t.seed)
+            top_seed_by_game[game_id] = top_team.id
+
+    # Favorite (highest win probability) for each game
+    favorite_by_game = {}
+    probs = GameProbability.query.filter(GameProbability.game_id.in_(game_ids)).all()
+    prob_lookup = defaultdict(dict)
+    win_probs_by_game = defaultdict(dict)
+    for p in probs:
+        prob_lookup[p.game_id][p.team_id] = p.probability
+        win_probs_by_game[p.game_id][p.team_id] = round(p.probability * 100, 1)
+    for game_id, team_probs in prob_lookup.items():
+        if team_probs:
+            best_team_id = max(team_probs, key=team_probs.get)
+            favorite_by_game[game_id] = best_team_id
+
     selected_teams = {}
     if request.method == 'POST':
         users = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid.is_(True)).all()
         user_scores = {user.id: user.currentscore for user in users}
 
         # Optimization: Fetch all relevant picks for the remaining games in ONE query
-        game_ids = [g.id for g in games]
         all_picks = Pick.query.join(User).filter(
             Pick.game_id.in_(game_ids),
             User.pool_id == POOL_ID,
@@ -2256,7 +2294,7 @@ def simulate_standings():
             selected_teams[game_key] = selected_team_id
             if selected_team_id:
                 selected_team_id = int(selected_team_id)
-                
+
                 # Use our in-memory lookup instead of querying the DB 63 times
                 user_ids_who_picked = picks_lookup[game.id][selected_team_id]
                 for uid in user_ids_who_picked:
@@ -2264,14 +2302,41 @@ def simulate_standings():
                         user_scores[uid] += game.round.points
 
         user_names = {user.id: user.full_name for user in users}
+        current_scores = {user.id: user.currentscore for user in users}
+
+        # Compute current ranks (before simulation)
+        current_order = sorted(users, key=lambda u: u.currentscore, reverse=True)
+        current_rank = {u.id: rank + 1 for rank, u in enumerate(current_order)}
 
         simulated_standings = [(user_id, user_scores[user_id], user_names[user_id]) for user_id in user_scores]
-        simulated_standings.sort(key=lambda x: x[1], reverse=True)  # Sort by score in descending order
-        simulated_standings_with_rank = [(rank + 1, user_id, score, name) for rank, (user_id, score, name) in enumerate(simulated_standings)]
+        simulated_standings.sort(key=lambda x: x[1], reverse=True)
+        simulated_standings_with_rank = [
+            (rank + 1, user_id, score, name, current_rank.get(user_id), current_scores.get(user_id, 0))
+            for rank, (user_id, score, name) in enumerate(simulated_standings)
+        ]
 
-        return render_template('simulate_standings.html', games_data=games_data, selected_teams=selected_teams, potential_winners_data=potential_winners_data, simulated_standings_with_rank=simulated_standings_with_rank, show_results=True)
+        return render_template('simulate_standings.html',
+            games_data=games_data,
+            selected_teams=selected_teams,
+            potential_winners_data=potential_winners_data,
+            simulated_standings_with_rank=simulated_standings_with_rank,
+            show_results=True,
+            my_picks_by_game=my_picks_by_game,
+            top_seed_by_game=top_seed_by_game,
+            favorite_by_game=favorite_by_game,
+            win_probs_by_game=win_probs_by_game,
+        )
 
-    return render_template('simulate_standings.html', games_data=games_data, selected_teams=selected_teams, potential_winners_data=potential_winners_data, show_results=False)
+    return render_template('simulate_standings.html',
+        games_data=games_data,
+        selected_teams=selected_teams,
+        potential_winners_data=potential_winners_data,
+        show_results=False,
+        my_picks_by_game=my_picks_by_game,
+        top_seed_by_game=top_seed_by_game,
+        favorite_by_game=favorite_by_game,
+        win_probs_by_game=win_probs_by_game,
+    )
 
 
 @app.route('/compare_brackets', methods=['GET'])
