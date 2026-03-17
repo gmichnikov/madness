@@ -34,7 +34,7 @@
                     <th></th>
                     <th>Name</th>
                     <th>Total Score</th>
-                    {% if is_after_cutoff %}
+                    {% if is_after_cutoff or current_user.is_super_admin %}
                         <th>Exp. Total</th>
                     {% endif %}
                     <th>Max Possible Score</th>
@@ -55,7 +55,7 @@
                         <td>{{ user.rank }}</td>
                         <td><a href="{{ url_for('view_picks', user_id=user.id) }}">{{ user.full_name }}</a></td>
                         <td>{{ user.currentscore }}</td>
-                        {% if is_after_cutoff %}
+                        {% if is_after_cutoff or current_user.is_super_admin %}
                             <td><strong>{{ user.expected_score | round(1) }}</strong></td>
                         {% endif %}
                         <td>{{ user.maxpossiblescore }}</td>
