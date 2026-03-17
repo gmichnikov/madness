@@ -54,7 +54,7 @@
         });
     </script>
 
-    <form method="POST">
+    <form method="POST" id="sim-form" onsubmit="if(window.posthog){posthog.capture('simulate_standings_run');}">
         {# Collapsible picker section #}
         <div style="border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 24px; overflow: hidden;">
             <div onclick="simTogglePicker()"
@@ -161,4 +161,15 @@
         </div>
     {% endif %}
 </div>
+{% block morejs %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.posthog) posthog.capture('simulate_standings_viewed');
+        var form = document.querySelector('form[method="POST"]');
+        if (form && window.posthog) {
+            form.addEventListener('submit', function() { posthog.capture('simulate_standings_run'); });
+        }
+    });
+</script>
+{% endblock %}
 {% endblock %}

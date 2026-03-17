@@ -26,4 +26,5 @@ SQLAlchemy==2.0.20
 typing_extensions==4.13.0
 Werkzeug==2.3.7
 WTForms==3.0.1
+posthog>=3.0.0
 zipp==3.16.2

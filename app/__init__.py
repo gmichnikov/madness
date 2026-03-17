@@ -36,9 +36,30 @@ def inject_globals():
         from urllib.parse import quote
         params = f"txn=pay&amount={quote(str(venmo_amount))}&note={quote(venmo_note)}"
         venmo_url = f"https://venmo.com/{venmo_username}?{params}"
+
+    posthog_api_key = os.environ.get('POSTHOG_API_KEY')
+    posthog_host = os.environ.get('POSTHOG_HOST', 'https://us.i.posthog.com')
+
+    pool_id = None
+    pool_name = None
+    pool_id_str = os.environ.get('POOL_ID')
+    if pool_id_str:
+        try:
+            pool_id = int(pool_id_str)
+            from app.models import Pool
+            pool = Pool.query.get(pool_id)
+            if pool:
+                pool_name = pool.name
+        except (ValueError, TypeError):
+            pass
+
     return dict(
         measurement_id=os.environ.get('MEASUREMENT_ID'),
         venmo_pay_url=venmo_url,
+        posthog_api_key=posthog_api_key,
+        posthog_host=posthog_host,
+        posthog_pool_id=pool_id,
+        posthog_pool_name=pool_name,
     )
 
 
@@ -195,4 +216,5 @@ def list_scoreboard_teams_command():
 
 app.cli.add_command(list_scoreboard_teams_command)
 
+from app import posthog_client  # noqa: F401 - exported for routes
 from app import routes

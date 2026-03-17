@@ -39,5 +39,14 @@
     </div>
 </div>
 {% endblock %}
+{% block morejs %}
+    {% if posthog_api_key %}
+    <script>
+        if (window.posthog) {
+            posthog.capture('thread_viewed', { thread_id: {{ thread.id }}, thread_title: {{ thread.title | tojson }} });
+        }
+    </script>
+    {% endif %}
+{% endblock %}
 
 

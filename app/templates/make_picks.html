@@ -35,7 +35,7 @@
             <div class="bracket-grid">
                 {% for game in games %}
                     <div class="game-dropdown" id="game{{ game.id }}">
-                        <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select" onchange="handleSelectChange();">
+                        <select name="game{{ game.id }}" id="game{{ game.id }}" class="bracket-grid-select" data-game-id="{{ game.id }}" data-round-id="{{ game.round_id }}" onchange="handleSelectChange(this);">
     
                             <option value=""></option>
                             {% for team_id in potential_picks_map.get(game.id, []) %}
@@ -109,7 +109,18 @@
             localStorage.setItem('picksScrollPosition', JSON.stringify(position));
         }
 
-        function handleSelectChange() {
+        function handleSelectChange(sel) {
+            if (window.posthog && sel && sel.value) {
+                var gameId = sel.getAttribute && sel.getAttribute('data-game-id');
+                var roundId = sel.getAttribute && sel.getAttribute('data-round-id');
+                if (gameId && sel.value) {
+                    posthog.capture('bracket_pick_made', {
+                        game_id: parseInt(gameId),
+                        team_id: parseInt(sel.value),
+                        round_id: roundId ? parseInt(roundId) : null
+                    });
+                }
+            }
             if (autosaveEnabled) {
                 saveScrollPosition();
                 document.getElementById('action-input').value = 'save_picks';
@@ -118,6 +129,15 @@
         }
 
         function submitForm(actionValue) {
+            if (window.posthog) {
+                if (actionValue === 'fill_in_better_seeds') {
+                    posthog.capture('fill_in_better_seeds_clicked');
+                } else if (actionValue === 'clear_picks') {
+                    posthog.capture('clear_picks_clicked');
+                } else if (actionValue === 'save_picks') {
+                    posthog.capture('bracket_save_clicked');
+                }
+            }
             saveScrollPosition();
             document.getElementById('action-input').value = actionValue;
             document.getElementById('picks-form').submit();

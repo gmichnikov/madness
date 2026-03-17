@@ -85,6 +85,14 @@
             inputField.value = '';
             inputField.value = val; // (cursor moves to the end)
         }
+        if (window.posthog) {
+            var sortField = document.querySelector('select[name="sort_field"]');
+            var sortOrder = document.querySelector('select[name="sort_order"]');
+            posthog.capture('standings_viewed', {
+                sort_by: sortField ? sortField.value : null,
+                sort_order: sortOrder ? sortOrder.value : null
+            });
+        }
         });
     </script>
 {% endblock %}

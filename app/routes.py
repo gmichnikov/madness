@@ -39,6 +39,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from app.espn import fetch_espn_scoreboard, parse_completed_events
 from app.utils.email_service import send_password_reset_email, send_password_reset_confirmation_email
+from app import posthog_client
 load_dotenv()
 
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '').strip()
@@ -158,6 +159,11 @@ def register():
         db.session.add(log_entry)
         db.session.commit()
 
+        posthog_client.capture(
+            f'user_{new_user.id}',
+            'user_registered',
+            {'pool_id': POOL_ID, 'time_zone': new_user.time_zone}
+        )
         flash('Registration successful. Please log in.')
         return redirect(url_for('login'))
     return render_template('register.html', form=form, pool_name=pool_name, is_login=False)
@@ -171,14 +177,19 @@ def login():
         user = get_user_from_form_email(form)
         if user and user.check_password(form.password.data):
             login_user(user)
+            posthog_client.capture(f'user_{user.id}', 'user_logged_in', {'user_id': user.id})
             return redirect(url_for('index'))
         else:
+            posthog_client.capture('anonymous', 'login_failed', {'reason': 'invalid_credentials'})
             flash('Invalid email or password')
     return render_template('login.html', form=form, pool_name=pool_name, is_login=True)
 
 @app.route('/logout')
 def logout():
+    user_id = current_user.id if current_user.is_authenticated else None
     logout_user()
+    if user_id:
+        posthog_client.capture(f'user_{user_id}', 'user_logged_out', {'user_id': user_id})
     return redirect(url_for('index'))
 
 def get_user_from_form_email(form):
@@ -674,6 +685,13 @@ def make_picks():
             set_is_bracket_valid(games_dict, commit=False)
             recalculate_standings(current_user, commit=False)
             db.session.commit()  # Single commit for all operations
+            games_picked = Pick.query.filter_by(user_id=current_user.id).count()
+            champ_pick = Pick.query.filter_by(user_id=current_user.id, game_id=CHAMPIONSHIP_GAME_ID).first()
+            posthog_client.capture(
+                f'user_{current_user.id}',
+                'bracket_saved',
+                {'is_valid': current_user.is_bracket_valid, 'games_picked': games_picked, 'champion_team_id': champ_pick.team_id if champ_pick else None}
+            )
             flash('Your picks have been saved.')
             return redirect(url_for('make_picks'))
         elif action == 'clear_picks':
@@ -686,6 +704,7 @@ def make_picks():
             set_is_bracket_valid(games_dict, commit=False)
             recalculate_standings(current_user, commit=False)
             db.session.commit()  # Single commit for all operations
+            posthog_client.capture(f'user_{current_user.id}', 'clear_picks')
             return redirect(url_for('make_picks'))
         elif action == 'fill_in_better_seeds':
             auto_fill_bracket(games_dict, user_picks, commit=False)
@@ -694,6 +713,7 @@ def make_picks():
             set_is_bracket_valid(games_dict, commit=False)
             recalculate_standings(current_user, commit=False)
             db.session.commit()  # Single commit for all operations
+            posthog_client.capture(f'user_{current_user.id}', 'fill_in_better_seeds_used')
             return redirect(url_for('make_picks'))
 
     return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted)
@@ -910,6 +930,7 @@ def admin_set_winners():
         games_by_round_and_region[round_name][region_name].append(game)
 
     if request.method == 'POST':
+        games_changed = 0
         for game in games:
             selected_team_id = request.form.get(f"game_{game.id}")
             if selected_team_id:
@@ -922,6 +943,7 @@ def admin_set_winners():
             # Case 1: No change
             if previous_winning_team_id == selected_team_id:
                 continue
+            games_changed += 1
                 
             # Case 2: Clearing a previously set winner
             if selected_team_id is None:
@@ -958,6 +980,10 @@ def admin_set_winners():
         clear_potential_winners_cache()  # Clear cache before updating potential winners
         do_admin_update_potential_winners()
         recalculate_standings()
+        posthog_client.capture(
+            f'user_{current_user.id}', 'admin_set_winners',
+            {'admin_id': current_user.id, 'games_updated': games_changed}
+        )
         return redirect(url_for('admin_set_winners'))
 
     espn_sync = EspnSyncLog.query.order_by(EspnSyncLog.id.desc()).first()
@@ -1593,7 +1619,12 @@ def create_thread():
         log_entry = LogEntry(category='Create Thread', current_user_id=current_user.id, description=f"{current_user.email} created thread \"{title}\"")
         db.session.add(log_entry)
         db.session.commit()
-        
+
+        posthog_client.capture(
+            f'user_{current_user.id}', 'thread_created',
+            {'thread_id': new_thread.id, 'title': title[:50]}
+        )
+
         flash('New thread created.')
 
         return redirect(url_for('message_board'))
@@ -1629,6 +1660,12 @@ def thread(thread_id):
             new_post = Post(content=content[:1000], author_id=current_user.id, thread_id=thread.id)
             db.session.add(new_post)
             db.session.commit()
+
+            posthog_client.capture(
+                f'user_{current_user.id}', 'post_created',
+                {'post_id': new_post.id, 'thread_id': thread_id}
+            )
+
             flash('Your post has been added.')
             return redirect(url_for('thread', thread_id=thread_id))
 
@@ -1849,6 +1886,8 @@ def reset_password_via_token():
         user.clear_password_reset_token()
         db.session.commit()
 
+        posthog_client.capture(f'user_{user.id}', 'password_reset_completed', {'method': 'email_link'})
+
         log_entry = LogEntry(category='Password Reset', current_user_id=user.id, description=f"{user.full_name} reset their password via email link")
         db.session.add(log_entry)
         db.session.commit()
@@ -1947,6 +1986,11 @@ def super_admin_delete_user():
             
             db.session.delete(user)
             db.session.flush()
+
+            posthog_client.capture(
+                f'user_{current_user.id}', 'user_deleted',
+                {'deleted_user_id': user_id, 'deleted_by': current_user.id}
+            )
 
             log_entry = LogEntry(category='Delete User', current_user_id=current_user.id, description=f"{current_user.full_name} deleted the user {full_name} whose id was {user_id} and whose email was {email}")
             db.session.add(log_entry)

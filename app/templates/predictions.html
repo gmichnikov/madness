@@ -93,5 +93,8 @@
         });
     });
 })();
+        if (window.posthog) {
+            posthog.capture('predictions_viewed');
+        }
 </script>
 {% endblock %}

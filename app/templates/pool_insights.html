@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Pool Insights{% endblock %}
 {% block content %}
-<div class="container">
+<div class="container" id="pool-insights-root">
     <h1>Pool Insights</h1>
     <p class="lead">Insights based on the <strong>{{ total_users }}</strong> valid brackets in the pool.</p>
 
@@ -128,4 +128,12 @@
         background: #007bff;
     }
 </style>
+{% endblock %}
+
+{% block morejs %}
+<script>
+(function() {
+    if (window.posthog) posthog.capture('pool_insights_viewed', { total_users: {{ total_users }} });
+})();
+</script>
 {% endblock %}

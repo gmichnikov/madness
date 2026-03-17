@@ -29,3 +29,7 @@
 </div>
 
 {% endblock %}
+
+{% block morejs %}
+<script>if (window.posthog) posthog.capture('message_board_viewed');</script>
+{% endblock %}

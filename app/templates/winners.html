@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% block title %}Past Winners{% endblock %}
 {% block content %}
 <div id="winners">
     <h1>🎉 Past Winners 🎉</h1>
@@ -8,4 +9,8 @@
         {% endfor %}
     </ul>
 </div>
+{% endblock %}
+
+{% block morejs %}
+<script>if (window.posthog) posthog.capture('winners_viewed');</script>
 {% endblock %}

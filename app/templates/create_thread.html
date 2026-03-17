@@ -20,3 +20,7 @@
 </div>
 {% endblock %}
 
+{% block morejs %}
+<script>if (window.posthog) posthog.capture('create_thread_viewed');</script>
+{% endblock %}
+

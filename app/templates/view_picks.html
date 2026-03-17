@@ -51,6 +51,11 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.posthog) {
+                posthog.capture('view_picks_viewed', { viewed_user_id: {{ user.id }} });
+            }
+        });
         function showTooltip(event) {
             var tooltipSpan = document.getElementById('tooltip');
             var tooltipText = event.target.getAttribute('data-tooltip');
