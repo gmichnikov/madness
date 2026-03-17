@@ -15,7 +15,7 @@ def _get_client():
         host = os.environ.get('POSTHOG_HOST', 'https://us.i.posthog.com')
         if api_key:
             from posthog import Posthog
-            _posthog = Posthog(api_key=api_key, host=host)
+            _posthog = Posthog(api_key, host=host)
     return _posthog
 
 def capture(distinct_id, event, properties=None, groups=None):
