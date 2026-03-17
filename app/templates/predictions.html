@@ -12,8 +12,9 @@
                 <tr>
                     <th class="pred-sortable" data-col="0" data-type="number">Seed <span class="pred-sort-icon">↕</span></th>
                     <th class="pred-sortable" data-col="1" data-type="string">Team <span class="pred-sort-icon">↕</span></th>
+                    <th class="pred-sortable" data-col="2" data-type="string">Region <span class="pred-sort-icon">↕</span></th>
                     {% for round in rounds %}
-                        <th class="pred-sortable" data-col="{{ loop.index + 1 }}" data-type="number">{{ round.name }} <span class="pred-sort-icon">↕</span></th>
+                        <th class="pred-sortable" data-col="{{ loop.index + 2 }}" data-type="number">{{ round.name }} <span class="pred-sort-icon">↕</span></th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -23,6 +24,7 @@
                     <tr>
                         <td>{{ team.seed }}</td>
                         <td>{{ team.get_display_name() }}</td>
+                        <td>{{ team.region.name }}</td>
                         {% for round in rounds %}
                             {% set prob = team_round_probs[team.id].get(round.id, 0) %}
                             <td data-value="{{ prob }}" style="background-color: rgba(0, 123, 255, {{ prob }});">
