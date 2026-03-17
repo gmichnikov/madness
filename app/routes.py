@@ -1164,6 +1164,12 @@ def clear_rounds_cache():
     global _rounds_cache
     _rounds_cache = None
 
+def clear_pool_users_cache():
+    """Clear pool users cache (e.g. after a user is added or deleted)"""
+    global _pool_users_cache, _pool_users_cache_time
+    _pool_users_cache = None
+    _pool_users_cache_time = None
+
 def clear_regions_cache():
     """Clear regions cache if region names change"""
     global _regions_cache
@@ -1943,11 +1949,16 @@ def super_admin_delete_user():
                 Thread.query.filter(Thread.id.in_(thread_ids)).delete(synchronize_session=False)
             
             db.session.delete(user)
-            
+            db.session.flush()
+
             log_entry = LogEntry(category='Delete User', current_user_id=current_user.id, description=f"{current_user.full_name} deleted the user {full_name} whose id was {user_id} and whose email was {email}")
             db.session.add(log_entry)
             db.session.commit()
-            
+
+            recalculate_standings()
+            clear_potential_winners_cache()
+            clear_pool_users_cache()
+
             flash('User deleted successfully.', 'success')
         else:
             flash('User not found.', 'error')
