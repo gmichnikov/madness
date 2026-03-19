@@ -1330,6 +1330,9 @@ def sync_espn_results_to_games(force=False):
     db.session.commit()
 
     if games_updated > 0:
+        pool = Pool.query.get(POOL_ID)
+        if pool:
+            pool.expected_standings_dirty = True
         clear_potential_winners_cache()
         do_admin_update_potential_winners()
         recalculate_standings()
