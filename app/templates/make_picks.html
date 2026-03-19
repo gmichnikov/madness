@@ -1,12 +1,21 @@
 {% extends 'base.html' %}
-{% block title %}Make Picks{% endblock %}
+{% block title %}{{ 'Edit Bracket' if edit_target_user else 'Make Picks' }}{% endblock %}
 {% block content %}
-    <h1>Make Your Picks</h1>
-
-    {% if is_bracket_valid %}
-        <p><span class="bracket-valid">Your most recently saved bracket is valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
+    {% if edit_target_user %}
+        <h1>Edit {{ edit_target_user.full_name }}'s Bracket</h1>
+        <p class="mm-admin-edit-banner"><i class="fa-solid fa-user-shield"></i> Admin editing mode — you are modifying another user's bracket. <a href="{{ url_for('view_picks', user_id=edit_target_user.id) }}">View bracket (read-only)</a></p>
+        {% if is_bracket_valid %}
+            <p><span class="bracket-valid">Their bracket is valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
+        {% else %}
+            <p><span class="bracket-invalid">Their bracket is not valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
+        {% endif %}
     {% else %}
-        <p><span class="bracket-invalid">Your most recently saved bracket is not valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
+        <h1>Make Your Picks</h1>
+        {% if is_bracket_valid %}
+            <p><span class="bracket-valid">Your most recently saved bracket is valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
+        {% else %}
+            <p><span class="bracket-invalid">Your most recently saved bracket is not valid.</span> {% if last_save %}Last saved: {{ last_save }}.{% endif %}</p>
+        {% endif %}
     {% endif %}
 
     <form method="post" id="picks-form">

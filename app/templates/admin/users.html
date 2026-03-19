@@ -28,6 +28,7 @@
                 <th>Bracket Valid</th>
                 <th>Current Score</th>
                 <th>Max Possible Score</th>
+                {% if is_after_cutoff %}<th>Edit</th>{% endif %}
                 <th>ID</th>
             </tr>
         </thead>
@@ -40,6 +41,9 @@
                 <td>{{ 'Yes' if user.is_bracket_valid else 'No' }}</td>
                 <td>{{ user.currentscore }}</td>
                 <td>{{ user.maxpossiblescore }}</td>
+                {% if is_after_cutoff %}
+                <td><a href="{{ url_for('admin_edit_bracket', user_id=user.id) }}">Edit Bracket</a></td>
+                {% endif %}
                 <td>{{ user.id }}</td>
             </tr>
             {% endfor %}

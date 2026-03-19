@@ -1203,6 +1203,24 @@ header {
     margin-bottom: 20px;
 }
 
+.mm-admin-edit-banner {
+    background-color: #e7f3ff;
+    border: 1px solid #0066cc;
+    color: #004085;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.mm-admin-edit-banner a {
+    color: #0066cc;
+    font-weight: 500;
+}
+
+.mm-admin-edit-banner a:hover {
+    text-decoration: underline;
+}
+
 .mm-profile-readonly-note {
     color: #856404;
     background-color: #fff3cd;

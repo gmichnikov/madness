@@ -722,7 +722,138 @@ def make_picks():
             posthog_client.capture(f'user_{current_user.id}', 'fill_in_better_seeds_used')
             return redirect(url_for('make_picks'))
 
-    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted)
+    return render_template('make_picks.html', games=games, teams=teams, rounds=rounds, regions=regions, user_picks=user_picks, teams_dict=teams_dict, potential_picks_map=potential_picks_map, is_bracket_valid=is_bracket_valid, last_save=last_save_formatted, edit_target_user=None)
+
+
+@app.route('/admin/edit_bracket/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@pool_required
+@admin_required
+def admin_edit_bracket(user_id):
+    """Allow admin to edit any user's bracket after cutoff."""
+    if not is_after_cutoff():
+        flash('Bracket editing is only available after the tournament cutoff.')
+        return redirect(url_for('standings'))
+
+    target_user = User.query.filter_by(id=user_id, pool_id=POOL_ID).first_or_404()
+
+    games = Game.query.options(
+        joinedload(Game.round),
+        joinedload(Game.team1),
+        joinedload(Game.team2)
+    ).order_by(Game.id).all()
+
+    teams = get_all_teams()
+    teams_dict = {team.id: team for team in teams}
+    rounds = rounds_dict()
+    regions = regions_dict()
+
+    user_picks = {pick.game_id: pick.team_id for pick in Pick.query.filter_by(user_id=target_user.id).all()}
+    games_dict = {game.id: game for game in games}
+
+    picks_cache = {}
+    potential_picks_map = {
+        game.id: get_potential_picks(game.id, False, games_dict, user_picks, picks_cache)
+        for game in games
+    }
+
+    is_bracket_valid = target_user.is_bracket_valid
+    user_tz = pytz.timezone(target_user.time_zone)
+    last_save_formatted = None
+    if target_user.last_bracket_save:
+        last_save_localized = target_user.last_bracket_save.replace(tzinfo=pytz.utc).astimezone(user_tz)
+        last_save_formatted = last_save_localized.strftime('%Y-%m-%d, %I:%M:%S %p ') + last_save_localized.tzname()
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'save_picks':
+            existing_picks = {pick.game_id: pick for pick in Pick.query.filter_by(user_id=target_user.id).all()}
+
+            for game in games:
+                selected_team_id = request.form.get(f'game{game.id}')
+                pick = existing_picks.get(game.id)
+
+                if selected_team_id:
+                    selected_team_id = int(selected_team_id)
+                    add_or_update_pick(pick, selected_team_id, game.id, user=target_user)
+                else:
+                    later_round_pick_team_id = get_later_round_pick(game, request.form, games_dict)
+                    if later_round_pick_team_id and later_round_pick_team_id in potential_picks_map[game.id]:
+                        add_or_update_pick(pick, later_round_pick_team_id, game.id, user=target_user)
+                    else:
+                        if pick:
+                            db.session.delete(pick)
+
+            db.session.flush()
+
+            set_is_bracket_valid(games_dict, commit=False, user=target_user, reason=f"Admin {current_user.email} edited bracket")
+            recalculate_standings(user=target_user, commit=False)
+            db.session.commit()
+
+            calculate_expected_points(POOL_ID)
+
+            db.session.add(LogEntry(
+                category='Admin Edit Bracket',
+                current_user_id=current_user.id,
+                description=f"{current_user.email} saved picks for {target_user.full_name} ({target_user.email})"
+            ))
+            db.session.commit()
+
+            flash(f"Bracket saved for {target_user.full_name}. Scores recalculated.")
+            return redirect(url_for('admin_edit_bracket', user_id=user_id))
+
+        elif action == 'clear_picks':
+            Pick.query.filter_by(user_id=target_user.id).delete()
+            db.session.flush()
+
+            db.session.add(LogEntry(
+                category='Admin Edit Bracket',
+                current_user_id=current_user.id,
+                description=f"{current_user.email} cleared all picks for {target_user.full_name} ({target_user.email})"
+            ))
+
+            set_is_bracket_valid(games_dict, commit=False, user=target_user, reason=f"Admin {current_user.email} cleared bracket")
+            recalculate_standings(user=target_user, commit=False)
+            db.session.commit()
+
+            calculate_expected_points(POOL_ID)
+
+            flash(f"All picks cleared for {target_user.full_name}.")
+            return redirect(url_for('admin_edit_bracket', user_id=user_id))
+
+        elif action == 'fill_in_better_seeds':
+            auto_fill_bracket(games_dict, user_picks, commit=False, user=target_user, add_log=False)
+            db.session.flush()
+
+            db.session.add(LogEntry(
+                category='Admin Edit Bracket',
+                current_user_id=current_user.id,
+                description=f"{current_user.email} used Fill In Better Seeds for {target_user.full_name} ({target_user.email})"
+            ))
+
+            set_is_bracket_valid(games_dict, commit=False, user=target_user, reason=f"Admin {current_user.email} edited bracket")
+            recalculate_standings(user=target_user, commit=False)
+            db.session.commit()
+
+            calculate_expected_points(POOL_ID)
+
+            flash(f"Fill In Better Seeds applied for {target_user.full_name}.")
+            return redirect(url_for('admin_edit_bracket', user_id=user_id))
+
+    return render_template(
+        'make_picks.html',
+        games=games,
+        teams=teams,
+        rounds=rounds,
+        regions=regions,
+        user_picks=user_picks,
+        teams_dict=teams_dict,
+        potential_picks_map=potential_picks_map,
+        is_bracket_valid=is_bracket_valid,
+        last_save=last_save_formatted,
+        edit_target_user=target_user
+    )
+
 
 def add_or_update_pick(pick, team_id, game_id, user=None):
     """Add or update a user's pick for a game"""
@@ -843,11 +974,12 @@ def set_is_bracket_valid(games_dict=None, commit=True, user=None, reason=None):
     if commit:
         db.session.commit()
 
-def auto_fill_bracket(games_dict=None, user_picks=None, commit=True, user=None):
+def auto_fill_bracket(games_dict=None, user_picks=None, commit=True, user=None, add_log=True):
     """
     Auto-fill empty picks in user's bracket with better seeds.
     For each unpicked game, chooses the team with the best (lowest) seed number.
     Set commit=False to defer committing (for atomic operations).
+    Set add_log=False when caller will add its own log (e.g. admin edit).
     """
     if user is None:
         user = current_user
@@ -881,8 +1013,9 @@ def auto_fill_bracket(games_dict=None, user_picks=None, commit=True, user=None):
                 db.session.add(new_pick)
                 user_picks[game.id] = best_team.id # Update local dict to inform future round fills
 
-    log_entry = LogEntry(category='Fill Better Seeds', current_user_id=user.id, description=f"{user.email} filled in the better seeds")
-    db.session.add(log_entry)
+    if add_log:
+        log_entry = LogEntry(category='Fill Better Seeds', current_user_id=user.id, description=f"{user.email} filled in the better seeds")
+        db.session.add(log_entry)
     if commit:
         db.session.commit()
 
