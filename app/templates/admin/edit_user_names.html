@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}Edit User Names{% endblock %}
+{% block content %}
+<h1>Edit User Names</h1>
+
+<table class="table-logs mm-edit-names-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td class="mm-edit-names-name" data-user-id="{{ user.id }}">{{ user.full_name }}</td>
+            <td>{{ user.email }}</td>
+            <td>
+                <button class="btn btn-secondary mm-edit-names-btn"
+                        data-user-id="{{ user.id }}"
+                        data-user-name="{{ user.full_name }}"
+                        data-user-email="{{ user.email }}">
+                    Edit
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div id="mm-edit-names-overlay" class="mm-edit-names-overlay" style="display:none;">
+    <div class="mm-edit-names-modal">
+        <h2>Edit User Name</h2>
+        <div class="mm-edit-names-field">
+            <label>Email</label>
+            <input type="text" id="mm-edit-names-email" class="form-control" disabled>
+        </div>
+        <div class="mm-edit-names-field">
+            <label for="mm-edit-names-input">Name</label>
+            <input type="text" id="mm-edit-names-input" class="form-control" maxlength="100">
+        </div>
+        <div id="mm-edit-names-error" class="mm-edit-names-error" style="display:none;"></div>
+        <div class="mm-edit-names-actions">
+            <button id="mm-edit-names-save" class="btn btn-primary">Save</button>
+            <button id="mm-edit-names-cancel" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.mm-edit-names-table td,
+.mm-edit-names-table th {
+    padding: 8px 12px;
+}
+
+.mm-edit-names-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mm-edit-names-modal {
+    background: #fff;
+    border-radius: 6px;
+    padding: 28px 32px;
+    min-width: 360px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+}
+
+.mm-edit-names-modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+}
+
+.mm-edit-names-field {
+    margin-bottom: 16px;
+}
+
+.mm-edit-names-field label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.mm-edit-names-field input[disabled] {
+    background: #f4f4f4;
+    color: #666;
+    cursor: default;
+}
+
+.mm-edit-names-error {
+    color: #c0392b;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+}
+
+.mm-edit-names-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+</style>
+
+<script>
+(function () {
+    var overlay = document.getElementById('mm-edit-names-overlay');
+    var emailInput = document.getElementById('mm-edit-names-email');
+    var nameInput = document.getElementById('mm-edit-names-input');
+    var saveBtn = document.getElementById('mm-edit-names-save');
+    var cancelBtn = document.getElementById('mm-edit-names-cancel');
+    var errorDiv = document.getElementById('mm-edit-names-error');
+    var activeUserId = null;
+
+    function openModal(userId, userName, userEmail) {
+        activeUserId = userId;
+        emailInput.value = userEmail;
+        nameInput.value = userName;
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+        overlay.style.display = 'flex';
+        nameInput.focus();
+        nameInput.select();
+    }
+
+    function closeModal() {
+        overlay.style.display = 'none';
+        activeUserId = null;
+    }
+
+    document.querySelectorAll('.mm-edit-names-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            openModal(
+                btn.dataset.userId,
+                btn.dataset.userName,
+                btn.dataset.userEmail
+            );
+        });
+    });
+
+    cancelBtn.addEventListener('click', closeModal);
+
+    overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeModal();
+    });
+
+    nameInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') saveBtn.click();
+    });
+
+    saveBtn.addEventListener('click', function () {
+        var newName = nameInput.value.trim();
+        if (!newName) {
+            errorDiv.textContent = 'Name cannot be empty.';
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        saveBtn.disabled = true;
+        errorDiv.style.display = 'none';
+
+        fetch('{{ url_for("admin_edit_user_name") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: parseInt(activeUserId), full_name: newName })
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.success) {
+                var nameCell = document.querySelector('.mm-edit-names-name[data-user-id="' + activeUserId + '"]');
+                if (nameCell) nameCell.textContent = data.full_name;
+                var editBtn = document.querySelector('.mm-edit-names-btn[data-user-id="' + activeUserId + '"]');
+                if (editBtn) editBtn.dataset.userName = data.full_name;
+                closeModal();
+            } else {
+                errorDiv.textContent = data.error || 'An error occurred.';
+                errorDiv.style.display = 'block';
+            }
+        })
+        .catch(function () {
+            errorDiv.textContent = 'Network error. Please try again.';
+            errorDiv.style.display = 'block';
+        })
+        .finally(function () {
+            saveBtn.disabled = false;
+        });
+    });
+})();
+</script>
+{% endblock %}

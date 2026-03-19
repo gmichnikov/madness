@@ -1543,6 +1543,45 @@ def admin_users():
     user_emails = ', '.join([user.email for user in users])
     return render_template('admin/users.html', users=users, valid_bracket_filter=valid_bracket_filter, verified_filter=verified_filter, user_emails=user_emails)
 
+@app.route('/admin/edit_user_names', methods=['GET'])
+@login_required
+@pool_required
+@admin_required
+def admin_edit_user_names():
+    users = User.query.filter(User.pool_id == POOL_ID).order_by(func.lower(User.full_name)).all()
+    return render_template('admin/edit_user_names.html', users=users)
+
+@app.route('/admin/edit_user_name', methods=['POST'])
+@login_required
+@pool_required
+@admin_required
+def admin_edit_user_name():
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Invalid request'}), 400
+
+    user_id = data.get('user_id')
+    new_name = (data.get('full_name') or '').strip()
+
+    if not user_id or not new_name:
+        return jsonify({'success': False, 'error': 'Missing user_id or full_name'}), 400
+
+    user = User.query.filter_by(id=user_id, pool_id=POOL_ID).first()
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+
+    old_name = user.full_name
+    user.full_name = new_name
+    log_entry = LogEntry(
+        category='Edit User Name',
+        current_user_id=current_user.id,
+        description=f"{current_user.full_name} changed name of {user.email} from \"{old_name}\" to \"{new_name}\""
+    )
+    db.session.add(log_entry)
+    db.session.commit()
+
+    return jsonify({'success': True, 'full_name': user.full_name})
+
 def get_teams_that_lost():
     """Get set of team IDs that have lost at least one game"""
     lost_teams = set()
