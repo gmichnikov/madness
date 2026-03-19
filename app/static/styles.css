@@ -916,7 +916,8 @@ header {
 }
 
 .standings-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: separate; /* Required for sticky headers */
     border-spacing: 0;
 }
@@ -927,6 +928,9 @@ header {
     background-color: #f2f2f2;
     z-index: 10;
     border-bottom: 2px solid #ddd;
+    white-space: normal;
+    word-break: break-word;
+    min-width: 40px;
 }
 
 /* Sticky Rank and Name Columns */
@@ -936,14 +940,17 @@ header {
     left: 0;
     z-index: 11;
     background: #f8f9fa;
-    width: 40px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
     border-right: 1px solid #eee;
+    text-align: center;
 }
 
 .standings-table th:nth-child(2),
 .standings-table td:nth-child(2) {
     position: sticky;
-    left: 40px;
+    left: 32px;
     z-index: 11;
     background: white;
     min-width: 140px;
@@ -978,10 +985,43 @@ header {
     color: #0056b3;
 }
 
+/* Column header line breaks: hidden on desktop, shown on mobile */
+.mm-th-br {
+    display: none;
+}
+.mm-th-sp {
+    display: inline;
+}
+
 /* Hide per-round scores on very small screens */
 @media screen and (max-width: 600px) {
+    .mm-th-br {
+        display: inline;
+    }
+    .mm-th-sp {
+        display: none;
+    }
     .hide-mobile {
         display: none;
+    }
+
+    /* Narrow the name column so the 3 score columns fit without scrolling */
+    .standings-table th:nth-child(2),
+    .standings-table td:nth-child(2) {
+        min-width: 0;
+        max-width: 100px;
+        width: 100px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    /* Keep the link from overflowing its cell */
+    .standings-table td:nth-child(2) a {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 }
 
