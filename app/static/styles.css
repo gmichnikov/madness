@@ -1221,6 +1221,11 @@ header {
     text-decoration: underline;
 }
 
+.mm-add-user-note {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
 .mm-profile-readonly-note {
     color: #856404;
     background-color: #fff3cd;

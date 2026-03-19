@@ -24,7 +24,7 @@ from flask import render_template, redirect, url_for, flash, request, jsonify, R
 from app import app, db, login_manager
 from app.models import User, Region, Team, Round, LogEntry, Game, Pick, Thread, Post, Pool, PotentialWinner, EspnTeam, EspnSyncLog, GameProbability
 from flask_login import login_user, logout_user, login_required, current_user
-from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, RequestPasswordResetForm, ResetPasswordWithTokenForm, SuperAdminDeleteUserForm, EditPoolForm, AnalyticsForm
+from app.forms import RegistrationForm, LoginForm, AdminPasswordResetForm, ManageRegionsForm, ManageTeamsForm, ManageRoundsForm, AdminStatusForm, EditProfileForm, SortStandingsForm, UserSelectionForm, AdminPasswordResetCodeForm, ResetPasswordRequestForm, ResetPasswordForm, RequestPasswordResetForm, ResetPasswordWithTokenForm, SuperAdminDeleteUserForm, SuperAdminAddUserForm, EditPoolForm, AnalyticsForm
 from functools import wraps
 import os
 import csv
@@ -2193,6 +2193,50 @@ def super_admin_delete_user():
         return redirect(url_for('super_admin_delete_user'))
 
     return render_template('super_admin/delete_user.html', form=form)
+
+
+@app.route('/super_admin/add_user', methods=['GET', 'POST'])
+@login_required
+@pool_required
+@super_admin_required
+def super_admin_add_user():
+    """Super admin only: add a user (e.g. after cutoff). Super admin sets password; user can reset later if needed."""
+    form = SuperAdminAddUserForm()
+
+    if form.validate_on_submit():
+        existing = User.query.filter(
+            func.lower(User.email) == func.lower(form.email.data),
+            User.pool_id == POOL_ID
+        ).first()
+        if existing:
+            flash('Email already registered in this pool.')
+            return redirect(url_for('super_admin_add_user'))
+
+        new_user = User(
+            email=form.email.data,
+            full_name=form.full_name.data,
+            time_zone=form.time_zone.data,
+            tiebreaker_winner=form.tiebreaker_winner.data,
+            tiebreaker_loser=form.tiebreaker_loser.data,
+            pool_id=POOL_ID
+        )
+        new_user.set_password(form.password.data)
+        if ADMIN_EMAIL and form.email.data.lower() == ADMIN_EMAIL.lower():
+            new_user.is_admin = True
+            new_user.is_super_admin = True
+
+        db.session.add(new_user)
+        db.session.add(LogEntry(
+            category='Super Admin Add User',
+            current_user_id=current_user.id,
+            description=f"{current_user.email} added user {new_user.full_name} ({new_user.email})"
+        ))
+        db.session.commit()
+
+        flash(f'User {new_user.full_name} added successfully. They can log in with the password you set, or request a reset later.')
+        return redirect(url_for('admin_users'))
+
+    return render_template('admin/add_user.html', form=form)
 
 
 @app.route('/admin/analytics', methods=['GET', 'POST'])

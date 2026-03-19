@@ -86,6 +86,16 @@ class SuperAdminDeleteUserForm(FlaskForm):
     email = SelectField('Select User', choices=[])
     submit = SubmitField('Delete User')
 
+class SuperAdminAddUserForm(FlaskForm):
+    """Super admin only: add a user (e.g. after cutoff). Super admin sets password; user can reset later if needed."""
+    email = StringField(EMAIL, validators=[DataRequired(), Email()])
+    full_name = StringField(FULL_NAME, validators=[DataRequired()], render_kw={"placeholder": "John Doe"})
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=4)])
+    time_zone = SelectField('Time Zone', choices=[(tz, tz) for tz in pytz.all_timezones], default='US/Eastern')
+    tiebreaker_winner = IntegerField(TIEBREAKER_1, validators=[DataRequired()], default=0)
+    tiebreaker_loser = IntegerField(TIEBREAKER_2, validators=[DataRequired()], default=0)
+    submit = SubmitField('Add User')
+
 class EditPoolForm(FlaskForm):
     pool_name = StringField('Pool Name', validators=[DataRequired(), Length(max=100)])
     submit = SubmitField('Update Pool Name')

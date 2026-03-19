@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Add User{% endblock %}
+{% block content %}
+<h1>Add User</h1>
+<p class="mm-add-user-note">Super admin only. Add a user (e.g. after cutoff). You set the password; they can request a reset later if needed.</p>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.email.label }}<br>
+        {{ form.email(class='form-control-wide', size=40) }}
+        {% for error in form.email.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.full_name.label }}<br>
+        {{ form.full_name(class='form-control-wide', size=40) }}
+        {% for error in form.full_name.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.password.label }}<br>
+        {{ form.password(class='form-control', size=20) }}
+        {% for error in form.password.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.time_zone.label }}<br>
+        {{ form.time_zone(class='form-control') }}
+    </div>
+    <div class="form-group">
+        {{ form.tiebreaker_winner.label }}<br>
+        {{ form.tiebreaker_winner(class='form-control', style='width: 80px;') }}
+        {% for error in form.tiebreaker_winner.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.tiebreaker_loser.label }}<br>
+        {{ form.tiebreaker_loser(class='form-control', style='width: 80px;') }}
+        {% for error in form.tiebreaker_loser.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.submit(class="btn btn-primary btn-top-margin") }}
+    </div>
+</form>
+{% endblock %}
