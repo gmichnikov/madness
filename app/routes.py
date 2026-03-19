@@ -451,6 +451,12 @@ def admin_view_logs():
     selected_user = 'Any'
     selected_category = 'Any'
 
+    limit_raw = request.form.get('limit') or request.args.get('limit', '50')
+    try:
+        selected_limit = max(1, min(10000, int(limit_raw)))
+    except (TypeError, ValueError):
+        selected_limit = 50
+
     if request.method == 'POST':
         selected_user = request.form.get('user_full_name', 'Any')
         selected_category = request.form.get('category', 'Any')
@@ -469,14 +475,14 @@ def admin_view_logs():
             (LogEntry.current_user_id.is_(None)) | (User.pool_id == POOL_ID)
         )
 
-    log_entries = log_entries.order_by(LogEntry.timestamp.desc()).all()
+    log_entries = log_entries.order_by(LogEntry.timestamp.desc()).limit(selected_limit).all()
 
     for log in log_entries:
         localized_timestamp = log.timestamp.replace(tzinfo=pytz.utc).astimezone(user_tz)
         tz_abbr = localized_timestamp.tzname()  # Gets the time zone abbreviation
         log.formatted_timestamp = localized_timestamp.strftime('%Y-%m-%d, %I:%M:%S %p ') + tz_abbr
         log.user_full_name = log.current_user.full_name if log.current_user else "System"
-    return render_template('admin/view_logs.html', log_entries=log_entries, users=users, categories=categories, selected_user=selected_user, selected_category=selected_category)
+    return render_template('admin/view_logs.html', log_entries=log_entries, users=users, categories=categories, selected_user=selected_user, selected_category=selected_category, selected_limit=selected_limit)
 
 @app.route('/user/<int:user_id>', methods=['GET', 'POST'])
 @login_required

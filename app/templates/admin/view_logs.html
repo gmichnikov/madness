@@ -5,23 +5,30 @@
 {% block content %}
     <h1>Log Entries</h1>
 
-    <form method="post" id="logs-filter-form">
-        User: 
-        <select name="user_full_name" onchange="document.getElementById('logs-filter-form').submit();">
-            <option value="Any" {{ 'selected' if selected_user == 'Any' else '' }}>Any</option>
-            <option value="System" {{ 'selected' if selected_user == 'System' else '' }}>System</option>
-            {% for user in users %}
-                <option value="{{ user.full_name }}" {{ 'selected' if user.full_name == selected_user else '' }}>{{ user.full_name }}</option>
-            {% endfor %}
-        </select>
-    
-        Category: 
-        <select name="category" onchange="document.getElementById('logs-filter-form').submit();">
-            <option value="Any" {{ 'selected' if selected_category == 'Any' else '' }}>Any</option>
-            {% for category in categories %}
-                <option value="{{ category[0] }}" {{ 'selected' if category[0] == selected_category else '' }}>{{ category[0] }}</option>
-            {% endfor %}
-        </select>
+    <form method="post" id="logs-filter-form" class="logs-filter">
+        <div class="logs-filter__group">
+            <label class="logs-filter__label">User</label>
+            <select name="user_full_name" class="logs-filter__control logs-filter__select" onchange="document.getElementById('logs-filter-form').submit();">
+                <option value="Any" {{ 'selected' if selected_user == 'Any' else '' }}>Any</option>
+                <option value="System" {{ 'selected' if selected_user == 'System' else '' }}>System</option>
+                {% for user in users %}
+                    <option value="{{ user.full_name }}" {{ 'selected' if user.full_name == selected_user else '' }}>{{ user.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="logs-filter__group">
+            <label class="logs-filter__label">Category</label>
+            <select name="category" class="logs-filter__control logs-filter__select" onchange="document.getElementById('logs-filter-form').submit();">
+                <option value="Any" {{ 'selected' if selected_category == 'Any' else '' }}>Any</option>
+                {% for category in categories %}
+                    <option value="{{ category[0] }}" {{ 'selected' if category[0] == selected_category else '' }}>{{ category[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="logs-filter__group">
+            <label class="logs-filter__label">Limit</label>
+            <input type="number" name="limit" value="{{ selected_limit }}" min="1" max="10000" class="logs-filter__control logs-filter__control--narrow" onchange="document.getElementById('logs-filter-form').submit();">
+        </div>
     </form>
 
     <table class="table-logs">
