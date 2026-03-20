@@ -2566,6 +2566,22 @@ def simulate_standings():
             best_team_id = max(team_probs, key=team_probs.get)
             favorite_by_game[game_id] = best_team_id
 
+    # Other users' picks (for "Load user's picks" dropdown) - only alive picks
+    other_users_picks_by_id = {}
+    all_user_picks = Pick.query.join(User).filter(
+        Pick.game_id.in_(game_ids),
+        User.pool_id == POOL_ID,
+        User.is_bracket_valid.is_(True)
+    ).all()
+    for pick in all_user_picks:
+        if pick.team_id in alive_team_ids and pick.user_id != current_user.id:
+            if pick.user_id not in other_users_picks_by_id:
+                other_users_picks_by_id[pick.user_id] = {}
+            other_users_picks_by_id[pick.user_id][pick.game_id] = pick.team_id
+    user_ids = sorted(other_users_picks_by_id.keys())
+    users_by_id = {u.id: u for u in User.query.filter(User.id.in_(user_ids)).all()} if user_ids else {}
+    other_users_for_dropdown = [(uid, users_by_id[uid].full_name) for uid in user_ids if uid in users_by_id]
+
     selected_teams = {}
     if request.method == 'POST':
         users = User.query.filter(User.pool_id == POOL_ID, User.is_bracket_valid.is_(True)).all()
@@ -2620,6 +2636,8 @@ def simulate_standings():
             top_seed_by_game=top_seed_by_game,
             favorite_by_game=favorite_by_game,
             win_probs_by_game=win_probs_by_game,
+            other_users_picks_by_id=other_users_picks_by_id,
+            other_users_for_dropdown=other_users_for_dropdown,
         )
 
     return render_template('simulate_standings.html',
@@ -2631,6 +2649,8 @@ def simulate_standings():
         top_seed_by_game=top_seed_by_game,
         favorite_by_game=favorite_by_game,
         win_probs_by_game=win_probs_by_game,
+        other_users_picks_by_id=other_users_picks_by_id,
+        other_users_for_dropdown=other_users_for_dropdown,
     )
 
 

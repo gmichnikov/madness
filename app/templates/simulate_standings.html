@@ -9,11 +9,18 @@
         const simAutofill = {
             myPicks: {{ my_picks_by_game | tojson }},
             topSeed: {{ top_seed_by_game | tojson }},
-            favorite: {{ favorite_by_game | tojson }}
+            favorite: {{ favorite_by_game | tojson }},
+            userPicks: {{ other_users_picks_by_id | tojson }}
         };
 
-        function simFillAll(source) {
-            const data = simAutofill[source];
+        function simFillAll(source, userId) {
+            let data;
+            if (source === 'userPicks' && userId) {
+                data = simAutofill.userPicks[String(userId)];
+            } else {
+                data = simAutofill[source];
+            }
+            if (!data) return;
             document.querySelectorAll('.sim-game-select').forEach(function(sel) {
                 const gameId = sel.dataset.gameId;
                 const val = data[gameId];
@@ -74,6 +81,12 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="simFillAll('myPicks')">My Picks</button>
                     <button type="button" class="btn btn-outline-success btn-sm" onclick="simFillAll('topSeed')">Top Seed</button>
                     <button type="button" class="btn btn-outline-warning btn-sm" onclick="simFillAll('favorite')">Favorites</button>
+                    <select class="form-control sim-load-user-select" style="display: inline-block; width: auto; padding: 4px 8px; margin-left: 4px;" onchange="if(this.value){ simFillAll('userPicks', this.value); this.value=''; }">
+                        <option value="">Load user's picks...</option>
+                        {% for uid, name in other_users_for_dropdown %}
+                        <option value="{{ uid }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="simClearAll()">Clear All</button>
                 </div>
 
