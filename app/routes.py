@@ -2580,7 +2580,10 @@ def simulate_standings():
             other_users_picks_by_id[pick.user_id][pick.game_id] = pick.team_id
     user_ids = sorted(other_users_picks_by_id.keys())
     users_by_id = {u.id: u for u in User.query.filter(User.id.in_(user_ids)).all()} if user_ids else {}
-    other_users_for_dropdown = [(uid, users_by_id[uid].full_name) for uid in user_ids if uid in users_by_id]
+    other_users_for_dropdown = sorted(
+        [(uid, users_by_id[uid].full_name) for uid in user_ids if uid in users_by_id],
+        key=lambda x: (x[1] or '').lower()
+    )
 
     selected_teams = {}
     if request.method == 'POST':
