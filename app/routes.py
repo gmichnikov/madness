@@ -840,6 +840,32 @@ def admin_edit_bracket(user_id):
             flash(f"Fill In Better Seeds applied for {target_user.full_name}.")
             return redirect(url_for('admin_edit_bracket', user_id=user_id))
 
+        elif action == 'save_tiebreakers':
+            try:
+                winner = int(request.form.get('tiebreaker_winner', 0))
+                loser = int(request.form.get('tiebreaker_loser', 0))
+            except (TypeError, ValueError):
+                flash('Tiebreakers must be valid numbers.')
+                return redirect(url_for('admin_edit_bracket', user_id=user_id))
+
+            if winner <= 0 or loser <= 0:
+                flash('Tiebreakers must be non-zero positive numbers.')
+                return redirect(url_for('admin_edit_bracket', user_id=user_id))
+
+            target_user.tiebreaker_winner = winner
+            target_user.tiebreaker_loser = loser
+            db.session.commit()
+
+            db.session.add(LogEntry(
+                category='Admin Edit Bracket',
+                current_user_id=current_user.id,
+                description=f"{current_user.email} updated tiebreakers for {target_user.full_name} ({target_user.email}): winner={winner}, loser={loser}"
+            ))
+            db.session.commit()
+
+            flash(f"Tiebreakers updated for {target_user.full_name}: {winner}-{loser}.")
+            return redirect(url_for('admin_edit_bracket', user_id=user_id))
+
     return render_template(
         'make_picks.html',
         games=games,

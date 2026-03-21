@@ -39,6 +39,20 @@
         <button style="display: none;" type="button" onclick="submitForm('save_picks')" class="btn btn-primary" id="save-picks-button">Save Picks</button>
         <button type="button" onclick="submitForm('clear_picks')" class="btn btn-secondary">Clear All Picks</button>
         <button type="button" onclick="submitForm('fill_in_better_seeds')" class="btn btn-secondary">Fill In Better Seeds</button>
+
+        {% if edit_target_user %}
+        <div class="mm-admin-tiebreakers">
+            <h3 class="mm-admin-tiebreakers-title">Tiebreakers (Championship scores)</h3>
+            <p class="mm-admin-tiebreakers-note">Winner's and loser's score in the final. Must be non-zero.</p>
+            <div class="mm-admin-tiebreakers-fields">
+                <label class="mm-admin-tiebreakers-label">Winner's score</label>
+                <input type="number" name="tiebreaker_winner" id="mm-tiebreaker-winner" class="mm-admin-tiebreakers-input form-control" value="{{ edit_target_user.tiebreaker_winner }}" min="1" required>
+                <label class="mm-admin-tiebreakers-label">Loser's score</label>
+                <input type="number" name="tiebreaker_loser" id="mm-tiebreaker-loser" class="mm-admin-tiebreakers-input form-control" value="{{ edit_target_user.tiebreaker_loser }}" min="1" required>
+                <button type="button" onclick="submitForm('save_tiebreakers')" class="btn btn-secondary mm-admin-tiebreakers-btn">Save Tiebreakers</button>
+            </div>
+        </div>
+        {% endif %}
     
         <div class="bracket-grid-container">
             <div class="bracket-grid">

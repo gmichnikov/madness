@@ -1221,6 +1221,45 @@ header {
     text-decoration: underline;
 }
 
+.mm-admin-tiebreakers {
+    margin: 1.5rem 0;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+}
+
+.mm-admin-tiebreakers-title {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+}
+
+.mm-admin-tiebreakers-note {
+    margin: 0 0 12px 0;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.mm-admin-tiebreakers-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.mm-admin-tiebreakers-label {
+    font-weight: 500;
+    margin-right: 4px;
+}
+
+.mm-admin-tiebreakers-input {
+    width: 80px;
+}
+
+.mm-admin-tiebreakers-btn {
+    margin-left: 8px;
+}
+
 .mm-add-user-note {
     color: #666;
     margin-bottom: 1rem;
